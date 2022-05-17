@@ -17,17 +17,17 @@ Add one of the following dependencies:
 
 ```scala
 // common model classes, including Schema
-"com.softwaremill.sttp.apispec" %% "apispec-model" % "0.1"
+"com.softwaremill.sttp.apispec" %% "apispec-model" % "0.1.0"
 
 // only model classes, root: OpenAPI
-"com.softwaremill.sttp.apispec" %% "openapi-model" % "0.1"
+"com.softwaremill.sttp.apispec" %% "openapi-model" % "0.1.0"
 // circe encoders for the model classes
-"com.softwaremill.sttp.apispec" %% "openapi-circe" % "0.1"
+"com.softwaremill.sttp.apispec" %% "openapi-circe" % "0.1.0"
 
 // only model classes, root: AsyncAPI
-"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.1"
+"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.1.0"
 // circe encoders for the model classes
-"com.softwaremill.sttp.apispec" %% "asyncapi-circe" % "0.1" 
+"com.softwaremill.sttp.apispec" %% "asyncapi-circe" % "0.1.0" 
 ```
 
 sttp apispec is available for Scala 2.12, 2.13, 3, Scala.JS and Scala Native.
@@ -37,7 +37,7 @@ sttp apispec is available for Scala 2.12, 2.13, 3, Scala.JS and Scala Native.
 Model classes encoded using Circe encoders can then be serialized to JSON by adding a dependency:
 
 ```scala
-"io.circe" %% "circe-yaml" % "0.14.1"
+"io.circe" %% "circe-yaml" % "0.1.04.1"
 ```
 
 And running the following:
