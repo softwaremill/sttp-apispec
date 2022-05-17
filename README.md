@@ -16,13 +16,18 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 Add one of the following dependencies:
 
 ```scala
-"com.softwaremill.sttp.apispec" %% "apispec-model" % "0.1" // common model classes, including Schema
+// common model classes, including Schema
+"com.softwaremill.sttp.apispec" %% "apispec-model" % "0.1"
 
-"com.softwaremill.sttp.apispec" %% "openapi-model" % "0.1" // only model classes, root: OpenAPI
-"com.softwaremill.sttp.apispec" %% "openapi-circe" % "0.1" // circe encoders for the model classes
+// only model classes, root: OpenAPI
+"com.softwaremill.sttp.apispec" %% "openapi-model" % "0.1"
+// circe encoders for the model classes
+"com.softwaremill.sttp.apispec" %% "openapi-circe" % "0.1"
 
-"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.1" // only model classes, root: AsyncAPI
-"com.softwaremill.sttp.apispec" %% "asyncapi-circe" % "0.1" // circe encoders for the model classes
+// only model classes, root: AsyncAPI
+"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.1"
+// circe encoders for the model classes
+"com.softwaremill.sttp.apispec" %% "asyncapi-circe" % "0.1" 
 ```
 
 sttp apispec is available for Scala 2.12, 2.13, 3, Scala.JS and Scala Native.
