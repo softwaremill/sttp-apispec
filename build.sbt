@@ -58,8 +58,10 @@ lazy val allProjectAggregates: Seq[ProjectReference] =
   apispecModel.projectRefs ++
     openapiModel.projectRefs ++
     openapiCirce.projectRefs ++
+    openapiCirceYaml.projectRefs ++
     asyncapiModel.projectRefs ++
-    asyncapiCirce.projectRefs
+    asyncapiCirce.projectRefs ++
+    asyncapiCirceYaml.projectRefs
 
 lazy val projectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
   println("[info] STTP_NATIVE defined, including native in the aggregate projects")
