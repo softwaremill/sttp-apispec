@@ -23,31 +23,18 @@ Add one of the following dependencies:
 "com.softwaremill.sttp.apispec" %% "openapi-model" % "0.2.0"
 // circe encoders for the model classes
 "com.softwaremill.sttp.apispec" %% "openapi-circe" % "0.2.0"
+// extension method for OpenAPI to convert to yaml
+"com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.2.0"
 
 // only model classes, root: AsyncAPI
 "com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.2.0"
 // circe encoders for the model classes
-"com.softwaremill.sttp.apispec" %% "asyncapi-circe" % "0.2.0" 
+"com.softwaremill.sttp.apispec" %% "asyncapi-circe" % "0.2.0"
+// extension method for AsyncAPI to convert to yaml
+"com.softwaremill.sttp.apispec" %% "asyncapi-circe-yaml" % "0.2.0"
 ```
 
 sttp apispec is available for Scala 2.12, 2.13, 3, Scala.JS and Scala Native.
-
-## Converting model classes to yaml
-
-Model classes encoded using Circe encoders can then be serialized to JSON by adding a dependency:
-
-```scala
-"io.circe" %% "circe-yaml" % "0.14.1"
-```
-
-And running the following:
-
-```scala
-import io.circe.syntax._
-import io.circe.yaml.Printer
-
-def toYaml: String = Printer(dropNullKeys = true, preserveOrder = true).pretty(myModel.asJson)
-```
 
 ## Documentation
 
