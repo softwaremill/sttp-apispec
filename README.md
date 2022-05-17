@@ -37,7 +37,7 @@ sttp apispec is available for Scala 2.12, 2.13, 3, Scala.JS and Scala Native.
 Model classes encoded using Circe encoders can then be serialized to JSON by adding a dependency:
 
 ```scala
-"io.circe" %% "circe-yaml" % "0.1.04.1"
+"io.circe" %% "circe-yaml" % "0.14.1"
 ```
 
 And running the following:
