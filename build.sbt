@@ -3,9 +3,9 @@ import com.softwaremill.Publish.ossPublishSettings
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 
-val scala2_12 = "2.12.15"
+val scala2_12 = "2.12.16"
 val scala2_13 = "2.13.8"
-val scala3 = "3.1.2"
+val scala3 = "3.1.3"
 
 val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
@@ -13,7 +13,7 @@ val scalaNativeVersions = List(scala2_12, scala2_13, scala3)
 
 val circeVersion = "0.14.1"
 val circeYamlVersion = "0.14.1"
-val scalaTestVersion = "3.2.12"
+val scalaTestVersion = "3.2.13"
 
 excludeLintKeys in Global ++= Set(ideSkipProject)
 
