@@ -30,7 +30,14 @@ package circe {
     // note: these are strict val-s, order matters!
 
     implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
-      case Left(Reference(ref)) => Json.obj(("$ref", Json.fromString(ref)))
+      case Left(Reference(ref, summary, description)) =>
+        Json
+          .obj(
+            "$ref" := ref,
+            "summary" := summary,
+            "description" := description
+          )
+          .dropNullValues
       case Right(t)             => implicitly[Encoder[T]].apply(t)
     }
 

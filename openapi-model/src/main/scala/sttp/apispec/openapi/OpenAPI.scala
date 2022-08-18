@@ -15,11 +15,13 @@ import sttp.apispec.{
 import scala.collection.immutable.ListMap
 
 final case class OpenAPI(
-    openapi: String = "3.0.3",
+    openapi: String = "3.1.0",
     info: Info,
+    jsonSchemaDialect: Option[String],
     tags: List[Tag] = Nil,
     servers: List[Server] = Nil,
     paths: Paths = Paths.Empty,
+    webhooks: Option[Map[String, ReferenceOr[PathItem]]],
     components: Option[Components] = None,
     security: List[SecurityRequirement] = Nil,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
@@ -37,6 +39,10 @@ final case class OpenAPI(
   def addServer(url: String): OpenAPI = copy(servers = servers ++ List(Server(url)))
 
   def tags(t: List[Tag]): OpenAPI = copy(tags = t)
+
+  def jsonSchemaDialect(d: Option[String]): OpenAPI = copy(jsonSchemaDialect = d)
+
+  def webhooks(wh: Option[Map[String, ReferenceOr[PathItem]]]): OpenAPI = copy(webhooks = wh)
 
   def security(updated: List[SecurityRequirement]): OpenAPI = copy(security = updated)
   def addSecurity(updated: SecurityRequirement): OpenAPI = copy(security = security ++ List(updated))
