@@ -17,11 +17,11 @@ import scala.collection.immutable.ListMap
 final case class OpenAPI(
     openapi: String = "3.1.0",
     info: Info,
-    jsonSchemaDialect: Option[String],
+    jsonSchemaDialect: Option[String] = None,
     tags: List[Tag] = Nil,
     servers: List[Server] = Nil,
     paths: Paths = Paths.Empty,
-    webhooks: Option[Map[String, ReferenceOr[PathItem]]],
+    webhooks: Option[Map[String, ReferenceOr[PathItem]]] = None,
     components: Option[Components] = None,
     security: List[SecurityRequirement] = Nil,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
@@ -53,6 +53,7 @@ final case class OpenAPI(
 final case class Info(
     title: String,
     version: String,
+    summary: Option[String] = None,
     description: Option[String] = None,
     termsOfService: Option[String] = None,
     contact: Option[Contact] = None,
@@ -61,6 +62,7 @@ final case class Info(
 ) {
   def title(updated: String): Info = copy(title = updated)
   def version(updated: String): Info = copy(version = updated)
+  def summary(updated: String): Info = copy(summary = Some(updated))
   def description(updated: String): Info = copy(description = Some(updated))
   def termsOfService(updated: String): Info = copy(termsOfService = Some(updated))
   def contact(updated: Contact): Info = copy(contact = Some(updated))
