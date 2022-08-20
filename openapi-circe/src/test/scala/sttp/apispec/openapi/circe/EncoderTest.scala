@@ -1,14 +1,10 @@
 package sttp.apispec.openapi
 package circe
 
-import io.circe._
 import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.io.{InputStreamReader, StringWriter}
-import java.nio.charset.StandardCharsets
-
-class EncoderTest extends AnyFunSuite {
+class EncoderTest extends AnyFunSuite with ResourcePlatform {
   val petstore: OpenAPI = OpenAPI(
     info = Info(
       title = "Sample Pet Store App",
@@ -46,16 +42,8 @@ class EncoderTest extends AnyFunSuite {
     )
 
     val serialized = withPathItem.asJson
-    val Right(json) = jsonFromResource("/petstore/basic-petstore.json")
+    val Right(json) = readJson("/petstore/basic-petstore.json")
 
     assert(serialized === json)
-  }
-
-  def jsonFromResource(path: String): Either[Error, Json] = {
-    val is = getClass.getResourceAsStream(path)
-    val reader = new java.io.BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
-    val writer = new StringWriter()
-    reader.transferTo(writer)
-    io.circe.parser.decode[Json](writer.toString)
   }
 }

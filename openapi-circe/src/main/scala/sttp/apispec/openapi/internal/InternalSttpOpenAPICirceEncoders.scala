@@ -1,5 +1,5 @@
 package sttp.apispec.openapi
-package circe
+package internal
 
 import io.circe.generic.semiauto._
 import io.circe.parser._
@@ -23,11 +23,8 @@ import sttp.apispec.{
 }
 
 import scala.collection.immutable.ListMap
-
-
-trait SttpOpenAPICirceEncoders {
+trait InternalSttpOpenAPICirceEncoders {
   // note: these are strict val-s, order matters!
-
   implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
     case Left(Reference(ref, summary, description)) =>
       Json
