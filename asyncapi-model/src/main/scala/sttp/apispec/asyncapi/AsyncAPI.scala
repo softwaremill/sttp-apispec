@@ -176,13 +176,13 @@ case class MessageTrait(
 
 // TODO: serverBindings, channelBindings, operationBindings, messageBindings
 case class Components(
-    schemas: ListMap[String, ReferenceOr[Schema]],
-    messages: ListMap[String, ReferenceOr[Message]],
-    securitySchemes: ListMap[String, ReferenceOr[SecurityScheme]],
-    parameters: ListMap[String, ReferenceOr[Parameter]],
-    correlationIds: ListMap[String, ReferenceOr[CorrelationId]],
-    operationTraits: ListMap[String, ReferenceOr[OperationTrait]],
-    messageTraits: ListMap[String, ReferenceOr[MessageTrait]],
+    schemas: ListMap[String, ReferenceOr[Schema]] = ListMap.empty,
+    messages: ListMap[String, ReferenceOr[Message]] = ListMap.empty,
+    securitySchemes: ListMap[String, ReferenceOr[SecurityScheme]] = ListMap.empty,
+    parameters: ListMap[String, ReferenceOr[Parameter]] = ListMap.empty,
+    correlationIds: ListMap[String, ReferenceOr[CorrelationId]] = ListMap.empty,
+    operationTraits: ListMap[String, ReferenceOr[OperationTrait]] = ListMap.empty,
+    messageTraits: ListMap[String, ReferenceOr[MessageTrait]] = ListMap.empty,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 )
 

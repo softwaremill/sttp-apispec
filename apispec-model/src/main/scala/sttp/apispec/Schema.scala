@@ -44,14 +44,26 @@ object Schema {
     new Schema(oneOf = references, discriminator = discriminator)
 }
 
-sealed abstract class SchemaType(val value: String)
+sealed trait SchemaType
+
+final case class ArraySchemaType(value: List[BasicSchemaType]) extends SchemaType
+
+sealed abstract class BasicSchemaType(val value: String) extends SchemaType
+
 object SchemaType {
-  case object Boolean extends SchemaType("boolean")
-  case object Object extends SchemaType("object")
-  case object Array extends SchemaType("array")
-  case object Number extends SchemaType("number")
-  case object String extends SchemaType("string")
-  case object Integer extends SchemaType("integer")
+  case object Boolean extends BasicSchemaType("boolean")
+
+  case object Object extends BasicSchemaType("object")
+
+  case object Array extends BasicSchemaType("array")
+
+  case object Number extends BasicSchemaType("number")
+
+  case object String extends BasicSchemaType("string")
+
+  case object Integer extends BasicSchemaType("integer")
+
+  case object Null extends BasicSchemaType("null")
 }
 
 object SchemaFormat {

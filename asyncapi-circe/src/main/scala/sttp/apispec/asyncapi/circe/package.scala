@@ -1,25 +1,10 @@
-package sttp.apispec.asyncapi
+package sttp.apispec
+package asyncapi
 
 import io.circe.generic.semiauto._
 import io.circe.parser._
 import io.circe.syntax._
 import io.circe.{Encoder, Json, JsonObject}
-import sttp.apispec.{
-  Discriminator,
-  ExampleMultipleValue,
-  ExampleSingleValue,
-  ExampleValue,
-  ExtensionValue,
-  ExternalDocumentation,
-  OAuthFlow,
-  OAuthFlows,
-  Reference,
-  ReferenceOr,
-  Schema,
-  SchemaType,
-  SecurityScheme,
-  Tag
-}
 
 import scala.collection.immutable.ListMap
 
@@ -64,10 +49,12 @@ package circe {
       case ExampleMultipleValue(values) =>
         Json.arr(values.map(v => encoderExampleSingleValue(ExampleSingleValue(v))): _*)
     }
-    implicit val encoderSchemaType: Encoder[SchemaType] = { e => Encoder.encodeString(e.value) }
-    implicit val encoderSchema: Encoder[Schema] = deriveEncoder[Schema].mapJsonObject(
-      obj => expandExtensions(obj).remove("$schema")
-    )
+    implicit val encoderSchemaType: Encoder[SchemaType] = {
+      case e: BasicSchemaType => e.value.asJson
+      case ArraySchemaType(_) => sys.error("Not a valid value for async api")
+    }
+    implicit val encoderSchema: Encoder[Schema] =
+      deriveEncoder[Schema].mapJsonObject(obj => expandExtensions(obj).remove("$schema"))
     implicit val encoderReference: Encoder[Reference] = deriveEncoder[Reference]
     implicit val encoderDiscriminator: Encoder[Discriminator] = deriveEncoder[Discriminator]
     implicit val encoderExternalDocumentation: Encoder[ExternalDocumentation] =
