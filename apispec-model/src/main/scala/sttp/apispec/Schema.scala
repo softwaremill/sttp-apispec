@@ -2,15 +2,30 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
+sealed trait SchemaLike
+
+sealed trait AnySchema extends SchemaLike
+
+object AnySchema {
+  sealed trait Encoding
+  object Encoding {
+    case object Object extends Encoding
+    case object Boolean extends Encoding
+  }
+
+  case class Anything(encoding: Encoding = Encoding.Boolean) extends AnySchema
+  case class Nothing(encoding: Encoding = Encoding.Boolean) extends AnySchema
+}
+
 // todo: xml
 case class Schema(
     $schema: Option[String] = None,
-    allOf: List[ReferenceOr[Schema]] = List.empty,
+    allOf: List[ReferenceOr[SchemaLike]] = List.empty,
     title: Option[String] = None,
     required: List[String] = List.empty,
     `type`: Option[SchemaType] = None,
     items: Option[ReferenceOr[Schema]] = None,
-    properties: ListMap[String, ReferenceOr[Schema]] = ListMap.empty,
+    properties: ListMap[String, ReferenceOr[SchemaLike]] = ListMap.empty,
     description: Option[String] = None,
     format: Option[String] = None,
     default: Option[ExampleValue] = None,
@@ -19,9 +34,9 @@ case class Schema(
     writeOnly: Option[Boolean] = None,
     example: Option[ExampleValue] = None,
     deprecated: Option[Boolean] = None,
-    oneOf: List[ReferenceOr[Schema]] = List.empty,
+    oneOf: List[ReferenceOr[SchemaLike]] = List.empty,
     discriminator: Option[Discriminator] = None,
-    additionalProperties: Option[ReferenceOr[Schema]] = None,
+    additionalProperties: Option[ReferenceOr[SchemaLike]] = None,
     pattern: Option[String] = None,
     minLength: Option[Int] = None,
     maxLength: Option[Int] = None,
@@ -33,7 +48,7 @@ case class Schema(
     maxItems: Option[Int] = None,
     `enum`: Option[List[ExampleSingleValue]] = None,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
-)
+) extends SchemaLike
 
 case class Discriminator(propertyName: String, mapping: Option[ListMap[String, String]])
 
@@ -52,17 +67,11 @@ sealed abstract class BasicSchemaType(val value: String) extends SchemaType
 
 object SchemaType {
   case object Boolean extends BasicSchemaType("boolean")
-
   case object Object extends BasicSchemaType("object")
-
   case object Array extends BasicSchemaType("array")
-
   case object Number extends BasicSchemaType("number")
-
   case object String extends BasicSchemaType("string")
-
   case object Integer extends BasicSchemaType("integer")
-
   case object Null extends BasicSchemaType("null")
 }
 

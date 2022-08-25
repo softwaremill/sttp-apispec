@@ -53,8 +53,20 @@ package circe {
       case e: BasicSchemaType => e.value.asJson
       case ArraySchemaType(_) => sys.error("Not a valid value for async api")
     }
+    implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
+      case AnySchema.Anything(AnySchema.Encoding.Object) => Json.obj()
+      case AnySchema.Anything(AnySchema.Encoding.Boolean) => Json.True
+      case AnySchema.Nothing(AnySchema.Encoding.Object) => Json.obj(
+        "not" := Json.obj()
+      )
+      case AnySchema.Nothing(AnySchema.Encoding.Boolean) => Json.False
+    }
     implicit val encoderSchema: Encoder[Schema] =
       deriveEncoder[Schema].mapJsonObject(obj => expandExtensions(obj).remove("$schema"))
+    implicit val encoderSchemaLike: Encoder[SchemaLike] = Encoder.instance {
+      case s: AnySchema => encoderAnySchema(s)
+      case s: Schema => encoderSchema(s)
+    }
     implicit val encoderReference: Encoder[Reference] = deriveEncoder[Reference]
     implicit val encoderDiscriminator: Encoder[Discriminator] = deriveEncoder[Discriminator]
     implicit val encoderExternalDocumentation: Encoder[ExternalDocumentation] =

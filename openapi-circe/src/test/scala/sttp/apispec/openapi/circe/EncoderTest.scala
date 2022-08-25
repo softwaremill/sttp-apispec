@@ -31,6 +31,8 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     )
   )
 
+  def refOr[A](a: A): ReferenceOr[A] = Right(a)
+
   test("petstore serialize") {
     val withPathItem = petstore.addPathItem(
       "/pets",
@@ -51,7 +53,6 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
   }
 
   test("full schema") {
-    def refOr[A](a: A): ReferenceOr[A] = Right(a)
 
     def schemaTypeAndDescription(desc: String, typ: SchemaType) =
       Schema(description = Some(desc), `type` = Some(typ))
@@ -112,6 +113,27 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     val openApiJson = openapi.asJson
     val Right(json) = readJson("/spec/3.1/schema.json")
+
+    assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
+  }
+
+  test("any and nothing") {
+    val components = Components(
+      schemas = ListMap(
+        "anything_boolean" -> refOr(AnySchema.Anything(AnySchema.Encoding.Boolean)),
+        "nothing_boolean" -> refOr(AnySchema.Nothing(AnySchema.Encoding.Boolean)),
+        "anything_object" -> refOr(AnySchema.Anything(AnySchema.Encoding.Object)),
+        "nothing_object" -> refOr(AnySchema.Nothing(AnySchema.Encoding.Object)),
+      )
+    )
+
+    val openapi = OpenAPI(
+      info = Info(title = "API", version = "1.0.0"),
+      components = Some(components)
+    )
+
+    val openApiJson = openapi.asJson
+    val Right(json) = readJson("/spec/3.1/any_and_nothing.json")
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
   }

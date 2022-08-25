@@ -30,16 +30,16 @@ trait InternalSttpOpenAPICirceEncoders {
   implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
     deriveEncoder[SecurityScheme].mapJsonObject(expandExtensions)
   implicit val encoderExampleSingleValue: Encoder[ExampleSingleValue] = {
-    case ExampleSingleValue(value: String)     => parse(value).getOrElse(Json.fromString(value))
-    case ExampleSingleValue(value: Int)        => Json.fromInt(value)
-    case ExampleSingleValue(value: Long)       => Json.fromLong(value)
-    case ExampleSingleValue(value: Float)      => Json.fromFloatOrString(value)
-    case ExampleSingleValue(value: Double)     => Json.fromDoubleOrString(value)
-    case ExampleSingleValue(value: Boolean)    => Json.fromBoolean(value)
+    case ExampleSingleValue(value: String) => parse(value).getOrElse(Json.fromString(value))
+    case ExampleSingleValue(value: Int) => Json.fromInt(value)
+    case ExampleSingleValue(value: Long) => Json.fromLong(value)
+    case ExampleSingleValue(value: Float) => Json.fromFloatOrString(value)
+    case ExampleSingleValue(value: Double) => Json.fromDoubleOrString(value)
+    case ExampleSingleValue(value: Boolean) => Json.fromBoolean(value)
     case ExampleSingleValue(value: BigDecimal) => Json.fromBigDecimal(value)
-    case ExampleSingleValue(value: BigInt)     => Json.fromBigInt(value)
-    case ExampleSingleValue(null)              => Json.Null
-    case ExampleSingleValue(value)             => Json.fromString(value.toString)
+    case ExampleSingleValue(value: BigInt) => Json.fromBigInt(value)
+    case ExampleSingleValue(null) => Json.Null
+    case ExampleSingleValue(value) => Json.fromString(value.toString)
   }
   implicit val encoderExampleValue: Encoder[ExampleValue] = {
     case e: ExampleSingleValue =>
@@ -48,7 +48,7 @@ trait InternalSttpOpenAPICirceEncoders {
       Json.arr(values.map(v => encoderExampleSingleValue(ExampleSingleValue(v))): _*)
   }
   implicit val encoderSchemaType: Encoder[SchemaType] = {
-    case e: BasicSchemaType   => e.value.asJson
+    case e: BasicSchemaType => e.value.asJson
     case ArraySchemaType(typ) => typ.map(_.value.asJson).asJson
   }
   implicit val encoderDiscriminator: Encoder[Discriminator] = deriveEncoder[Discriminator]
@@ -63,8 +63,8 @@ trait InternalSttpOpenAPICirceEncoders {
         "title" := s.title,
         "required" := s.required,
         "type" := (if (s.nullable.getOrElse(false))
-                     s.`type`.map(s => Json.arr(s.asJson, Json.fromString("null"))).asJson
-                   else s.`type`.asJson),
+          s.`type`.map(s => Json.arr(s.asJson, Json.fromString("null"))).asJson
+        else s.`type`.asJson),
         "items" := s.items,
         "properties" := s.properties,
         "description" := s.description,
@@ -90,6 +90,20 @@ trait InternalSttpOpenAPICirceEncoders {
     }
     .mapJsonObject(expandExtensions)
 
+  implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
+    case AnySchema.Anything(AnySchema.Encoding.Object) => Json.obj()
+    case AnySchema.Anything(AnySchema.Encoding.Boolean) => Json.True
+    case AnySchema.Nothing(AnySchema.Encoding.Object) => Json.obj(
+      "not" := Json.obj()
+    )
+    case AnySchema.Nothing(AnySchema.Encoding.Boolean) => Json.False
+  }
+
+  implicit val encoderSchemaLike: Encoder[SchemaLike] = Encoder.instance {
+    case s: AnySchema => encoderAnySchema(s)
+    case s: Schema => encoderSchema(s)
+  }
+
   implicit val encoderReference: Encoder[Reference] = deriveEncoder[Reference]
   implicit val encoderHeader: Encoder[Header] = deriveEncoder[Header]
   implicit val encoderExample: Encoder[Example] = deriveEncoder[Example].mapJsonObject(expandExtensions)
@@ -107,8 +121,8 @@ trait InternalSttpOpenAPICirceEncoders {
   implicit val encoderResponseMap: Encoder[ListMap[ResponsesKey, ReferenceOr[Response]]] =
     (responses: ListMap[ResponsesKey, ReferenceOr[Response]]) => {
       val fields = responses.map {
-        case (ResponsesDefaultKey, r)      => ("default", r.asJson)
-        case (ResponsesCodeKey(code), r)   => (code.toString, r.asJson)
+        case (ResponsesDefaultKey, r) => ("default", r.asJson)
+        case (ResponsesCodeKey(code), r) => (code.toString, r.asJson)
         case (ResponsesRangeKey(range), r) => (s"${range}XX", r.asJson)
       }
 
@@ -149,7 +163,7 @@ trait InternalSttpOpenAPICirceEncoders {
     deriveEncoder[OpenAPI].mapJsonObject(expandExtensions).mapJson(_.deepDropNullValues)
 
   implicit def encodeList[T: Encoder]: Encoder[List[T]] = {
-    case Nil        => Json.Null
+    case Nil => Json.Null
     case l: List[T] => Json.arr(l.map(i => implicitly[Encoder[T]].apply(i)): _*)
   }
 
