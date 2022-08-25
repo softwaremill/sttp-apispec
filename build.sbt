@@ -17,17 +17,26 @@ val scalaTestVersion = "3.2.13"
 
 excludeLintKeys in Global ++= Set(ideSkipProject)
 
+val scala3Settings = Seq(
+  scalacOptions -= "-Xmax-inlines",
+  scalacOptions ++= {
+    if (scalaVersion.value.startsWith("3")) List("-Xmax-inlines", "64") else Nil
+  }
+)
+
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.apispec",
   mimaPreviousArtifacts := Set.empty,
   versionScheme := Some("semver-spec")
-)
+) ++ scala3Settings
 
 val commonJvmSettings = commonSettings ++ Seq(
   ideSkipProject := (scalaVersion.value != scala2_13),
   libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % scalaTestVersion % Test),
   mimaPreviousArtifacts := previousStableVersion.value.map(organization.value %% moduleName.value % _).toSet,
-  mimaReportBinaryIssues := { if ((publish / skip).value) {} else mimaReportBinaryIssues.value }
+  mimaReportBinaryIssues := {
+    if ((publish / skip).value) {} else mimaReportBinaryIssues.value
+  }
 )
 
 val commonJsSettings = commonSettings ++ Seq(
@@ -176,15 +185,23 @@ lazy val asyncapiCirce: ProjectMatrix = (projectMatrix in file("asyncapi-circe")
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % circeVersion,
-      "io.circe" %% "circe-parser" % circeVersion,
-      "io.circe" %% "circe-generic" % circeVersion
+      "io.circe" %%% "circe-core" % circeVersion,
+      "io.circe" %%% "circe-parser" % circeVersion,
+      "io.circe" %%% "circe-generic" % circeVersion
     ),
     name := "asyncapi-circe"
   )
   .jvmPlatform(
     scalaVersions = scalaJVMVersions,
     settings = commonJvmSettings
+  )
+  .jsPlatform(
+    scalaVersions = scalaJSVersions,
+    settings = commonJsSettings
+  )
+  .nativePlatform(
+    scalaVersions = scalaNativeVersions,
+    settings = commonNativeSettings
   )
   .dependsOn(asyncapiModel)
 

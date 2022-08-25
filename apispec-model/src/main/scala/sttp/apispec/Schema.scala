@@ -2,8 +2,9 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
-// todo: discriminator, xml, json-schema properties
+// todo: xml
 case class Schema(
+    $schema: Option[String] = None,
     allOf: List[ReferenceOr[Schema]] = List.empty,
     title: Option[String] = None,
     required: List[String] = List.empty,
@@ -37,7 +38,7 @@ case class Schema(
 case class Discriminator(propertyName: String, mapping: Option[ListMap[String, String]])
 
 object Schema {
-  def apply(`type`: SchemaType): Schema = new Schema(`type` = Some(`type`))
+  def apply(schemaType: SchemaType): Schema = new Schema(`type` = Some(schemaType))
 
   def apply(references: List[ReferenceOr[Schema]], discriminator: Option[Discriminator]): Schema =
     new Schema(oneOf = references, discriminator = discriminator)
