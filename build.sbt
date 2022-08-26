@@ -11,9 +11,10 @@ val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
 val scalaNativeVersions = List(scala2_12, scala2_13, scala3)
 
-val circeVersion = "0.14.1"
+val circeVersion = "0.14.2"
 val circeYamlVersion = "0.14.1"
 val scalaTestVersion = "3.2.13"
+val scalaCollectionCompatVersion = "2.8.1"
 
 excludeLintKeys in Global ++= Set(ideSkipProject)
 
@@ -134,7 +135,8 @@ lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
     libraryDependencies ++= Seq(
       "io.circe" %%% "circe-core" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
-      "io.circe" %%% "circe-generic" % circeVersion
+      "io.circe" %%% "circe-generic" % circeVersion,
+      "org.scala-lang.modules" %%% "scala-collection-compat" % scalaCollectionCompatVersion
     ),
     name := "openapi-circe"
   )
@@ -198,10 +200,6 @@ lazy val asyncapiCirce: ProjectMatrix = (projectMatrix in file("asyncapi-circe")
   .jsPlatform(
     scalaVersions = scalaJSVersions,
     settings = commonJsSettings
-  )
-  .nativePlatform(
-    scalaVersions = scalaNativeVersions,
-    settings = commonNativeSettings
   )
   .dependsOn(asyncapiModel)
 
