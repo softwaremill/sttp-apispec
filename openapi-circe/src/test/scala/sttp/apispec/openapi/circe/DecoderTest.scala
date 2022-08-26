@@ -22,4 +22,13 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     assert(schemas("anything_object") === Right(AnySchema.Anything(AnySchema.Encoding.Object)))
     assert(schemas("nothing_object") === Right(AnySchema.Nothing(AnySchema.Encoding.Object)))
   }
+
+  test("all schemas types") {
+    val Right(openapi) = readJson("/spec/3.1/schema.json").flatMap(_.as[OpenAPI])
+    assert(openapi.info.title === "API")
+    val schemas = openapi.components.getOrElse(Components.Empty).schemas
+    assert(schemas.nonEmpty)
+    val Right(model) = schemas("model")
+    assert(model.asInstanceOf[Schema].properties.size === 12)
+  }
 }

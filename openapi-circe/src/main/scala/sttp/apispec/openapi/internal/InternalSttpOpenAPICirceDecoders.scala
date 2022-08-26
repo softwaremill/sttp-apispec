@@ -8,7 +8,6 @@ import io.circe.syntax._
 import io.circe.generic.semiauto.deriveDecoder
 import sttp.apispec.{Reference, ReferenceOr, Schema, SchemaType}
 
-import scala.collection.compat._
 import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceDecoders {
@@ -47,29 +46,49 @@ trait InternalSttpOpenAPICirceDecoders {
   implicit val exampleValueDecoder: Decoder[ExampleValue] =
     exampleMultipleValueDecoder.widen[ExampleValue].or(exampleSingleValueDecoder.widen[ExampleValue])
 
-  implicit def decodeMapLike[K, V, M[K, V] <: Map[K, V]](implicit
-      decodeK: KeyDecoder[K],
-      decodeV: Decoder[V],
-      factory: Factory[(K, V), M[K, V]]
-  ): Decoder[M[K, V]] =
-    Decoder.decodeMapLike[K, V, M].or(Decoder.const(factory.newBuilder.result()))
-
-  implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, A]] =
-    decodeMapLike[String, A, ListMap].or(Decoder.const(ListMap.empty))
-
   implicit val extensionValueDecoder: Decoder[ExtensionValue] = Decoder[Json].map(j => ExtensionValue(j.spaces2))
 
   implicit val extensionsDecoder: Decoder[ListMap[String, ExtensionValue]] =
-    decodeMapLike[String, ExtensionValue, ListMap].map(_.filter(_._1.startsWith("x-")))
+    Decoder.decodeMapLike[String, ExtensionValue, ListMap].map(_.filter(_._1.startsWith("x-")))
 
   implicit val discriminatorDecoder: Decoder[Discriminator] = deriveDecoder[Discriminator]
 
-  implicit val schemaDecoder: Decoder[Schema] = deriveDecoder[Schema].map(s =>
-    s.`type` match {
-      case Some(ArraySchemaType(x :: SchemaType.Null :: Nil)) => s.copy(`type` = Some(x), nullable = Some(true))
-      case _                                                  => s
+  implicit val schemaDecoder: Decoder[Schema] = {
+    implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, ReferenceOr[A]]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[String, ReferenceOr[A], ListMap]).map(_.getOrElse(ListMap.empty))
+    implicit def listReference[A: Decoder]: Decoder[List[A]] =
+      Decoder.decodeOption(Decoder.decodeList[A]).map(_.getOrElse(Nil))
+
+    def translateMinMax[A](decoder: Decoder[A]) = Decoder.instance { c =>
+      val modded = c.withFocus(_.mapObject { obj =>
+        val map = obj.toMap
+        val min = map
+          .get("exclusiveMinimum")
+          .map { m =>
+            obj.remove("exclusiveMinimum").add("exclusiveMinimum", Json.True).add("minimum", m)
+          }
+          .getOrElse(obj)
+        map
+          .get("exclusiveMaximum")
+          .map { m =>
+            min.remove("exclusiveMaximum").add("exclusiveMaximum", Json.True).add("maximum", m)
+          }
+          .getOrElse(min)
+      })
+      decoder.tryDecode(modded)
     }
-  )
+
+    withExtensions(
+      translateMinMax(
+        deriveDecoder[Schema].map(s =>
+          s.`type` match {
+            case Some(ArraySchemaType(x :: SchemaType.Null :: Nil)) => s.copy(`type` = Some(x), nullable = Some(true))
+            case _                                                  => s
+          }
+        )
+      )
+    )
+  }
   implicit val anySchemaDecoder: Decoder[AnySchema] = Decoder.instance { c =>
     def fromBool(b: Boolean) =
       if (b) AnySchema.Anything(AnySchema.Encoding.Boolean) else AnySchema.Nothing(AnySchema.Encoding.Boolean)
@@ -101,12 +120,14 @@ trait InternalSttpOpenAPICirceDecoders {
   implicit val schemaLikeDecoder: Decoder[SchemaLike] =
     anySchemaDecoder.widen[SchemaLike].or(schemaDecoder.widen[SchemaLike])
 
-  implicit val externalDocumentationDecoder: Decoder[ExternalDocumentation] = deriveDecoder[ExternalDocumentation]
-  implicit val tagDecoder: Decoder[Tag] = deriveDecoder[Tag]
+  implicit val externalDocumentationDecoder: Decoder[ExternalDocumentation] = withExtensions(
+    deriveDecoder[ExternalDocumentation]
+  )
+  implicit val tagDecoder: Decoder[Tag] = withExtensions(deriveDecoder[Tag])
 
-  implicit val oauthFlowDecoder: Decoder[OAuthFlow] = deriveDecoder[OAuthFlow]
-  implicit val oauthFlowsDecoder: Decoder[OAuthFlows] = deriveDecoder[OAuthFlows]
-  implicit val securitySchemeDecoder: Decoder[SecurityScheme] = deriveDecoder[SecurityScheme]
+  implicit val oauthFlowDecoder: Decoder[OAuthFlow] = withExtensions(deriveDecoder[OAuthFlow])
+  implicit val oauthFlowsDecoder: Decoder[OAuthFlows] = withExtensions(deriveDecoder[OAuthFlows])
+  implicit val securitySchemeDecoder: Decoder[SecurityScheme] = withExtensions(deriveDecoder[SecurityScheme])
 
   implicit val contactDecoder: Decoder[Contact] = withExtensions(deriveDecoder[Contact])
   implicit val licenseDecoder: Decoder[License] = withExtensions(deriveDecoder[License])
@@ -134,11 +155,11 @@ trait InternalSttpOpenAPICirceDecoders {
     case err                                 => s"$err is not a valid ParameterStyle value".asLeft
   }
 
-  implicit val exampleDecoder: Decoder[Example] = deriveDecoder[Example]
-  implicit val encodingDecoder: Decoder[Encoding] = deriveDecoder[Encoding]
+  implicit val exampleDecoder: Decoder[Example] = withExtensions(deriveDecoder[Example])
+  implicit val encodingDecoder: Decoder[Encoding] = withExtensions(deriveDecoder[Encoding])
   implicit val headerDecoder: Decoder[Header] = deriveDecoder[Header]
-  implicit val mediaTypeDecoder: Decoder[MediaType] = deriveDecoder[MediaType]
-  implicit val requestBodyDecoder: Decoder[RequestBody] = deriveDecoder[RequestBody]
+  implicit val mediaTypeDecoder: Decoder[MediaType] = withExtensions(deriveDecoder[MediaType])
+  implicit val requestBodyDecoder: Decoder[RequestBody] = withExtensions(deriveDecoder[RequestBody])
 
   implicit val responseDecoder: Decoder[Response] = deriveDecoder[Response]
   implicit val responsesKeyDecoder: KeyDecoder[ResponsesKey] = {
@@ -150,11 +171,11 @@ trait InternalSttpOpenAPICirceDecoders {
     }
   }
 
-  implicit val responsesDecoder: Decoder[Responses] = deriveDecoder[Responses]
-  implicit val parameterDecoder: Decoder[Parameter] = deriveDecoder[Parameter]
+  implicit val responsesDecoder: Decoder[Responses] = withExtensions(deriveDecoder[Responses])
+  implicit val parameterDecoder: Decoder[Parameter] = withExtensions(deriveDecoder[Parameter])
   implicit val callbackDecoder: Decoder[Callback] = deriveDecoder[Callback]
-  implicit val operationDecoder: Decoder[Operation] = deriveDecoder[Operation]
-  implicit val pathItemDecoder: Decoder[PathItem] = deriveDecoder[PathItem]
+  implicit val operationDecoder: Decoder[Operation] = withExtensions(deriveDecoder[Operation])
+  implicit val pathItemDecoder: Decoder[PathItem] = withExtensions(deriveDecoder[PathItem])
   implicit val pathsDecoder: Decoder[Paths] = withExtensions(Decoder.instance { c =>
     for {
       pathItems <- c.as[JsonObject].flatMap(json => json.remove("extensions").asJson.as[ListMap[String, PathItem]])
@@ -164,7 +185,7 @@ trait InternalSttpOpenAPICirceDecoders {
   implicit val componentsDecoder: Decoder[Components] = withExtensions(Decoder.instance { c =>
     type Comp[A] = ListMap[String, ReferenceOr[A]]
     def getComp[A: Decoder](name: String): Decoder.Result[Comp[A]] =
-      c.getOrElse[Comp[A]](name)(ListMap.empty[String, ReferenceOr[A]])
+      c.get[Option[Comp[A]]](name).map(_.getOrElse(ListMap.empty))
     for {
       schemas <- getComp[SchemaLike]("schemas")
       responses <- getComp[Response]("responses")
@@ -188,9 +209,9 @@ trait InternalSttpOpenAPICirceDecoders {
       callbacks,
       extensions
     )
-
   })
-  implicit val openAPIDecoder: Decoder[OpenAPI] = Decoder.instance { c =>
+
+  implicit val openAPIDecoder: Decoder[OpenAPI] = withExtensions(Decoder.instance { c =>
     for {
       openapi <- c.get[String]("openapi")
       info <- c.get[Info]("info")
@@ -203,7 +224,7 @@ trait InternalSttpOpenAPICirceDecoders {
       security <- c.getOrElse[List[SecurityRequirement]]("security")(Nil)
       extensions <- c.getOrElse[ListMap[String, ExtensionValue]]("extensions")(ListMap.empty)
     } yield OpenAPI(openapi, info, jsonSchemaDialect, tags, servers, paths, webhooks, components, security, extensions)
-  }
+  })
 
   def withExtensions[A](decoder: Decoder[A]): Decoder[A] = Decoder.instance { c =>
     import io.circe.syntax._
