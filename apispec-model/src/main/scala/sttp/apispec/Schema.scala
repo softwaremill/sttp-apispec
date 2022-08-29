@@ -54,6 +54,7 @@ case class Schema(
     `if`: Option[ReferenceOr[SchemaLike]] = None,
     `then`: Option[ReferenceOr[SchemaLike]] = None,
     `else`: Option[ReferenceOr[SchemaLike]] = None,
+    $defs: Option[ListMap[String, SchemaLike]] = None,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 ) extends SchemaLike
 

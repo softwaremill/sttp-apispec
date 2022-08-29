@@ -97,6 +97,7 @@ trait InternalSttpOpenAPICirceEncoders {
         "if" := s.`if`,
         "then" := s.`then`,
         "else" := s.`else`,
+        "$defs" := s.$defs,
         "extensions" := s.extensions
       )
     }
