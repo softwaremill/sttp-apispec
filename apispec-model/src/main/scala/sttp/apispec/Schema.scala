@@ -47,6 +47,10 @@ case class Schema(
     minItems: Option[Int] = None,
     maxItems: Option[Int] = None,
     `enum`: Option[List[ExampleSingleValue]] = None,
+    not: Option[ReferenceOr[SchemaLike]] = None,
+    `if`: Option[ReferenceOr[SchemaLike]] = None,
+    `then`: Option[ReferenceOr[SchemaLike]] = None,
+    `else`: Option[ReferenceOr[SchemaLike]] = None,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 ) extends SchemaLike
 

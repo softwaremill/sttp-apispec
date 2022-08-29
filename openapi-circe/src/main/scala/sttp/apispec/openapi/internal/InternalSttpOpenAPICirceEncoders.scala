@@ -85,6 +85,10 @@ trait InternalSttpOpenAPICirceEncoders {
         "minItems" := s.minItems,
         "maxItems" := s.maxItems,
         "enum" := s.`enum`,
+        "not" := s.not,
+        "if" := s.`if`,
+        "then" := s.`then`,
+        "else" := s.`else`,
         "extensions" := s.extensions
       )
     }
