@@ -3,7 +3,7 @@ package openapi
 package internal
 
 import cats.syntax.all._
-import io.circe.{Decoder, DecodingFailure, Json, JsonObject, KeyDecoder}
+import io.circe.{Decoder, KeyDecoder, DecodingFailure, Json, JsonObject}
 import io.circe.syntax._
 import io.circe.generic.semiauto.deriveDecoder
 import sttp.apispec.{Reference, ReferenceOr, Schema, SchemaType}
@@ -28,6 +28,12 @@ trait InternalSttpOpenAPICirceDecoders {
   implicit val decodeArraySchemaType: Decoder[ArraySchemaType] = {
     Decoder.decodeList(decodeBasicSchemaType).map(ArraySchemaType.apply)
   }
+
+  implicit val decodePatternKey: KeyDecoder[Pattern] =
+    KeyDecoder.decodeKeyString.map(Pattern.apply)
+
+  implicit val decodePattern: Decoder[Pattern] =
+    Decoder.decodeString.map(Pattern.apply)
 
   implicit val decodeSchemaType: Decoder[SchemaType] =
     decodeBasicSchemaType.widen[SchemaType].or(decodeArraySchemaType.widen[SchemaType])

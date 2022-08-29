@@ -26,3 +26,6 @@ case class ExternalDocumentation(
 )
 
 case class ExtensionValue(value: String)
+
+
+final case class Pattern(value: String)

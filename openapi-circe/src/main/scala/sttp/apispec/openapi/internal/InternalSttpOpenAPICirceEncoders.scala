@@ -5,7 +5,7 @@ package internal
 import io.circe.generic.semiauto._
 import io.circe.parser._
 import io.circe.syntax._
-import io.circe.{Encoder, Json, JsonObject}
+import io.circe.{Encoder, KeyEncoder, Json, JsonObject}
 
 import scala.collection.immutable.ListMap
 
@@ -51,6 +51,11 @@ trait InternalSttpOpenAPICirceEncoders {
     case e: BasicSchemaType => e.value.asJson
     case ArraySchemaType(typ) => typ.map(_.value.asJson).asJson
   }
+  implicit val encoderKeyPattern: KeyEncoder[Pattern] =
+    KeyEncoder.encodeKeyString.contramap(_.value)
+  implicit val encoderPattern: Encoder[Pattern] =
+    Encoder.encodeString.contramap(_.value)
+
   implicit val encoderDiscriminator: Encoder[Discriminator] = deriveEncoder[Discriminator]
 
   implicit val encoderSchema: Encoder[Schema] = Encoder.AsObject
@@ -65,8 +70,11 @@ trait InternalSttpOpenAPICirceEncoders {
         "type" := (if (s.nullable.getOrElse(false))
           s.`type`.map(s => Json.arr(s.asJson, Json.fromString("null"))).asJson
         else s.`type`.asJson),
+        "prefixItems" := s.prefixItems,
         "items" := s.items,
+        "contains" := s.contains,
         "properties" := s.properties,
+        "patternProperties" := s.patternProperties,
         "description" := s.description,
         "format" := s.format,
         "default" := s.default,

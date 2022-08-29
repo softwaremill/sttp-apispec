@@ -4,7 +4,7 @@ package asyncapi
 import io.circe.generic.semiauto._
 import io.circe.parser._
 import io.circe.syntax._
-import io.circe.{Encoder, Json, JsonObject}
+import io.circe.{Encoder, KeyEncoder, Json, JsonObject}
 
 import scala.collection.immutable.ListMap
 
@@ -53,6 +53,11 @@ package circe {
       case e: BasicSchemaType => e.value.asJson
       case ArraySchemaType(_) => sys.error("Not a valid value for async api")
     }
+    implicit val encoderKeyPattern: KeyEncoder[Pattern] =
+      KeyEncoder.encodeKeyString.contramap(_.value)
+    implicit val encoderPattern: Encoder[Pattern] =
+      Encoder.encodeString.contramap(_.value)
+
     implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
       case AnySchema.Anything(AnySchema.Encoding.Object) => Json.obj()
       case AnySchema.Anything(AnySchema.Encoding.Boolean) => Json.True
