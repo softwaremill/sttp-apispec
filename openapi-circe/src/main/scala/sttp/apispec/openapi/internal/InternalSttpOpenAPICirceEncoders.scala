@@ -180,9 +180,9 @@ trait InternalSttpOpenAPICirceEncoders {
     case l: List[T] => Json.arr(l.map(i => implicitly[Encoder[T]].apply(i)): _*)
   }
 
-  implicit def encodeListMap[V: Encoder]: Encoder[ListMap[String, V]] = doEncodeListMap(nullWhenEmpty = true)
+  implicit def encodeListMap[K: KeyEncoder, V: Encoder]: Encoder[ListMap[K, V]] = doEncodeListMap(nullWhenEmpty = true)
 
-  private def doEncodeListMap[V: Encoder](nullWhenEmpty: Boolean): Encoder[ListMap[String, V]] = {
+  private def doEncodeListMap[K: KeyEncoder, V: Encoder](nullWhenEmpty: Boolean): Encoder[ListMap[K, V]] = {
     case m: ListMap[String, V] if m.isEmpty && nullWhenEmpty => Json.Null
     case m: ListMap[String, V] =>
       val properties = m.mapValues(v => implicitly[Encoder[V]].apply(v)).toList

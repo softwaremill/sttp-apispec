@@ -62,6 +62,8 @@ trait InternalSttpOpenAPICirceDecoders {
   implicit val schemaDecoder: Decoder[Schema] = {
     implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, ReferenceOr[A]]] =
       Decoder.decodeOption(Decoder.decodeMapLike[String, ReferenceOr[A], ListMap]).map(_.getOrElse(ListMap.empty))
+    implicit def listPatternMapDecoder[A: Decoder]: Decoder[ListMap[Pattern, ReferenceOr[A]]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[Pattern, ReferenceOr[A], ListMap]).map(_.getOrElse(ListMap.empty))
     implicit def listReference[A: Decoder]: Decoder[List[A]] =
       Decoder.decodeOption(Decoder.decodeList[A]).map(_.getOrElse(Nil))
 
@@ -167,7 +169,15 @@ trait InternalSttpOpenAPICirceDecoders {
   implicit val mediaTypeDecoder: Decoder[MediaType] = withExtensions(deriveDecoder[MediaType])
   implicit val requestBodyDecoder: Decoder[RequestBody] = withExtensions(deriveDecoder[RequestBody])
 
-  implicit val responseDecoder: Decoder[Response] = deriveDecoder[Response]
+  implicit val responseDecoder: Decoder[Response] = {
+    implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, ReferenceOr[A]]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[String, ReferenceOr[A], ListMap]).map(_.getOrElse(ListMap.empty))
+
+    implicit def listMapMediaTypeDecoder: Decoder[ListMap[String, MediaType]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[String, MediaType, ListMap]).map(_.getOrElse(ListMap.empty))
+
+    withExtensions(deriveDecoder[Response])
+  }
   implicit val responsesKeyDecoder: KeyDecoder[ResponsesKey] = {
     val Range = "(\\d)XX".r
     KeyDecoder.decodeKeyString.map {
@@ -177,11 +187,31 @@ trait InternalSttpOpenAPICirceDecoders {
     }
   }
 
-  implicit val responsesDecoder: Decoder[Responses] = withExtensions(deriveDecoder[Responses])
+  implicit val responsesDecoder: Decoder[Responses] = withExtensions(Decoder.instance { c =>
+    for {
+      responses <- c
+        .as[JsonObject]
+        .flatMap(json => json.remove("extensions").asJson.as[ListMap[ResponsesKey, ReferenceOr[Response]]])
+      extensions <- c.getOrElse[ListMap[String, ExtensionValue]]("extensions")(ListMap.empty)
+    } yield Responses(responses, extensions)
+  })
   implicit val parameterDecoder: Decoder[Parameter] = withExtensions(deriveDecoder[Parameter])
   implicit val callbackDecoder: Decoder[Callback] = deriveDecoder[Callback]
-  implicit val operationDecoder: Decoder[Operation] = withExtensions(deriveDecoder[Operation])
-  implicit val pathItemDecoder: Decoder[PathItem] = withExtensions(deriveDecoder[PathItem])
+  implicit val operationDecoder: Decoder[Operation] = {
+    implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, ReferenceOr[A]]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[String, ReferenceOr[A], ListMap]).map(_.getOrElse(ListMap.empty))
+
+    implicit def listReference[A: Decoder]: Decoder[List[A]] =
+      Decoder.decodeOption(Decoder.decodeList[A]).map(_.getOrElse(Nil))
+
+    withExtensions(deriveDecoder[Operation])
+  }
+  implicit val pathItemDecoder: Decoder[PathItem] = {
+    implicit def listReference[A: Decoder]: Decoder[List[A]] =
+      Decoder.decodeOption(Decoder.decodeList[A]).map(_.getOrElse(Nil))
+
+    withExtensions(deriveDecoder[PathItem])
+  }
   implicit val pathsDecoder: Decoder[Paths] = withExtensions(Decoder.instance { c =>
     for {
       pathItems <- c.as[JsonObject].flatMap(json => json.remove("extensions").asJson.as[ListMap[String, PathItem]])
@@ -233,7 +263,6 @@ trait InternalSttpOpenAPICirceDecoders {
   })
 
   def withExtensions[A](decoder: Decoder[A]): Decoder[A] = Decoder.instance { c =>
-    import io.circe.syntax._
     val modded = c.withFocus(json =>
       json
         .mapObject { obj =>
