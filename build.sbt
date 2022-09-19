@@ -11,7 +11,7 @@ val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
 val scalaNativeVersions = List(scala2_12, scala2_13, scala3)
 
-val circeVersion = "0.14.2"
+val circeVersion = "0.14.3"
 val circeYamlVersion = "0.14.1"
 val scalaTestVersion = "3.2.13"
 val scalaCollectionCompatVersion = "2.8.1"
@@ -148,6 +148,10 @@ lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
     scalaVersions = scalaJSVersions,
     settings = commonJsSettings
   )
+  .nativePlatform(
+    scalaVersions = scalaNativeVersions,
+    settings = commonNativeSettings
+  )
   .dependsOn(openapiModel)
 
 lazy val openapiCirceYaml: ProjectMatrix = (projectMatrix in file("openapi-circe-yaml"))
@@ -200,6 +204,10 @@ lazy val asyncapiCirce: ProjectMatrix = (projectMatrix in file("asyncapi-circe")
   .jsPlatform(
     scalaVersions = scalaJSVersions,
     settings = commonJsSettings
+  )
+  .nativePlatform(
+    scalaVersions = scalaNativeVersions,
+    settings = commonNativeSettings
   )
   .dependsOn(asyncapiModel)
 

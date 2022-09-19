@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets
 
 trait ResourcePlatform {
   def readJson(path: String): Either[Error, Json] = {
+
     val is = getClass.getResourceAsStream(path)
     val reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
     val writer = new StringWriter()
