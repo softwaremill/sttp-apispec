@@ -7,14 +7,14 @@ sealed trait SchemaLike
 sealed trait AnySchema extends SchemaLike
 
 object AnySchema {
-  sealed trait Encoding
+  sealed trait Encoding extends Product with Serializable
   object Encoding {
     case object Object extends Encoding
     case object Boolean extends Encoding
   }
 
-  case class Anything(encoding: Encoding = Encoding.Boolean) extends AnySchema
-  case class Nothing(encoding: Encoding = Encoding.Boolean) extends AnySchema
+  case object Anything extends AnySchema
+  case object Nothing extends AnySchema
 }
 
 // todo: xml

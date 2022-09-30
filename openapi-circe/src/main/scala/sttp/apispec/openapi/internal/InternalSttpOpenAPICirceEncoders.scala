@@ -10,6 +10,7 @@ import io.circe.{Encoder, KeyEncoder, Json, JsonObject}
 import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceEncoders {
+  def anyObjectEncoding: AnySchema.Encoding
   // note: these are strict val-s, order matters!
   implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
     case Left(Reference(ref, summary, description)) =>
@@ -104,12 +105,19 @@ trait InternalSttpOpenAPICirceEncoders {
     .mapJsonObject(expandExtensions)
 
   implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
-    case AnySchema.Anything(AnySchema.Encoding.Object) => Json.obj()
-    case AnySchema.Anything(AnySchema.Encoding.Boolean) => Json.True
-    case AnySchema.Nothing(AnySchema.Encoding.Object) => Json.obj(
-      "not" := Json.obj()
-    )
-    case AnySchema.Nothing(AnySchema.Encoding.Boolean) => Json.False
+    case AnySchema.Anything =>
+      anyObjectEncoding match {
+        case AnySchema.Encoding.Object => Json.obj()
+        case AnySchema.Encoding.Boolean => Json.True
+      }
+    case AnySchema.Nothing =>
+      anyObjectEncoding match {
+        case AnySchema.Encoding.Object =>
+          Json.obj(
+            "not" := Json.obj()
+          )
+        case AnySchema.Encoding.Boolean => Json.False
+      }
   }
 
   implicit val encoderSchemaLike: Encoder[SchemaLike] = Encoder.instance {

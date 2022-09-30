@@ -7,11 +7,7 @@
   "components": {
     "schemas": {
       "anything_boolean": true,
-      "nothing_boolean": false,
-      "anything_object": {},
-      "nothing_object": {
-        "not": {}
-      }
+      "nothing_boolean": false
     }
   }
 }

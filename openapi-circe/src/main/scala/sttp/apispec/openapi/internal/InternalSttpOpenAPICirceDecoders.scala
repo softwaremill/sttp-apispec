@@ -99,15 +99,15 @@ trait InternalSttpOpenAPICirceDecoders {
   }
   implicit val anySchemaDecoder: Decoder[AnySchema] = Decoder.instance { c =>
     def fromBool(b: Boolean) =
-      if (b) AnySchema.Anything(AnySchema.Encoding.Boolean) else AnySchema.Nothing(AnySchema.Encoding.Boolean)
+      if (b) AnySchema.Anything else AnySchema.Nothing
 
     def fromObject(obj: JsonObject) = {
       val target = JsonObject("not" := Json.obj())
 
       if (obj.isEmpty) {
-        AnySchema.Anything(AnySchema.Encoding.Object).some
+        AnySchema.Anything.some
       } else if (obj == target) {
-        AnySchema.Nothing(AnySchema.Encoding.Object).some
+        AnySchema.Nothing.some
       } else
         none[AnySchema]
     }

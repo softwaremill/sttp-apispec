@@ -116,25 +116,4 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
   }
-
-  test("any and nothing") {
-    val components = Components(
-      schemas = ListMap(
-        "anything_boolean" -> refOr(AnySchema.Anything(AnySchema.Encoding.Boolean)),
-        "nothing_boolean" -> refOr(AnySchema.Nothing(AnySchema.Encoding.Boolean)),
-        "anything_object" -> refOr(AnySchema.Anything(AnySchema.Encoding.Object)),
-        "nothing_object" -> refOr(AnySchema.Nothing(AnySchema.Encoding.Object)),
-      )
-    )
-
-    val openapi = OpenAPI(
-      info = Info(title = "API", version = "1.0.0"),
-      components = Some(components)
-    )
-
-    val openApiJson = openapi.asJson
-    val Right(json) = readJson("/spec/3.1/any_and_nothing.json")
-
-    assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
-  }
 }

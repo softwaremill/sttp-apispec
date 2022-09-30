@@ -8,11 +8,15 @@ import io.circe.{Encoder, KeyEncoder, Json, JsonObject}
 
 import scala.collection.immutable.ListMap
 
-package object circe extends SttpAsyncAPICirceEncoders
+package object circe extends SttpAsyncAPICirceEncoders {
+  val anyObjectEncoding: AnySchema.Encoding = AnySchema.Encoding.Boolean
+}
 
 package circe {
   trait SttpAsyncAPICirceEncoders {
     // note: these are strict val-s, order matters!
+
+    def anyObjectEncoding: AnySchema.Encoding
 
     implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
       case Left(Reference(ref, summary, description)) =>
@@ -59,12 +63,19 @@ package circe {
       Encoder.encodeString.contramap(_.value)
 
     implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
-      case AnySchema.Anything(AnySchema.Encoding.Object) => Json.obj()
-      case AnySchema.Anything(AnySchema.Encoding.Boolean) => Json.True
-      case AnySchema.Nothing(AnySchema.Encoding.Object) => Json.obj(
-        "not" := Json.obj()
-      )
-      case AnySchema.Nothing(AnySchema.Encoding.Boolean) => Json.False
+      case AnySchema.Anything =>
+        anyObjectEncoding match {
+          case AnySchema.Encoding.Object  => Json.obj()
+          case AnySchema.Encoding.Boolean => Json.True
+        }
+      case AnySchema.Nothing =>
+        anyObjectEncoding match {
+          case AnySchema.Encoding.Object =>
+            Json.obj(
+              "not" := Json.obj()
+            )
+          case AnySchema.Encoding.Boolean => Json.False
+        }
     }
     implicit val encoderSchema: Encoder[Schema] =
       deriveEncoder[Schema].mapJsonObject(obj => expandExtensions(obj).remove("$schema"))

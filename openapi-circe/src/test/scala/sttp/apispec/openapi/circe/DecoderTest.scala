@@ -11,16 +11,24 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     assert(openapi.info.description === Some("This is a sample server for a pet store."))
   }
 
-  test("spec any nothing schema") {
-    val Right(openapi) = readJson("/spec/3.1/any_and_nothing.json").flatMap(_.as[OpenAPI])
+  test("spec any nothing schema boolean") {
+    val Right(openapi) = readJson("/spec/3.1/any_and_nothing1.json").flatMap(_.as[OpenAPI])
 
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
     assert(schemas.nonEmpty)
-    assert(schemas("anything_boolean") === Right(AnySchema.Anything(AnySchema.Encoding.Boolean)))
-    assert(schemas("nothing_boolean") === Right(AnySchema.Nothing(AnySchema.Encoding.Boolean)))
-    assert(schemas("anything_object") === Right(AnySchema.Anything(AnySchema.Encoding.Object)))
-    assert(schemas("nothing_object") === Right(AnySchema.Nothing(AnySchema.Encoding.Object)))
+    assert(schemas("anything_boolean") === Right(AnySchema.Anything))
+    assert(schemas("nothing_boolean") === Right(AnySchema.Nothing))
+  }
+
+  test("spec any nothing schema object") {
+    val Right(openapi) = readJson("/spec/3.1/any_and_nothing2.json").flatMap(_.as[OpenAPI])
+
+    assert(openapi.info.title === "API")
+    val schemas = openapi.components.getOrElse(Components.Empty).schemas
+    assert(schemas.nonEmpty)
+    assert(schemas("anything_object") === Right(AnySchema.Anything))
+    assert(schemas("nothing_object") === Right(AnySchema.Nothing))
   }
 
   test("all schemas types") {
