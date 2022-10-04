@@ -26,7 +26,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     )
 
     val openApiJson = openapi.asJson
-    val Right(json) = readJson("/spec/3.1/any_and_nothing1.json")
+    val Right(json) = readJson("/spec/3.1/any_and_nothing1.json"): @unchecked
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
   }
@@ -51,7 +51,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     )
 
     val openApiJson = openapi.asJson
-    val Right(json) = readJson("/spec/3.1/any_and_nothing2.json")
+    val Right(json) = readJson("/spec/3.1/any_and_nothing2.json"): @unchecked
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
   }

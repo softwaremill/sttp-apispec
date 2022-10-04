@@ -47,7 +47,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     )
 
     val serialized = withPathItem.asJson
-    val Right(json) = readJson("/petstore/basic-petstore.json")
+    val Right(json) = readJson("/petstore/basic-petstore.json"): @unchecked
 
     assert(serialized === json)
   }
@@ -112,7 +112,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     )
 
     val openApiJson = openapi.asJson
-    val Right(json) = readJson("/spec/3.1/schema.json")
+    val Right(json) = readJson("/spec/3.1/schema.json"): @unchecked
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
   }

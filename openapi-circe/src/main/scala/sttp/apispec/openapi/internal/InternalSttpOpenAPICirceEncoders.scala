@@ -5,8 +5,9 @@ package internal
 import io.circe.generic.semiauto._
 import io.circe.parser._
 import io.circe.syntax._
-import io.circe.{Encoder, KeyEncoder, Json, JsonObject}
+import io.circe.{Encoder, Json, JsonObject, KeyEncoder}
 
+import scala.annotation.nowarn
 import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceEncoders {
@@ -16,7 +17,7 @@ trait InternalSttpOpenAPICirceEncoders {
     case Left(Reference(ref, summary, description)) =>
       Json
         .obj(
-          "$ref" := ref,
+          s"$$ref" := ref,
           "summary" := summary,
           "description" := description
         )
@@ -64,7 +65,7 @@ trait InternalSttpOpenAPICirceEncoders {
       val minKey = if (s.exclusiveMinimum.getOrElse(false)) "exclusiveMinimum" else "minimum"
       val maxKey = if (s.exclusiveMaximum.getOrElse(false)) "exclusiveMaximum" else "maximum"
       JsonObject(
-        "$schema" := s.$schema,
+        s"$$schema" := s.$schema,
         "allOf" := s.allOf,
         "title" := s.title,
         "required" := s.required,
@@ -154,13 +155,14 @@ trait InternalSttpOpenAPICirceEncoders {
     val respJson = resp.responses.asJson
     respJson.asObject.map(_.deepMerge(extensions).asJson).getOrElse(respJson)
   }
+
   implicit val encoderOperation: Encoder[Operation] = {
     // this is needed to override the encoding of `security: List[SecurityRequirement]`. An empty security requirement
     // should be represented as an empty object (`{}`), not `null`, which is the default encoding of `ListMap`s.
-    implicit def encodeListMap[V: Encoder]: Encoder[ListMap[String, V]] = doEncodeListMap(nullWhenEmpty = false)
+    implicit def encodeListMap[V: Encoder]: Encoder[ListMap[String, V]] = doEncodeListMap(nullWhenEmpty = false) : @nowarn
 
     implicit def encodeListMapForCallbacks: Encoder[ListMap[String, ReferenceOr[Callback]]] =
-      doEncodeListMap(nullWhenEmpty = true)
+      doEncodeListMap(nullWhenEmpty = true) : @nowarn
 
     deriveEncoder[Operation].mapJsonObject(expandExtensions)
   }
@@ -191,9 +193,9 @@ trait InternalSttpOpenAPICirceEncoders {
   implicit def encodeListMap[K: KeyEncoder, V: Encoder]: Encoder[ListMap[K, V]] = doEncodeListMap(nullWhenEmpty = true)
 
   private def doEncodeListMap[K: KeyEncoder, V: Encoder](nullWhenEmpty: Boolean): Encoder[ListMap[K, V]] = {
-    case m: ListMap[String, V] if m.isEmpty && nullWhenEmpty => Json.Null
-    case m: ListMap[String, V] =>
-      val properties = m.mapValues(v => implicitly[Encoder[V]].apply(v)).toList
+    case m: ListMap[K, V] if m.isEmpty && nullWhenEmpty => Json.Null
+    case m: ListMap[K, V] =>
+      val properties = m.map{case (k, v) => KeyEncoder[K].apply(k) -> Encoder[V].apply(v)}.toList
       Json.obj(properties: _*)
   }
 

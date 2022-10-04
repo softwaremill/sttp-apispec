@@ -3,11 +3,12 @@ package openapi
 package internal
 
 import cats.syntax.all._
-import io.circe.{Decoder, KeyDecoder, DecodingFailure, Json, JsonObject}
+import io.circe.{Decoder, DecodingFailure, Json, JsonObject, KeyDecoder}
 import io.circe.syntax._
 import io.circe.generic.semiauto.deriveDecoder
 import sttp.apispec.{Reference, ReferenceOr, Schema, SchemaType}
 
+import scala.annotation.nowarn
 import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceDecoders {

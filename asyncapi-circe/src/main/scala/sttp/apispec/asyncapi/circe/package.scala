@@ -22,7 +22,7 @@ package circe {
       case Left(Reference(ref, summary, description)) =>
         Json
           .obj(
-            "$ref" := ref,
+            s"$$ref" := ref,
             "summary" := summary,
             "description" := description
           )
@@ -37,16 +37,16 @@ package circe {
     implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
       deriveEncoder[SecurityScheme].mapJsonObject(expandExtensions)
     implicit val encoderExampleSingleValue: Encoder[ExampleSingleValue] = {
-      case ExampleSingleValue(value: String)     => parse(value).getOrElse(Json.fromString(value))
-      case ExampleSingleValue(value: Int)        => Json.fromInt(value)
-      case ExampleSingleValue(value: Long)       => Json.fromLong(value)
-      case ExampleSingleValue(value: Float)      => Json.fromFloatOrString(value)
-      case ExampleSingleValue(value: Double)     => Json.fromDoubleOrString(value)
-      case ExampleSingleValue(value: Boolean)    => Json.fromBoolean(value)
+      case ExampleSingleValue(value: String) => parse(value).getOrElse(Json.fromString(value))
+      case ExampleSingleValue(value: Int) => Json.fromInt(value)
+      case ExampleSingleValue(value: Long) => Json.fromLong(value)
+      case ExampleSingleValue(value: Float) => Json.fromFloatOrString(value)
+      case ExampleSingleValue(value: Double) => Json.fromDoubleOrString(value)
+      case ExampleSingleValue(value: Boolean) => Json.fromBoolean(value)
       case ExampleSingleValue(value: BigDecimal) => Json.fromBigDecimal(value)
-      case ExampleSingleValue(value: BigInt)     => Json.fromBigInt(value)
-      case ExampleSingleValue(null)              => Json.Null
-      case ExampleSingleValue(value)             => Json.fromString(value.toString)
+      case ExampleSingleValue(value: BigInt) => Json.fromBigInt(value)
+      case ExampleSingleValue(null) => Json.Null
+      case ExampleSingleValue(value) => Json.fromString(value.toString)
     }
     implicit val encoderExampleValue: Encoder[ExampleValue] = {
       case e: ExampleSingleValue => encoderExampleSingleValue(e)
@@ -65,7 +65,7 @@ package circe {
     implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
       case AnySchema.Anything =>
         anyObjectEncoding match {
-          case AnySchema.Encoding.Object  => Json.obj()
+          case AnySchema.Encoding.Object => Json.obj()
           case AnySchema.Encoding.Boolean => Json.True
         }
       case AnySchema.Nothing =>
@@ -105,9 +105,9 @@ package circe {
         nullIfEmpty(a)(
           Json.obj(
             a.map {
-              case v: HttpMessageBinding      => "http" -> v.asJson
+              case v: HttpMessageBinding => "http" -> v.asJson
               case v: WebSocketMessageBinding => "ws" -> v.asJson
-              case v: KafkaMessageBinding     => "kafka" -> v.asJson
+              case v: KafkaMessageBinding => "kafka" -> v.asJson
             }: _*
           )
         )
@@ -122,9 +122,9 @@ package circe {
         nullIfEmpty(a)(
           Json.obj(
             a.map {
-              case v: HttpOperationBinding      => "http" -> v.asJson
+              case v: HttpOperationBinding => "http" -> v.asJson
               case v: WebSocketOperationBinding => "ws" -> v.asJson
-              case v: KafkaOperationBinding     => "kafka" -> v.asJson
+              case v: KafkaOperationBinding => "kafka" -> v.asJson
             }: _*
           )
         )
@@ -139,9 +139,9 @@ package circe {
         nullIfEmpty(a)(
           Json.obj(
             a.map {
-              case v: HttpChannelBinding      => "http" -> v.asJson
+              case v: HttpChannelBinding => "http" -> v.asJson
               case v: WebSocketChannelBinding => "ws" -> v.asJson
-              case v: KafkaChannelBinding     => "kafka" -> v.asJson
+              case v: KafkaChannelBinding => "kafka" -> v.asJson
             }: _*
           )
         )
@@ -156,9 +156,9 @@ package circe {
         nullIfEmpty(a)(
           Json.obj(
             a.map {
-              case v: HttpServerBinding      => "http" -> v.asJson
+              case v: HttpServerBinding => "http" -> v.asJson
               case v: WebSocketServerBinding => "ws" -> v.asJson
-              case v: KafkaServerBinding     => "kafka" -> v.asJson
+              case v: KafkaServerBinding => "kafka" -> v.asJson
             }: _*
           )
         )
@@ -167,7 +167,7 @@ package circe {
     private def nullIfEmpty[T](a: List[T])(otherwise: => Json): Json = if (a.isEmpty) Json.Null else otherwise
 
     implicit val encoderMessagePayload: Encoder[Option[Either[AnyValue, ReferenceOr[Schema]]]] = {
-      case None           => Json.Null
+      case None => Json.Null
       case Some(Left(av)) => encoderAnyValue.apply(av)
       case Some(Right(s)) => encoderReferenceOr[Schema].apply(s)
     }
@@ -179,7 +179,7 @@ package circe {
     implicit val encoderOneOfMessage: Encoder[OneOfMessage] = deriveEncoder[OneOfMessage]
     implicit val encoderMessage: Encoder[Message] = {
       case s: SingleMessage => encoderSingleMessage.apply(s)
-      case o: OneOfMessage  => encoderOneOfMessage.apply(o)
+      case o: OneOfMessage => encoderOneOfMessage.apply(o)
     }
 
     implicit val encoderOperationTrait: Encoder[OperationTrait] =
@@ -196,16 +196,16 @@ package circe {
     implicit val encoderAsyncAPI: Encoder[AsyncAPI] = deriveEncoder[AsyncAPI].mapJsonObject(expandExtensions)
 
     implicit def encodeList[T: Encoder]: Encoder[List[T]] = {
-      case Nil        => Json.Null
+      case Nil => Json.Null
       case l: List[T] => Json.arr(l.map(i => implicitly[Encoder[T]].apply(i)): _*)
     }
 
-    implicit def encodeListMap[V: Encoder]: Encoder[ListMap[String, V]] = doEncodeListMap(nullWhenEmpty = true)
+    implicit def encodeListMap[K: KeyEncoder, V: Encoder]: Encoder[ListMap[K, V]] = doEncodeListMap(nullWhenEmpty = true)
 
-    private def doEncodeListMap[V: Encoder](nullWhenEmpty: Boolean): Encoder[ListMap[String, V]] = {
-      case m: ListMap[String, V] if m.isEmpty && nullWhenEmpty => Json.Null
-      case m: ListMap[String, V] =>
-        val properties = m.mapValues(v => implicitly[Encoder[V]].apply(v)).toList
+    private def doEncodeListMap[K: KeyEncoder, V: Encoder](nullWhenEmpty: Boolean): Encoder[ListMap[K, V]] = {
+      case m: ListMap[K, V] if m.isEmpty && nullWhenEmpty => Json.Null
+      case m: ListMap[K, V] =>
+        val properties = m.map { case (k, v) => KeyEncoder[K].apply(k) -> Encoder[V].apply(v) }.toList
         Json.obj(properties: _*)
     }
 
