@@ -12,55 +12,10 @@ import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceEncoders {
   def anyObjectEncoding: AnySchema.Encoding
-  // note: these are strict val-s, order matters!
-  implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
-    case Left(Reference(ref, summary, description)) =>
-      Json
-        .obj(
-          s"$$ref" := ref,
-          "summary" := summary,
-          "description" := description
-        )
-        .dropNullValues
-    case Right(t) => implicitly[Encoder[T]].apply(t)
-  }
 
-  implicit val extensionValue: Encoder[ExtensionValue] =
-    Encoder.instance(e => parse(e.value).getOrElse(Json.fromString(e.value)))
-  implicit val encoderOAuthFlow: Encoder[OAuthFlow] = deriveEncoder[OAuthFlow].mapJsonObject(expandExtensions)
-  implicit val encoderOAuthFlows: Encoder[OAuthFlows] = deriveEncoder[OAuthFlows].mapJsonObject(expandExtensions)
-  implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
-    deriveEncoder[SecurityScheme].mapJsonObject(expandExtensions)
-  implicit val encoderExampleSingleValue: Encoder[ExampleSingleValue] = {
-    case ExampleSingleValue(value: String) => parse(value).getOrElse(Json.fromString(value))
-    case ExampleSingleValue(value: Int) => Json.fromInt(value)
-    case ExampleSingleValue(value: Long) => Json.fromLong(value)
-    case ExampleSingleValue(value: Float) => Json.fromFloatOrString(value)
-    case ExampleSingleValue(value: Double) => Json.fromDoubleOrString(value)
-    case ExampleSingleValue(value: Boolean) => Json.fromBoolean(value)
-    case ExampleSingleValue(value: BigDecimal) => Json.fromBigDecimal(value)
-    case ExampleSingleValue(value: BigInt) => Json.fromBigInt(value)
-    case ExampleSingleValue(null) => Json.Null
-    case ExampleSingleValue(value) => Json.fromString(value.toString)
-  }
-  implicit val encoderExampleValue: Encoder[ExampleValue] = {
-    case e: ExampleSingleValue =>
-      Json.arr(encoderExampleSingleValue(e))
-    case ExampleMultipleValue(values) =>
-      Json.arr(values.map(v => encoderExampleSingleValue(ExampleSingleValue(v))): _*)
-  }
-  implicit val encoderSchemaType: Encoder[SchemaType] = {
-    case e: BasicSchemaType => e.value.asJson
-    case ArraySchemaType(typ) => typ.map(_.value.asJson).asJson
-  }
-  implicit val encoderKeyPattern: KeyEncoder[Pattern] =
-    KeyEncoder.encodeKeyString.contramap(_.value)
-  implicit val encoderPattern: Encoder[Pattern] =
-    Encoder.encodeString.contramap(_.value)
+  def openApi30: Boolean = false
 
-  implicit val encoderDiscriminator: Encoder[Discriminator] = deriveEncoder[Discriminator]
-
-  implicit val encoderSchema: Encoder[Schema] = Encoder.AsObject
+  val encoderSchema31: Encoder[Schema] = Encoder.AsObject
     .instance { (s: Schema) =>
       val minKey = if (s.exclusiveMinimum.getOrElse(false)) "exclusiveMinimum" else "minimum"
       val maxKey = if (s.exclusiveMaximum.getOrElse(false)) "exclusiveMaximum" else "maximum"
@@ -104,6 +59,94 @@ trait InternalSttpOpenAPICirceEncoders {
       )
     }
     .mapJsonObject(expandExtensions)
+
+  val encoderSchema30: Encoder[Schema] = Encoder.AsObject
+    .instance { (s: Schema) =>
+      JsonObject(
+        "allOf" := s.allOf,
+        "title" := s.title,
+        "required" := s.required,
+        "nullable" := s.nullable,
+        "type" := s.`type`,
+        "prefixItems" := s.prefixItems,
+        "items" := s.items,
+        "contains" := s.contains,
+        "properties" := s.properties,
+        "patternProperties" := s.patternProperties,
+        "description" := s.description,
+        "format" := s.format,
+        "default" := s.default,
+        "readOnly" := s.readOnly,
+        "writeOnly" := s.writeOnly,
+        "examples" := s.example,
+        "deprecated" := s.deprecated,
+        "oneOf" := s.oneOf,
+        "discriminator" := s.discriminator,
+        "additionalProperties" := s.additionalProperties,
+        "pattern" := s.pattern,
+        "minLength" := s.minLength,
+        "maxLength" := s.maxLength,
+        "minimum" := s.minimum,
+        "maximum" := s.maximum,
+        "exclusiveMinimum" := s.exclusiveMinimum,
+        "exclusiveMaximum" := s.exclusiveMaximum,
+        "minItems" := s.minItems,
+        "maxItems" := s.maxItems,
+        "enum" := s.`enum`,
+        "not" := s.not,
+        "extensions" := s.extensions
+      )
+    }
+
+  // note: these are strict val-s, order matters!
+  implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
+    case Left(Reference(ref, summary, description)) =>
+      Json
+        .obj(
+          s"$$ref" := ref,
+          "summary" := summary,
+          "description" := description
+        )
+        .dropNullValues
+    case Right(t) => implicitly[Encoder[T]].apply(t)
+  }
+
+  implicit val extensionValue: Encoder[ExtensionValue] =
+    Encoder.instance(e => parse(e.value).getOrElse(Json.fromString(e.value)))
+  implicit val encoderOAuthFlow: Encoder[OAuthFlow] = deriveEncoder[OAuthFlow].mapJsonObject(expandExtensions)
+  implicit val encoderOAuthFlows: Encoder[OAuthFlows] = deriveEncoder[OAuthFlows].mapJsonObject(expandExtensions)
+  implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
+    deriveEncoder[SecurityScheme].mapJsonObject(expandExtensions)
+  implicit val encoderExampleSingleValue: Encoder[ExampleSingleValue] = {
+    case ExampleSingleValue(value: String) => parse(value).getOrElse(Json.fromString(value))
+    case ExampleSingleValue(value: Int) => Json.fromInt(value)
+    case ExampleSingleValue(value: Long) => Json.fromLong(value)
+    case ExampleSingleValue(value: Float) => Json.fromFloatOrString(value)
+    case ExampleSingleValue(value: Double) => Json.fromDoubleOrString(value)
+    case ExampleSingleValue(value: Boolean) => Json.fromBoolean(value)
+    case ExampleSingleValue(value: BigDecimal) => Json.fromBigDecimal(value)
+    case ExampleSingleValue(value: BigInt) => Json.fromBigInt(value)
+    case ExampleSingleValue(null) => Json.Null
+    case ExampleSingleValue(value) => Json.fromString(value.toString)
+  }
+  implicit val encoderExampleValue: Encoder[ExampleValue] = {
+    case e: ExampleSingleValue =>
+      encoderExampleSingleValue(e)
+    case ExampleMultipleValue(values) =>
+      Json.arr(values.map(v => encoderExampleSingleValue(ExampleSingleValue(v))): _*)
+  }
+  implicit val encoderSchemaType: Encoder[SchemaType] = {
+    case e: BasicSchemaType => e.value.asJson
+    case ArraySchemaType(typ) => typ.map(_.value.asJson).asJson
+  }
+  implicit val encoderKeyPattern: KeyEncoder[Pattern] =
+    KeyEncoder.encodeKeyString.contramap(_.value)
+  implicit val encoderPattern: Encoder[Pattern] =
+    Encoder.encodeString.contramap(_.value)
+
+  implicit val encoderDiscriminator: Encoder[Discriminator] = deriveEncoder[Discriminator]
+
+  implicit val encoderSchema: Encoder[Schema] = if (openApi30) encoderSchema30 else encoderSchema31
 
   implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
     case AnySchema.Anything =>
@@ -159,10 +202,10 @@ trait InternalSttpOpenAPICirceEncoders {
   implicit val encoderOperation: Encoder[Operation] = {
     // this is needed to override the encoding of `security: List[SecurityRequirement]`. An empty security requirement
     // should be represented as an empty object (`{}`), not `null`, which is the default encoding of `ListMap`s.
-    implicit def encodeListMap[V: Encoder]: Encoder[ListMap[String, V]] = doEncodeListMap(nullWhenEmpty = false) : @nowarn
+    implicit def encodeListMap[V: Encoder]: Encoder[ListMap[String, V]] = doEncodeListMap(nullWhenEmpty = false)
 
     implicit def encodeListMapForCallbacks: Encoder[ListMap[String, ReferenceOr[Callback]]] =
-      doEncodeListMap(nullWhenEmpty = true) : @nowarn
+      doEncodeListMap(nullWhenEmpty = true)
 
     deriveEncoder[Operation].mapJsonObject(expandExtensions)
   }
@@ -195,7 +238,7 @@ trait InternalSttpOpenAPICirceEncoders {
   private def doEncodeListMap[K: KeyEncoder, V: Encoder](nullWhenEmpty: Boolean): Encoder[ListMap[K, V]] = {
     case m: ListMap[K, V] if m.isEmpty && nullWhenEmpty => Json.Null
     case m: ListMap[K, V] =>
-      val properties = m.map{case (k, v) => KeyEncoder[K].apply(k) -> Encoder[V].apply(v)}.toList
+      val properties = m.map { case (k, v) => KeyEncoder[K].apply(k) -> Encoder[V].apply(v) }.toList
       Json.obj(properties: _*)
   }
 
@@ -229,7 +272,7 @@ trait InternalSttpOpenAPICirceEncoders {
         x-foo: 42
       ```
    */
-  private def expandExtensions(jsonObject: JsonObject): JsonObject = {
+  private[internal] def expandExtensions(jsonObject: JsonObject): JsonObject = {
     val extensions = jsonObject("extensions")
     val jsonWithoutExt = jsonObject.filterKeys(_ != "extensions")
     extensions.flatMap(_.asObject).map(extObject => extObject.deepMerge(jsonWithoutExt)).getOrElse(jsonWithoutExt)

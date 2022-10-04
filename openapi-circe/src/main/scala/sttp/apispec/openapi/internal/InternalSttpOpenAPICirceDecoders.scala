@@ -8,7 +8,6 @@ import io.circe.syntax._
 import io.circe.generic.semiauto.deriveDecoder
 import sttp.apispec.{Reference, ReferenceOr, Schema, SchemaType}
 
-import scala.annotation.nowarn
 import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceDecoders {
