@@ -73,13 +73,13 @@ trait InternalSttpOpenAPICirceDecoders {
         val min = map
           .get("exclusiveMinimum")
           .map { m =>
-            obj.remove("exclusiveMinimum").add("exclusiveMinimum", Json.True).add("minimum", m)
+            if (m.isNumber) obj.remove("exclusiveMinimum").add("exclusiveMinimum", Json.True).add("minimum", m) else obj
           }
           .getOrElse(obj)
         map
           .get("exclusiveMaximum")
           .map { m =>
-            min.remove("exclusiveMaximum").add("exclusiveMaximum", Json.True).add("maximum", m)
+            if (m.isNumber) min.remove("exclusiveMaximum").add("exclusiveMaximum", Json.True).add("maximum", m) else min
           }
           .getOrElse(min)
       })
