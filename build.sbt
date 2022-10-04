@@ -67,6 +67,7 @@ val commonNativeSettings = commonSettings ++ Seq(
 
 lazy val allProjectAggregates: Seq[ProjectReference] =
   apispecModel.projectRefs ++
+    jsonSchemaCirce.projectRefs ++
     openapiModel.projectRefs ++
     openapiCirce.projectRefs ++
     openapiCirceYaml.projectRefs ++
@@ -108,6 +109,32 @@ lazy val apispecModel: ProjectMatrix = (projectMatrix in file("apispec-model"))
     scalaVersions = scalaNativeVersions,
     settings = commonNativeSettings
   )
+
+// jsonschema
+lazy val jsonSchemaCirce: ProjectMatrix = (projectMatrix in file("jsonschema-circe"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.circe" %%% "circe-core" % circeVersion,
+      "io.circe" %%% "circe-parser" % circeVersion,
+      "io.circe" %%% "circe-generic" % circeVersion,
+      "org.scala-lang.modules" %%% "scala-collection-compat" % scalaCollectionCompatVersion
+    ),
+    name := "jsonschema-circe"
+  )
+  .jvmPlatform(
+    scalaVersions = scalaJVMVersions,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(
+    scalaVersions = scalaJSVersions,
+    settings = commonJsSettings
+  )
+  .nativePlatform(
+    scalaVersions = scalaNativeVersions,
+    settings = commonNativeSettings
+  )
+  .dependsOn(apispecModel)
 
 // openapi
 
@@ -153,7 +180,7 @@ lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
     scalaVersions = scalaNativeVersions,
     settings = commonNativeSettings
   )
-  .dependsOn(openapiModel)
+  .dependsOn(openapiModel, jsonSchemaCirce)
 
 lazy val openapiCirceYaml: ProjectMatrix = (projectMatrix in file("openapi-circe-yaml"))
   .settings(commonSettings)
@@ -210,7 +237,7 @@ lazy val asyncapiCirce: ProjectMatrix = (projectMatrix in file("asyncapi-circe")
     scalaVersions = scalaNativeVersions,
     settings = commonNativeSettings
   )
-  .dependsOn(asyncapiModel)
+  .dependsOn(asyncapiModel, jsonSchemaCirce)
 
 lazy val asyncapiCirceYaml: ProjectMatrix = (projectMatrix in file("asyncapi-circe-yaml"))
   .settings(commonSettings)
