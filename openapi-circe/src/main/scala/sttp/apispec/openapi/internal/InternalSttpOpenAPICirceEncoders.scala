@@ -3,12 +3,10 @@ package openapi
 package internal
 
 import io.circe.generic.semiauto._
-import io.circe.parser._
 import io.circe.syntax._
-import io.circe.{Encoder, Json, JsonObject, KeyEncoder}
+import io.circe.{Encoder, Json}
 import sttp.apispec.internal.JsonSchemaCirceEncoders
 
-import scala.annotation.nowarn
 import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {

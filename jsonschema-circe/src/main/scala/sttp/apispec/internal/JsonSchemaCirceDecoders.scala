@@ -9,7 +9,6 @@ import scala.collection.immutable.ListMap
 
 trait JsonSchemaCirceDecoders {
   implicit val referenceDecoder: Decoder[Reference] = deriveDecoder[Reference]
-
   implicit def decodeReferenceOr[A: Decoder]: Decoder[ReferenceOr[A]] = referenceDecoder.either(Decoder[A])
 
   implicit val decodeBasicSchemaType: Decoder[BasicSchemaType] = Decoder.decodeString.emap {

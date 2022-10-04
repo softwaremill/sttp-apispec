@@ -133,7 +133,7 @@ trait JsonSchemaCirceEncoders {
   def encodeExampleValue(alwaysArray: Boolean): Encoder[ExampleValue] = {
     case e: ExampleMultipleValue => encoderMultipleExampleValue.apply(e)
     case e: ExampleSingleValue =>
-      if (alwaysArray) encoderMultipleExampleValue.apply(ExampleMultipleValue(List(e)))
+      if (alwaysArray) encoderMultipleExampleValue.apply(ExampleMultipleValue(List(e.value)))
       else encoderExampleSingleValue.apply(e)
   }
 
@@ -150,7 +150,7 @@ trait JsonSchemaCirceEncoders {
 
   implicit val encoderDiscriminator: Encoder[Discriminator] = deriveEncoder[Discriminator]
 
-  implicit val encoderSchema: Encoder[Schema] = if (openApi30) encoderSchema30 else jsonSchemaEncoder
+  implicit lazy val encoderSchema: Encoder[Schema] = if (openApi30) encoderSchema30 else jsonSchemaEncoder
 
   implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
     case AnySchema.Anything =>
