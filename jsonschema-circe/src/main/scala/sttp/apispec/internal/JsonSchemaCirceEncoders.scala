@@ -65,7 +65,6 @@ trait JsonSchemaCirceEncoders {
         "allOf" := s.allOf,
         "title" := s.title,
         "required" := s.required,
-        "nullable" := s.nullable,
         "type" := s.`type`,
         "prefixItems" := s.prefixItems,
         "items" := s.items,
@@ -93,6 +92,7 @@ trait JsonSchemaCirceEncoders {
         "maxItems" := s.maxItems,
         "enum" := s.`enum`,
         "not" := s.not,
+        "nullable" := s.nullable,
         "extensions" := s.extensions
       )
     }
