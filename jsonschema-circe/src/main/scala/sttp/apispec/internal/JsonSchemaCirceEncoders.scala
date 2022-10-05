@@ -86,8 +86,8 @@ trait JsonSchemaCirceEncoders {
         "minLength" := s.minLength,
         "maxLength" := s.maxLength,
         "minimum" := s.minimum,
-        "maximum" := s.maximum,
         "exclusiveMinimum" := s.exclusiveMinimum,
+        "maximum" := s.maximum,
         "exclusiveMaximum" := s.exclusiveMaximum,
         "minItems" := s.minItems,
         "maxItems" := s.maxItems,
@@ -96,6 +96,7 @@ trait JsonSchemaCirceEncoders {
         "extensions" := s.extensions
       )
     }
+    .mapJsonObject(expandExtensions)
 
   // note: these are strict val-s, order matters!
   implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {

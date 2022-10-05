@@ -7,10 +7,12 @@ package object circe extends SttpOpenAPICirceEncoders with SttpOpenAPICirceDecod
 }
 
 package circe {
-  trait SttpOpenAPICirceEncoders extends internal.InternalSttpOpenAPICirceEncoders
-
-  trait SttpOpenAPI3_0CirceEncoders extends internal.InternalSttpOpenAPICirceEncoders {
+  trait SttpOpenAPICirceEncoders extends internal.InternalSttpOpenAPICirceEncoders {
     override val openApi30: Boolean = true
+  }
+
+  trait SttpOpenAPI3_1CirceEncoders extends internal.InternalSttpOpenAPICirceEncoders {
+    override val openApi30: Boolean = false
     override val anyObjectEncoding: AnySchema.Encoding = AnySchema.Encoding.Boolean
   }
 
