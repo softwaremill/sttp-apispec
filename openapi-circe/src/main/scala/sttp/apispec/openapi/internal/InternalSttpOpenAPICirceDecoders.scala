@@ -63,11 +63,13 @@ trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
     withExtensions(deriveDecoder[Response])
   }
   implicit val responsesKeyDecoder: KeyDecoder[ResponsesKey] = {
-    val Range = "(\\d)XX".r
+    val ResponseRange = "(1|2|3|4|5)XX".r
+    val ResponseCode = "([1|2|3|4|5]\\d\\d)".r
     KeyDecoder.decodeKeyString.map {
-      case "default"    => ResponsesDefaultKey
-      case Range(range) => ResponsesRangeKey(range.toInt)
-      case code         => ResponsesCodeKey(code.toInt)
+      case "default"            => ResponsesDefaultKey
+      case ResponseRange(range) => ResponsesRangeKey(range.toInt)
+      case ResponseCode(code)   => ResponsesCodeKey(code.toInt)
+      case key                  => sys.error(s"'$key' Not a valid responsekey")
     }
   }
 

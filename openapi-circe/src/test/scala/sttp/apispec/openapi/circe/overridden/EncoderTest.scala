@@ -11,7 +11,8 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
   def refOr[A](a: A): ReferenceOr[A] = Right(a)
 
   test("any boolean") {
-    import sttp.apispec.openapi.circe._
+    object obj extends sttp.apispec.openapi.circe.SttpOpenAPI3_1CirceEncoders
+    import obj._
 
     val components = Components(
       schemas = ListMap(
@@ -21,6 +22,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     )
 
     val openapi = OpenAPI(
+      openapi = "3.1.0",
       info = Info(title = "API", version = "1.0.0"),
       components = Some(components)
     )
@@ -32,8 +34,8 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
   }
 
   test("any object") {
-    object obj extends sttp.apispec.openapi.circe.SttpOpenAPICirceEncoders {
-      val anyObjectEncoding: AnySchema.Encoding = AnySchema.Encoding.Object
+    object obj extends sttp.apispec.openapi.circe.SttpOpenAPI3_1CirceEncoders {
+      override val anyObjectEncoding: AnySchema.Encoding = AnySchema.Encoding.Object
     }
 
     import obj._
@@ -46,6 +48,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     )
 
     val openapi = OpenAPI(
+      openapi = "3.1.0",
       info = Info(title = "API", version = "1.0.0"),
       components = Some(components)
     )

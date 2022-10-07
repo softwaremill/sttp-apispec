@@ -160,12 +160,6 @@ lazy val openapiModel: ProjectMatrix = (projectMatrix in file("openapi-model"))
 lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %%% "circe-core" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion,
-      "io.circe" %%% "circe-generic" % circeVersion,
-      "org.scala-lang.modules" %%% "scala-collection-compat" % scalaCollectionCompatVersion
-    ),
     name := "openapi-circe"
   )
   .jvmPlatform(
@@ -218,11 +212,6 @@ lazy val asyncapiModel: ProjectMatrix = (projectMatrix in file("asyncapi-model")
 lazy val asyncapiCirce: ProjectMatrix = (projectMatrix in file("asyncapi-circe"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %%% "circe-core" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion,
-      "io.circe" %%% "circe-generic" % circeVersion
-    ),
     name := "asyncapi-circe"
   )
   .jvmPlatform(

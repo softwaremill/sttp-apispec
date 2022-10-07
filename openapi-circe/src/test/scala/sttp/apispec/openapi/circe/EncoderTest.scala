@@ -1,14 +1,17 @@
 package sttp.apispec
 package openapi
 package circe
+package threeone
 
 import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
 
 import scala.collection.immutable.ListMap
 
-class EncoderTest extends AnyFunSuite with ResourcePlatform {
+class EncoderTest extends AnyFunSuite with ResourcePlatform with circe.SttpOpenAPI3_1CirceEncoders {
+
   val petstore: OpenAPI = OpenAPI(
+    openapi = "3.1.0",
     info = Info(
       title = "Sample Pet Store App",
       summary = Some("A pet store manager."),
@@ -107,6 +110,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     )
 
     val openapi = OpenAPI(
+      openapi = "3.1.0",
       info = Info(title = "API", version = "1.0.0"),
       components = Some(components)
     )

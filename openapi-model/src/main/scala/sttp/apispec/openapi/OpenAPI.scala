@@ -15,7 +15,7 @@ import sttp.apispec.{
 import scala.collection.immutable.ListMap
 
 final case class OpenAPI(
-    openapi: String = "3.1.0",
+    openapi: String = "3.0.3",
     info: Info,
     jsonSchemaDialect: Option[String] = None,
     tags: List[Tag] = Nil,
