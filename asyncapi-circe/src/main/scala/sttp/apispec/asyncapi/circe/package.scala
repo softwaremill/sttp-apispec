@@ -6,7 +6,6 @@ import io.circe.parser._
 import io.circe.syntax._
 import io.circe._
 
-
 package object circe extends SttpAsyncAPICirceEncoders {
   val anyObjectEncoding: AnySchema.Encoding = AnySchema.Encoding.Boolean
 }
@@ -44,9 +43,9 @@ package circe {
         nullIfEmpty(a)(
           Json.obj(
             a.map {
-              case v: HttpMessageBinding => "http" -> v.asJson
+              case v: HttpMessageBinding      => "http" -> v.asJson
               case v: WebSocketMessageBinding => "ws" -> v.asJson
-              case v: KafkaMessageBinding => "kafka" -> v.asJson
+              case v: KafkaMessageBinding     => "kafka" -> v.asJson
             }: _*
           )
         )
@@ -61,9 +60,9 @@ package circe {
         nullIfEmpty(a)(
           Json.obj(
             a.map {
-              case v: HttpOperationBinding => "http" -> v.asJson
+              case v: HttpOperationBinding      => "http" -> v.asJson
               case v: WebSocketOperationBinding => "ws" -> v.asJson
-              case v: KafkaOperationBinding => "kafka" -> v.asJson
+              case v: KafkaOperationBinding     => "kafka" -> v.asJson
             }: _*
           )
         )
@@ -78,9 +77,9 @@ package circe {
         nullIfEmpty(a)(
           Json.obj(
             a.map {
-              case v: HttpChannelBinding => "http" -> v.asJson
+              case v: HttpChannelBinding      => "http" -> v.asJson
               case v: WebSocketChannelBinding => "ws" -> v.asJson
-              case v: KafkaChannelBinding => "kafka" -> v.asJson
+              case v: KafkaChannelBinding     => "kafka" -> v.asJson
             }: _*
           )
         )
@@ -95,9 +94,9 @@ package circe {
         nullIfEmpty(a)(
           Json.obj(
             a.map {
-              case v: HttpServerBinding => "http" -> v.asJson
+              case v: HttpServerBinding      => "http" -> v.asJson
               case v: WebSocketServerBinding => "ws" -> v.asJson
-              case v: KafkaServerBinding => "kafka" -> v.asJson
+              case v: KafkaServerBinding     => "kafka" -> v.asJson
             }: _*
           )
         )
@@ -106,7 +105,7 @@ package circe {
     private def nullIfEmpty[T](a: List[T])(otherwise: => Json): Json = if (a.isEmpty) Json.Null else otherwise
 
     implicit val encoderMessagePayload: Encoder[Option[Either[AnyValue, ReferenceOr[Schema]]]] = {
-      case None => Json.Null
+      case None           => Json.Null
       case Some(Left(av)) => encoderAnyValue.apply(av)
       case Some(Right(s)) => encoderReferenceOr[Schema].apply(s)
     }
@@ -118,7 +117,7 @@ package circe {
     implicit val encoderOneOfMessage: Encoder[OneOfMessage] = deriveEncoder[OneOfMessage]
     implicit val encoderMessage: Encoder[Message] = {
       case s: SingleMessage => encoderSingleMessage.apply(s)
-      case o: OneOfMessage => encoderOneOfMessage.apply(o)
+      case o: OneOfMessage  => encoderOneOfMessage.apply(o)
     }
 
     implicit val encoderOperationTrait: Encoder[OperationTrait] =

@@ -12,7 +12,7 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
   }
 
   test("spec any nothing schema boolean") {
-    val Right(openapi) = readJson("/spec/3.1/any_and_nothing1.json").flatMap(_.as[OpenAPI]) : @unchecked
+    val Right(openapi) = readJson("/spec/3.1/any_and_nothing1.json").flatMap(_.as[OpenAPI]): @unchecked
 
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
@@ -22,7 +22,7 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
   }
 
   test("spec any nothing schema object") {
-    val Right(openapi) = readJson("/spec/3.1/any_and_nothing2.json").flatMap(_.as[OpenAPI]) : @unchecked
+    val Right(openapi) = readJson("/spec/3.1/any_and_nothing2.json").flatMap(_.as[OpenAPI]): @unchecked
 
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
@@ -32,7 +32,7 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
   }
 
   test("all schemas types") {
-    val Right(openapi) = readJson("/spec/3.1/schema.json").flatMap(_.as[OpenAPI]) : @unchecked
+    val Right(openapi) = readJson("/spec/3.1/schema.json").flatMap(_.as[OpenAPI]): @unchecked
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
     assert(schemas.nonEmpty)

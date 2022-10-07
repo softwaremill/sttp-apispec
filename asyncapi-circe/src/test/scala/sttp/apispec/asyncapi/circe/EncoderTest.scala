@@ -11,8 +11,7 @@ import io.circe.syntax._
 class EncoderTest extends AnyFunSuite {
   test("encode as expected") {
     val expected =
-      parse(
-        """{
+      parse("""{
           |  "messages" : {
           |    "string" : {
           |      "payload" : {
@@ -23,7 +22,13 @@ class EncoderTest extends AnyFunSuite {
           |  }
           |}""".stripMargin)
 
-    val comp = Components(messages = ListMap("string" -> Right(SingleMessage(payload = Some(Right(Right(Schema(SchemaType.String)))), contentType = Some("text/plain")))))
+    val comp = Components(messages =
+      ListMap(
+        "string" -> Right(
+          SingleMessage(payload = Some(Right(Right(Schema(SchemaType.String)))), contentType = Some("text/plain"))
+        )
+      )
+    )
 
     assert(expected === comp.asJson.deepDropNullValues)
   }

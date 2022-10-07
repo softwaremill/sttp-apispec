@@ -12,7 +12,6 @@ import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
 
-
   implicit val externalDocumentationDecoder: Decoder[ExternalDocumentation] = withExtensions(
     deriveDecoder[ExternalDocumentation]
   )

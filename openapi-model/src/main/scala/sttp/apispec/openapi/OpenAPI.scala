@@ -1,6 +1,16 @@
 package sttp.apispec.openapi
 
-import sttp.apispec.{ExampleValue, ExtensionValue, ExternalDocumentation, Reference, ReferenceOr, SchemaLike, SecurityRequirement, SecurityScheme, Tag}
+import sttp.apispec.{
+  ExampleValue,
+  ExtensionValue,
+  ExternalDocumentation,
+  Reference,
+  ReferenceOr,
+  SchemaLike,
+  SecurityRequirement,
+  SecurityScheme,
+  Tag
+}
 
 import scala.collection.immutable.ListMap
 

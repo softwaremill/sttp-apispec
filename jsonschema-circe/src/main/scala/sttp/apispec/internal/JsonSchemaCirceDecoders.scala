@@ -14,12 +14,12 @@ trait JsonSchemaCirceDecoders {
   implicit val decodeBasicSchemaType: Decoder[BasicSchemaType] = Decoder.decodeString.emap {
     case SchemaType.Integer.value => SchemaType.Integer.asRight
     case SchemaType.Boolean.value => SchemaType.Boolean.asRight
-    case SchemaType.String.value => SchemaType.String.asRight
-    case SchemaType.Number.value => SchemaType.Number.asRight
-    case SchemaType.Array.value => SchemaType.Array.asRight
-    case SchemaType.Object.value => SchemaType.Object.asRight
-    case SchemaType.Null.value => SchemaType.Null.asRight
-    case err => s"$err is an unknown schema type".asLeft
+    case SchemaType.String.value  => SchemaType.String.asRight
+    case SchemaType.Number.value  => SchemaType.Number.asRight
+    case SchemaType.Array.value   => SchemaType.Array.asRight
+    case SchemaType.Object.value  => SchemaType.Object.asRight
+    case SchemaType.Null.value    => SchemaType.Null.asRight
+    case err                      => s"$err is an unknown schema type".asLeft
   }
 
   implicit val decodeArraySchemaType: Decoder[ArraySchemaType] = {
@@ -48,7 +48,6 @@ trait JsonSchemaCirceDecoders {
 
   implicit val discriminatorDecoder: Decoder[Discriminator] = deriveDecoder[Discriminator]
 
-
   implicit val exampleValueDecoder: Decoder[ExampleValue] =
     exampleMultipleValueDecoder.widen[ExampleValue].or(exampleSingleValueDecoder.widen[ExampleValue])
 
@@ -56,7 +55,6 @@ trait JsonSchemaCirceDecoders {
 
   implicit val extensionsDecoder: Decoder[ListMap[String, ExtensionValue]] =
     Decoder.decodeMapLike[String, ExtensionValue, ListMap].map(_.filter(_._1.startsWith("x-")))
-
 
   implicit val schemaDecoder: Decoder[Schema] = {
     implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, ReferenceOr[A]]] =
@@ -92,7 +90,7 @@ trait JsonSchemaCirceDecoders {
         deriveDecoder[Schema].map(s =>
           s.`type` match {
             case Some(ArraySchemaType(x :: SchemaType.Null :: Nil)) => s.copy(`type` = Some(x), nullable = Some(true))
-            case _ => s
+            case _                                                  => s
           }
         )
       )
