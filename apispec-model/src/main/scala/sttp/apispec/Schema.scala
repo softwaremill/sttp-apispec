@@ -2,6 +2,8 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
+/** Algebraic data type for all possible schemas
+  */
 sealed trait SchemaLike
 
 sealed trait AnySchema extends SchemaLike
@@ -13,7 +15,13 @@ object AnySchema {
     case object Boolean extends Encoding
   }
 
+  /** Json schema can be represented by the values `true` or `{}` ( empty object). This represents any json value.
+    */
   case object Anything extends AnySchema
+
+  /** Json schema can be represented by the values `false` or `{"not": {}}` (object with a single property "not" which
+    * has a single value with must be the empty object" This represents no json value.
+    */
   case object Nothing extends AnySchema
 }
 
