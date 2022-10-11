@@ -1,66 +1,28 @@
-package sttp.apispec.asyncapi
+package sttp.apispec
+package asyncapi
 
 import io.circe.generic.semiauto._
 import io.circe.parser._
 import io.circe.syntax._
-import io.circe.{Encoder, Json, JsonObject}
-import sttp.apispec.{
-  Discriminator,
-  ExampleMultipleValue,
-  ExampleSingleValue,
-  ExampleValue,
-  ExtensionValue,
-  ExternalDocumentation,
-  OAuthFlow,
-  OAuthFlows,
-  Reference,
-  ReferenceOr,
-  Schema,
-  SchemaType,
-  SecurityScheme,
-  Tag
+import io.circe._
+
+package object circe extends SttpAsyncAPICirceEncoders {
+  val anyObjectEncoding: AnySchema.Encoding = AnySchema.Encoding.Boolean
 }
 
-import scala.collection.immutable.ListMap
-
-package object circe extends SttpAsyncAPICirceEncoders
-
 package circe {
-  trait SttpAsyncAPICirceEncoders {
+
+  import sttp.apispec.internal.JsonSchemaCirceEncoders
+
+  trait SttpAsyncAPICirceEncoders extends JsonSchemaCirceEncoders {
     // note: these are strict val-s, order matters!
+    override val openApi30: Boolean = true
 
-    implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
-      case Left(Reference(ref)) => Json.obj(("$ref", Json.fromString(ref)))
-      case Right(t)             => implicitly[Encoder[T]].apply(t)
-    }
-
-    implicit val docsExtensionValue: Encoder[ExtensionValue] =
-      Encoder.instance(e => parse(e.value).getOrElse(Json.fromString(e.value)))
     implicit val encoderOAuthFlow: Encoder[OAuthFlow] = deriveEncoder[OAuthFlow].mapJsonObject(expandExtensions)
     implicit val encoderOAuthFlows: Encoder[OAuthFlows] = deriveEncoder[OAuthFlows].mapJsonObject(expandExtensions)
     implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
       deriveEncoder[SecurityScheme].mapJsonObject(expandExtensions)
-    implicit val encoderExampleSingleValue: Encoder[ExampleSingleValue] = {
-      case ExampleSingleValue(value: String)     => parse(value).getOrElse(Json.fromString(value))
-      case ExampleSingleValue(value: Int)        => Json.fromInt(value)
-      case ExampleSingleValue(value: Long)       => Json.fromLong(value)
-      case ExampleSingleValue(value: Float)      => Json.fromFloatOrString(value)
-      case ExampleSingleValue(value: Double)     => Json.fromDoubleOrString(value)
-      case ExampleSingleValue(value: Boolean)    => Json.fromBoolean(value)
-      case ExampleSingleValue(value: BigDecimal) => Json.fromBigDecimal(value)
-      case ExampleSingleValue(value: BigInt)     => Json.fromBigInt(value)
-      case ExampleSingleValue(null)              => Json.Null
-      case ExampleSingleValue(value)             => Json.fromString(value.toString)
-    }
-    implicit val encoderExampleValue: Encoder[ExampleValue] = {
-      case e: ExampleSingleValue => encoderExampleSingleValue(e)
-      case ExampleMultipleValue(values) =>
-        Json.arr(values.map(v => encoderExampleSingleValue(ExampleSingleValue(v))): _*)
-    }
-    implicit val encoderSchemaType: Encoder[SchemaType] = { e => Encoder.encodeString(e.value) }
-    implicit val encoderSchema: Encoder[Schema] = deriveEncoder[Schema].mapJsonObject(expandExtensions)
-    implicit val encoderReference: Encoder[Reference] = deriveEncoder[Reference]
-    implicit val encoderDiscriminator: Encoder[Discriminator] = deriveEncoder[Discriminator]
+
     implicit val encoderExternalDocumentation: Encoder[ExternalDocumentation] =
       deriveEncoder[ExternalDocumentation].mapJsonObject(expandExtensions)
     implicit val encoderTag: Encoder[Tag] = deriveEncoder[Tag].mapJsonObject(expandExtensions)
@@ -170,26 +132,5 @@ package circe {
     implicit val encoderLicense: Encoder[License] = deriveEncoder[License].mapJsonObject(expandExtensions)
     implicit val encoderInfo: Encoder[Info] = deriveEncoder[Info].mapJsonObject(expandExtensions)
     implicit val encoderAsyncAPI: Encoder[AsyncAPI] = deriveEncoder[AsyncAPI].mapJsonObject(expandExtensions)
-
-    implicit def encodeList[T: Encoder]: Encoder[List[T]] = {
-      case Nil        => Json.Null
-      case l: List[T] => Json.arr(l.map(i => implicitly[Encoder[T]].apply(i)): _*)
-    }
-
-    implicit def encodeListMap[V: Encoder]: Encoder[ListMap[String, V]] = doEncodeListMap(nullWhenEmpty = true)
-
-    private def doEncodeListMap[V: Encoder](nullWhenEmpty: Boolean): Encoder[ListMap[String, V]] = {
-      case m: ListMap[String, V] if m.isEmpty && nullWhenEmpty => Json.Null
-      case m: ListMap[String, V] =>
-        val properties = m.mapValues(v => implicitly[Encoder[V]].apply(v)).toList
-        Json.obj(properties: _*)
-    }
-
-    // Take a look at sttp.apispec.SttpOpenAPICirceEncoders.expandExtensions for explanation
-    private def expandExtensions(jsonObject: JsonObject): JsonObject = {
-      val extensions = jsonObject("extensions")
-      val jsonWithoutExt = jsonObject.filterKeys(_ != "extensions")
-      extensions.flatMap(_.asObject).map(extObject => extObject.deepMerge(jsonWithoutExt)).getOrElse(jsonWithoutExt)
-    }
   }
 }

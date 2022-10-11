@@ -2,7 +2,7 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
-case class Reference($ref: String)
+case class Reference($ref: String, summary: Option[String] = None, description: Option[String] = None)
 
 object Reference {
   def to(prefix: String, $ref: String): Reference = new Reference(s"$prefix${$ref}")
@@ -26,3 +26,6 @@ case class ExternalDocumentation(
 )
 
 case class ExtensionValue(value: String)
+
+/** @see https://json-schema.org/understanding-json-schema/reference/regular_expressions.html */
+final case class Pattern(value: String)

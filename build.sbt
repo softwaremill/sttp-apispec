@@ -11,23 +11,34 @@ val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
 val scalaNativeVersions = List(scala2_12, scala2_13, scala3)
 
-val circeVersion = "0.14.1"
+val circeVersion = "0.14.3"
 val circeYamlVersion = "0.14.1"
+
 val scalaTestVersion = "3.2.14"
+val scalaCollectionCompatVersion = "2.8.1"
 
 excludeLintKeys in Global ++= Set(ideSkipProject)
+
+val scala3Settings = Seq(
+  scalacOptions -= "-Xmax-inlines",
+  scalacOptions ++= {
+    if (scalaVersion.value.startsWith("3")) List("-Xmax-inlines", "64") else Nil
+  }
+)
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.apispec",
   mimaPreviousArtifacts := Set.empty,
   versionScheme := Some("semver-spec")
-)
+) ++ scala3Settings
 
 val commonJvmSettings = commonSettings ++ Seq(
   ideSkipProject := (scalaVersion.value != scala2_13),
   libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % scalaTestVersion % Test),
   mimaPreviousArtifacts := previousStableVersion.value.map(organization.value %% moduleName.value % _).toSet,
-  mimaReportBinaryIssues := { if ((publish / skip).value) {} else mimaReportBinaryIssues.value }
+  mimaReportBinaryIssues := {
+    if ((publish / skip).value) {} else mimaReportBinaryIssues.value
+  }
 )
 
 val commonJsSettings = commonSettings ++ Seq(
@@ -56,6 +67,7 @@ val commonNativeSettings = commonSettings ++ Seq(
 
 lazy val allProjectAggregates: Seq[ProjectReference] =
   apispecModel.projectRefs ++
+    jsonSchemaCirce.projectRefs ++
     openapiModel.projectRefs ++
     openapiCirce.projectRefs ++
     openapiCirceYaml.projectRefs ++
@@ -98,6 +110,32 @@ lazy val apispecModel: ProjectMatrix = (projectMatrix in file("apispec-model"))
     settings = commonNativeSettings
   )
 
+// jsonschema
+lazy val jsonSchemaCirce: ProjectMatrix = (projectMatrix in file("jsonschema-circe"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.circe" %%% "circe-core" % circeVersion,
+      "io.circe" %%% "circe-parser" % circeVersion,
+      "io.circe" %%% "circe-generic" % circeVersion,
+      "org.scala-lang.modules" %%% "scala-collection-compat" % scalaCollectionCompatVersion
+    ),
+    name := "jsonschema-circe"
+  )
+  .jvmPlatform(
+    scalaVersions = scalaJVMVersions,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(
+    scalaVersions = scalaJSVersions,
+    settings = commonJsSettings
+  )
+  .nativePlatform(
+    scalaVersions = scalaNativeVersions,
+    settings = commonNativeSettings
+  )
+  .dependsOn(apispecModel)
+
 // openapi
 
 lazy val openapiModel: ProjectMatrix = (projectMatrix in file("openapi-model"))
@@ -122,11 +160,6 @@ lazy val openapiModel: ProjectMatrix = (projectMatrix in file("openapi-model"))
 lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % circeVersion,
-      "io.circe" %% "circe-parser" % circeVersion,
-      "io.circe" %% "circe-generic" % circeVersion
-    ),
     name := "openapi-circe"
   )
   .jvmPlatform(
@@ -137,7 +170,11 @@ lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
     scalaVersions = scalaJSVersions,
     settings = commonJsSettings
   )
-  .dependsOn(openapiModel)
+  .nativePlatform(
+    scalaVersions = scalaNativeVersions,
+    settings = commonNativeSettings
+  )
+  .dependsOn(openapiModel, jsonSchemaCirce)
 
 lazy val openapiCirceYaml: ProjectMatrix = (projectMatrix in file("openapi-circe-yaml"))
   .settings(commonSettings)
@@ -175,18 +212,21 @@ lazy val asyncapiModel: ProjectMatrix = (projectMatrix in file("asyncapi-model")
 lazy val asyncapiCirce: ProjectMatrix = (projectMatrix in file("asyncapi-circe"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % circeVersion,
-      "io.circe" %% "circe-parser" % circeVersion,
-      "io.circe" %% "circe-generic" % circeVersion
-    ),
     name := "asyncapi-circe"
   )
   .jvmPlatform(
     scalaVersions = scalaJVMVersions,
     settings = commonJvmSettings
   )
-  .dependsOn(asyncapiModel)
+  .jsPlatform(
+    scalaVersions = scalaJSVersions,
+    settings = commonJsSettings
+  )
+  .nativePlatform(
+    scalaVersions = scalaNativeVersions,
+    settings = commonNativeSettings
+  )
+  .dependsOn(asyncapiModel, jsonSchemaCirce)
 
 lazy val asyncapiCirceYaml: ProjectMatrix = (projectMatrix in file("asyncapi-circe-yaml"))
   .settings(commonSettings)

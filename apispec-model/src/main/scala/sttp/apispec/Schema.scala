@@ -2,14 +2,40 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
-// todo: discriminator, xml, json-schema properties
+/** Algebraic data type for all possible schemas
+  */
+sealed trait SchemaLike
+
+sealed trait AnySchema extends SchemaLike
+
+object AnySchema {
+  sealed trait Encoding extends Product with Serializable
+  object Encoding {
+    case object Object extends Encoding
+    case object Boolean extends Encoding
+  }
+
+  /** Json schema can be represented by the values `true` or `{}` (empty object). This represents any json value. */
+  case object Anything extends AnySchema
+
+  /** Json schema can be represented by the values `false` or `{"not": {}}` (object with a single property "not" which
+    * has a single value with must be the empty object". This represents no json value.
+    */
+  case object Nothing extends AnySchema
+}
+
+// todo: xml
 case class Schema(
-    allOf: List[ReferenceOr[Schema]] = List.empty,
+    $schema: Option[String] = None,
+    allOf: List[ReferenceOr[SchemaLike]] = List.empty,
     title: Option[String] = None,
     required: List[String] = List.empty,
     `type`: Option[SchemaType] = None,
-    items: Option[ReferenceOr[Schema]] = None,
-    properties: ListMap[String, ReferenceOr[Schema]] = ListMap.empty,
+    prefixItems: Option[List[ReferenceOr[SchemaLike]]] = None,
+    items: Option[ReferenceOr[SchemaLike]] = None,
+    contains: Option[ReferenceOr[SchemaLike]] = None,
+    properties: ListMap[String, ReferenceOr[SchemaLike]] = ListMap.empty,
+    patternProperties: ListMap[Pattern, ReferenceOr[SchemaLike]] = ListMap.empty,
     description: Option[String] = None,
     format: Option[String] = None,
     default: Option[ExampleValue] = None,
@@ -18,10 +44,10 @@ case class Schema(
     writeOnly: Option[Boolean] = None,
     example: Option[ExampleValue] = None,
     deprecated: Option[Boolean] = None,
-    oneOf: List[ReferenceOr[Schema]] = List.empty,
+    oneOf: List[ReferenceOr[SchemaLike]] = List.empty,
     discriminator: Option[Discriminator] = None,
-    additionalProperties: Option[ReferenceOr[Schema]] = None,
-    pattern: Option[String] = None,
+    additionalProperties: Option[ReferenceOr[SchemaLike]] = None,
+    pattern: Option[Pattern] = None,
     minLength: Option[Int] = None,
     maxLength: Option[Int] = None,
     minimum: Option[BigDecimal] = None,
@@ -31,26 +57,35 @@ case class Schema(
     minItems: Option[Int] = None,
     maxItems: Option[Int] = None,
     `enum`: Option[List[ExampleSingleValue]] = None,
+    not: Option[ReferenceOr[SchemaLike]] = None,
+    `if`: Option[ReferenceOr[SchemaLike]] = None,
+    `then`: Option[ReferenceOr[SchemaLike]] = None,
+    `else`: Option[ReferenceOr[SchemaLike]] = None,
+    $defs: Option[ListMap[String, SchemaLike]] = None,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
-)
+) extends SchemaLike
 
 case class Discriminator(propertyName: String, mapping: Option[ListMap[String, String]])
 
 object Schema {
-  def apply(`type`: SchemaType): Schema = new Schema(`type` = Some(`type`))
+  def apply(schemaType: SchemaType): Schema = new Schema(`type` = Some(schemaType))
 
   def apply(references: List[ReferenceOr[Schema]], discriminator: Option[Discriminator]): Schema =
     new Schema(oneOf = references, discriminator = discriminator)
 }
 
-sealed abstract class SchemaType(val value: String)
+sealed trait SchemaType
+case class ArraySchemaType(value: List[BasicSchemaType]) extends SchemaType
+sealed abstract class BasicSchemaType(val value: String) extends SchemaType
+
 object SchemaType {
-  case object Boolean extends SchemaType("boolean")
-  case object Object extends SchemaType("object")
-  case object Array extends SchemaType("array")
-  case object Number extends SchemaType("number")
-  case object String extends SchemaType("string")
-  case object Integer extends SchemaType("integer")
+  case object Boolean extends BasicSchemaType("boolean")
+  case object Object extends BasicSchemaType("object")
+  case object Array extends BasicSchemaType("array")
+  case object Number extends BasicSchemaType("number")
+  case object String extends BasicSchemaType("string")
+  case object Integer extends BasicSchemaType("integer")
+  case object Null extends BasicSchemaType("null")
 }
 
 object SchemaFormat {

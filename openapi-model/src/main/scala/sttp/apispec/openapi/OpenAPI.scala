@@ -6,7 +6,7 @@ import sttp.apispec.{
   ExternalDocumentation,
   Reference,
   ReferenceOr,
-  Schema,
+  SchemaLike,
   SecurityRequirement,
   SecurityScheme,
   Tag
@@ -17,9 +17,11 @@ import scala.collection.immutable.ListMap
 final case class OpenAPI(
     openapi: String = "3.0.3",
     info: Info,
+    jsonSchemaDialect: Option[String] = None,
     tags: List[Tag] = Nil,
     servers: List[Server] = Nil,
     paths: Paths = Paths.Empty,
+    webhooks: Option[Map[String, ReferenceOr[PathItem]]] = None,
     components: Option[Components] = None,
     security: List[SecurityRequirement] = Nil,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
@@ -38,6 +40,10 @@ final case class OpenAPI(
 
   def tags(t: List[Tag]): OpenAPI = copy(tags = t)
 
+  def jsonSchemaDialect(d: Option[String]): OpenAPI = copy(jsonSchemaDialect = d)
+
+  def webhooks(wh: Option[Map[String, ReferenceOr[PathItem]]]): OpenAPI = copy(webhooks = wh)
+
   def security(updated: List[SecurityRequirement]): OpenAPI = copy(security = updated)
   def addSecurity(updated: SecurityRequirement): OpenAPI = copy(security = security ++ List(updated))
   def addExtension(key: String, value: ExtensionValue): OpenAPI = copy(extensions = extensions.updated(key, value))
@@ -47,6 +53,7 @@ final case class OpenAPI(
 final case class Info(
     title: String,
     version: String,
+    summary: Option[String] = None,
     description: Option[String] = None,
     termsOfService: Option[String] = None,
     contact: Option[Contact] = None,
@@ -55,6 +62,7 @@ final case class Info(
 ) {
   def title(updated: String): Info = copy(title = updated)
   def version(updated: String): Info = copy(version = updated)
+  def summary(updated: String): Info = copy(summary = Some(updated))
   def description(updated: String): Info = copy(description = Some(updated))
   def termsOfService(updated: String): Info = copy(termsOfService = Some(updated))
   def contact(updated: Contact): Info = copy(contact = Some(updated))
@@ -136,7 +144,7 @@ final case class ServerVariable(
 }
 
 final case class Components(
-    schemas: ListMap[String, ReferenceOr[Schema]] = ListMap.empty,
+    schemas: ListMap[String, ReferenceOr[SchemaLike]] = ListMap.empty,
     responses: ListMap[String, ReferenceOr[Response]] = ListMap.empty,
     parameters: ListMap[String, ReferenceOr[Parameter]] = ListMap.empty,
     examples: ListMap[String, ReferenceOr[Example]] = ListMap.empty,
@@ -147,8 +155,8 @@ final case class Components(
     callbacks: ListMap[String, ReferenceOr[Callback]] = ListMap.empty,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 ) {
-  def addSchema(key: String, schema: Schema): Components = copy(schemas = schemas.updated(key, Right(schema)))
-  def getLocalSchema(key: String): Option[Schema] = schemas.get(key).flatMap(_.toOption)
+  def addSchema(key: String, schema: SchemaLike): Components = copy(schemas = schemas.updated(key, Right(schema)))
+  def getLocalSchema(key: String): Option[SchemaLike] = schemas.get(key).flatMap(_.toOption)
   def getReferenceToSchema(key: String): Option[Reference] =
     schemas.get(key).map(refOr => refOr.fold(identity, _ => Reference(s"#/components/schemas/$key")))
   def addSecurityScheme(key: String, scheme: SecurityScheme): Components =
@@ -156,7 +164,7 @@ final case class Components(
   def getLocalSecurityScheme(key: String): Option[SecurityScheme] = securitySchemes.get(key).flatMap(_.toOption)
   def getReferenceToSecurityScheme(key: String): Option[Reference] =
     securitySchemes.get(key).map(refOr => refOr.fold(identity, _ => Reference(s"#/components/securitySchemes/$key")))
-  def schemas(updated: ListMap[String, ReferenceOr[Schema]]): Components = copy(schemas = updated)
+  def schemas(updated: ListMap[String, ReferenceOr[SchemaLike]]): Components = copy(schemas = updated)
   def securitySchemes(updated: ListMap[String, ReferenceOr[SecurityScheme]]): Components =
     copy(securitySchemes = updated)
   def addResponse(key: String, response: Response): Components =
@@ -336,7 +344,7 @@ final case class Parameter(
     style: Option[ParameterStyle] = None,
     explode: Option[Boolean] = None,
     allowReserved: Option[Boolean] = None,
-    schema: Option[ReferenceOr[Schema]],
+    schema: Option[ReferenceOr[SchemaLike]],
     example: Option[ExampleValue] = None,
     examples: ListMap[String, ReferenceOr[Example]] = ListMap.empty,
     content: ListMap[String, MediaType] = ListMap.empty,
@@ -351,7 +359,7 @@ final case class Parameter(
   def style(updated: ParameterStyle): Parameter = copy(style = Some(updated))
   def explode(updated: Boolean): Parameter = copy(explode = Some(updated))
   def allowReserved(updated: Boolean): Parameter = copy(allowReserved = Some(updated))
-  def schema(updated: Schema): Parameter = copy(schema = Some(Right(updated)))
+  def schema(updated: SchemaLike): Parameter = copy(schema = Some(Right(updated)))
   def example(updated: ExampleValue): Parameter = copy(example = Some(updated))
   def examples(updated: ListMap[String, ReferenceOr[Example]]): Parameter = copy(examples = updated)
   def addExample(key: String, updated: Example): Parameter = copy(examples = examples.updated(key, Right(updated)))
@@ -398,13 +406,13 @@ object RequestBody {
 }
 
 final case class MediaType(
-    schema: Option[ReferenceOr[Schema]] = None,
+    schema: Option[ReferenceOr[SchemaLike]] = None,
     example: Option[ExampleValue] = None,
     examples: ListMap[String, ReferenceOr[Example]] = ListMap.empty,
     encoding: ListMap[String, Encoding] = ListMap.empty,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 ) {
-  def schema(updated: Schema): MediaType = copy(schema = Some(Right(updated)))
+  def schema(updated: SchemaLike): MediaType = copy(schema = Some(Right(updated)))
   def example(updated: ExampleValue): MediaType = copy(example = Some(updated))
   def examples(updated: ListMap[String, ReferenceOr[Example]]): MediaType = copy(examples = updated)
   def addExample(key: String, updated: Example): MediaType = copy(examples = examples.updated(key, Right(updated)))
@@ -510,7 +518,7 @@ final case class Header(
     style: Option[ParameterStyle] = None,
     explode: Option[Boolean] = None,
     allowReserved: Option[Boolean] = None,
-    schema: Option[ReferenceOr[Schema]] = None,
+    schema: Option[ReferenceOr[SchemaLike]] = None,
     example: Option[ExampleValue] = None,
     examples: ListMap[String, ReferenceOr[Example]] = ListMap.empty,
     content: ListMap[String, MediaType] = ListMap.empty
@@ -522,7 +530,7 @@ final case class Header(
   def style(updated: ParameterStyle): Header = copy(style = Some(updated))
   def explode(updated: Boolean): Header = copy(explode = Some(updated))
   def allowReserved(updated: Boolean): Header = copy(allowReserved = Some(updated))
-  def schema(updated: Schema): Header = copy(schema = Some(Right(updated)))
+  def schema(updated: SchemaLike): Header = copy(schema = Some(Right(updated)))
   def example(updated: ExampleValue): Header = copy(example = Some(updated))
   def examples(updated: ListMap[String, ReferenceOr[Example]]): Header = copy(examples = updated)
   def addExample(key: String, updated: Example): Header = copy(examples = examples.updated(key, Right(updated)))
