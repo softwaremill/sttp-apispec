@@ -15,12 +15,11 @@ object AnySchema {
     case object Boolean extends Encoding
   }
 
-  /** Json schema can be represented by the values `true` or `{}` ( empty object). This represents any json value.
-    */
+  /** Json schema can be represented by the values `true` or `{}` (empty object). This represents any json value. */
   case object Anything extends AnySchema
 
   /** Json schema can be represented by the values `false` or `{"not": {}}` (object with a single property "not" which
-    * has a single value with must be the empty object" This represents no json value.
+    * has a single value with must be the empty object". This represents no json value.
     */
   case object Nothing extends AnySchema
 }
@@ -76,9 +75,7 @@ object Schema {
 }
 
 sealed trait SchemaType
-
-final case class ArraySchemaType(value: List[BasicSchemaType]) extends SchemaType
-
+case class ArraySchemaType(value: List[BasicSchemaType]) extends SchemaType
 sealed abstract class BasicSchemaType(val value: String) extends SchemaType
 
 object SchemaType {

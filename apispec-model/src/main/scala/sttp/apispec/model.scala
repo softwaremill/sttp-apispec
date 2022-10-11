@@ -27,8 +27,5 @@ case class ExternalDocumentation(
 
 case class ExtensionValue(value: String)
 
-/** https://json-schema.org/understanding-json-schema/reference/regular_expressions.html
-  *
-  * @param value
-  */
+/** @see https://json-schema.org/understanding-json-schema/reference/regular_expressions.html */
 final case class Pattern(value: String)
