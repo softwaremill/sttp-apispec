@@ -53,8 +53,8 @@ and choosing one version over the other is a matter of selecting the proper enco
 
 Add dependencies:
 ```scala
-"com.softwaremill.sttp.apispec" %% "openapi-model" % "@VERSION@"
-"com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "@VERSION@"
+"com.softwaremill.sttp.apispec" %% "openapi-model" % "0.3.0"
+"com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.3.0"
 ```
 
 Create example OpenAPI models:
@@ -89,8 +89,8 @@ Usage is the following:
 
 Add dependencies
 ```scala
-"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "@VERSION@"
-"com.softwaremill.sttp.apispec" %% "asyncapi-circe-yaml" % "@VERSION@"
+"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.3.0"
+"com.softwaremill.sttp.apispec" %% "asyncapi-circe-yaml" % "0.3.0"
 ```
 
 Create an example AsyncAPI model:
