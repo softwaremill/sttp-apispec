@@ -35,7 +35,7 @@ trait JsonSchemaCirceEncoders {
         "default" := s.default.map(encodeExampleValue(false).apply),
         "readOnly" := s.readOnly,
         "writeOnly" := s.writeOnly,
-        "examples" := s.example.map(encodeExampleValue(true).apply),
+        "example" := s.example.map(encodeExampleValue(true).apply),
         "deprecated" := s.deprecated,
         "oneOf" := s.oneOf,
         "discriminator" := s.discriminator,
@@ -60,7 +60,6 @@ trait JsonSchemaCirceEncoders {
 
   val encoderSchema30: Encoder[Schema] = Encoder.AsObject
     .instance { (s: Schema) =>
-      val exampleKey = if (s.example.exists(_.isInstanceOf[ExampleMultipleValue])) "examples" else "example"
       JsonObject(
         "allOf" := s.allOf,
         "title" := s.title,
@@ -76,7 +75,8 @@ trait JsonSchemaCirceEncoders {
         "default" := s.default.map(encodeExampleValue(false).apply),
         "readOnly" := s.readOnly,
         "writeOnly" := s.writeOnly,
-        exampleKey := s.example.map(encodeExampleValue(false).apply),
+        // the current Schema model currently supports a single, optional example; if multiple examples support is added, they should be serialised to "examples"
+        "example" := s.example.map(encodeExampleValue(false).apply),
         "deprecated" := s.deprecated,
         "oneOf" := s.oneOf,
         "discriminator" := s.discriminator,
