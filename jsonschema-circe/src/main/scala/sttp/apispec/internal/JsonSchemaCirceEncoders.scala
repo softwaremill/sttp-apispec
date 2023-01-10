@@ -32,10 +32,10 @@ trait JsonSchemaCirceEncoders {
         "patternProperties" := s.patternProperties,
         "description" := s.description,
         "format" := s.format,
-        "default" := s.default.map(encodeExampleValue(false).apply),
+        "default" := s.default,
         "readOnly" := s.readOnly,
         "writeOnly" := s.writeOnly,
-        "examples" := s.example.map(encodeExampleValue(true).apply),
+        "example" := s.example,
         "deprecated" := s.deprecated,
         "oneOf" := s.oneOf,
         "discriminator" := s.discriminator,
@@ -60,7 +60,6 @@ trait JsonSchemaCirceEncoders {
 
   val encoderSchema30: Encoder[Schema] = Encoder.AsObject
     .instance { (s: Schema) =>
-      val exampleKey = if (s.example.exists(_.isInstanceOf[ExampleMultipleValue])) "examples" else "example"
       JsonObject(
         "allOf" := s.allOf,
         "title" := s.title,
@@ -73,10 +72,11 @@ trait JsonSchemaCirceEncoders {
         "patternProperties" := s.patternProperties,
         "description" := s.description,
         "format" := s.format,
-        "default" := s.default.map(encodeExampleValue(false).apply),
+        "default" := s.default,
         "readOnly" := s.readOnly,
         "writeOnly" := s.writeOnly,
-        exampleKey := s.example.map(encodeExampleValue(false).apply),
+        // the current Schema model currently supports a single, optional example; if multiple examples support is added, they should be serialised to "examples"
+        "example" := s.example,
         "deprecated" := s.deprecated,
         "oneOf" := s.oneOf,
         "discriminator" := s.discriminator,
@@ -131,14 +131,10 @@ trait JsonSchemaCirceEncoders {
     Json.arr(e.values.map(v => encoderExampleSingleValue(ExampleSingleValue(v))): _*)
   }
 
-  def encodeExampleValue(alwaysArray: Boolean): Encoder[ExampleValue] = {
+  implicit val encoderExampleValue: Encoder[ExampleValue] = {
     case e: ExampleMultipleValue => encoderMultipleExampleValue.apply(e)
-    case e: ExampleSingleValue =>
-      if (alwaysArray) encoderMultipleExampleValue.apply(ExampleMultipleValue(List(e.value)))
-      else encoderExampleSingleValue.apply(e)
+    case e: ExampleSingleValue   => encoderExampleSingleValue.apply(e)
   }
-
-  implicit val encoderExampleValue: Encoder[ExampleValue] = encodeExampleValue(false)
 
   implicit val encoderSchemaType: Encoder[SchemaType] = {
     case e: BasicSchemaType   => e.value.asJson

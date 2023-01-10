@@ -34,9 +34,7 @@
           "five": {
             "description": "singular example",
             "type": "string",
-            "examples": [
-              "exampleValue"
-            ]
+            "example": "exampleValue"
           },
           "six": {
             "description": "exclusiveMinimum true",
