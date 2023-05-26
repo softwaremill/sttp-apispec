@@ -1,10 +1,11 @@
-package sttp.apispec.openapi.circe
+package sttp.apispec.test
 
 import io.circe.{Json, Error}
 import io.circe.parser.decode
 
 trait ResourcePlatform {
-  def rscPath(path: String): String = "openapi-circe/src/test/resources" + path
+  def basedir: String
+  def rscPath(path: String): String = s"$basedir/src/test/resources$path"
 
   def rsc(path: String): String = {
     import scalajs.js.Dynamic.{global => g}

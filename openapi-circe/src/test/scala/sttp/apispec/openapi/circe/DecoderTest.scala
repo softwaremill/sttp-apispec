@@ -2,9 +2,12 @@ package sttp.apispec
 package openapi
 package circe
 
+import sttp.apispec.test._
 import org.scalatest.funsuite.AnyFunSuite
 
 class DecoderTest extends AnyFunSuite with ResourcePlatform {
+  val basedir = "openapi-circe"
+
   test("petstore deserialize") {
     val Right(openapi) = readJson("/petstore/basic-petstore.json").flatMap(_.as[OpenAPI]): @unchecked
 

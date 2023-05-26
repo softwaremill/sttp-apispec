@@ -62,6 +62,12 @@ case class Schema(
     `then`: Option[ReferenceOr[SchemaLike]] = None,
     `else`: Option[ReferenceOr[SchemaLike]] = None,
     $defs: Option[ListMap[String, SchemaLike]] = None,
+    $id: Option[String] = None,
+    const: Option[ExampleValue] = None,
+    anyOf: List[ReferenceOr[SchemaLike]] = List.empty,
+    unevaluatedProperties: Option[ReferenceOr[SchemaLike]] = None,
+    dependentRequired: ListMap[String, List[String]] = ListMap.empty,
+    dependentSchemas: ListMap[String, ReferenceOr[SchemaLike]] = ListMap.empty,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 ) extends SchemaLike
 
