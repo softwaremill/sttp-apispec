@@ -6,6 +6,10 @@ import java.io.{BufferedReader, InputStreamReader, StringWriter}
 import java.nio.charset.StandardCharsets
 
 trait ResourcePlatform {
+
+  /**
+   * @return Base directory of sbt project we should read resources from. Not used from JVM
+   */
   def basedir: String
   def readJson(path: String): Either[Error, Json] = {
 

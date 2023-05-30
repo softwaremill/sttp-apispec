@@ -7,7 +7,7 @@ import sttp.apispec.test._
 import scala.collection.immutable.ListMap
 
 class DecoderTest extends AnyFunSuite with ResourcePlatform {
-  val basedir = "jsonschema-circe"
+  override val basedir = "jsonschema-circe"
 
   test("extending rescursive") {
     val Right(json) = readJson("/extending-recursive.json")

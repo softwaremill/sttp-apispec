@@ -8,7 +8,7 @@ import scala.collection.immutable.ListMap
 import sttp.apispec.test._
 
 class EncoderTest extends AnyFunSuite with ResourcePlatform {
-  val basedir = "openapi-circe"
+  override val basedir = "openapi-circe"
   def refOr[A](a: A): ReferenceOr[A] = Right(a)
 
   test("any boolean") {

@@ -7,7 +7,7 @@ import io.circe.syntax._
 import io.circe.Decoder
 
 class RoundTripTest extends AnyFunSuite with ResourcePlatform {
-  val basedir = "jsonschema-circe"
+  override val basedir = "jsonschema-circe"
 
   test("Can parse self-encoded schema") {
     val simple = Schema($schema = Some("https://json-schema.org/draft/2020-12/schema"), $id = Some("http://yourdomain.com/schemas/myschema.json"))
