@@ -66,7 +66,8 @@ val commonNativeSettings = commonSettings ++ Seq(
 )
 
 lazy val allProjectAggregates: Seq[ProjectReference] =
-  apispecModel.projectRefs ++
+  circeTestUtils.projectRefs ++
+    apispecModel.projectRefs ++
     jsonSchemaCirce.projectRefs ++
     openapiModel.projectRefs ++
     openapiCirce.projectRefs ++
@@ -90,6 +91,28 @@ lazy val rootProject = (project in file("."))
   .settings(publish / skip := true, name := "sttp-apispec", scalaVersion := scala2_13)
   .aggregate(projectAggregates: _*)
 
+lazy val circeTestUtils: ProjectMatrix = (projectMatrix in file("circe-testutils"))
+  .settings(commonSettings)
+  .settings(
+    publish / skip := true,
+    name := "circe-testutils",
+    libraryDependencies ++= Seq(
+      "io.circe" %%% "circe-core" % circeVersion,
+      "io.circe" %%% "circe-parser" % circeVersion
+    )
+  )
+  .jvmPlatform(
+    scalaVersions = scalaJVMVersions,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(
+    scalaVersions = scalaJSVersions,
+    settings = commonJsSettings
+  )
+  .nativePlatform(
+    scalaVersions = scalaNativeVersions,
+    settings = commonNativeSettings
+  )
 // apispec
 
 lazy val apispecModel: ProjectMatrix = (projectMatrix in file("apispec-model"))
@@ -134,7 +157,7 @@ lazy val jsonSchemaCirce: ProjectMatrix = (projectMatrix in file("jsonschema-cir
     scalaVersions = scalaNativeVersions,
     settings = commonNativeSettings
   )
-  .dependsOn(apispecModel)
+  .dependsOn(apispecModel, circeTestUtils % Test)
 
 // openapi
 
@@ -174,7 +197,7 @@ lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
     scalaVersions = scalaNativeVersions,
     settings = commonNativeSettings
   )
-  .dependsOn(openapiModel, jsonSchemaCirce)
+  .dependsOn(openapiModel, jsonSchemaCirce, circeTestUtils % Test)
 
 lazy val openapiCirceYaml: ProjectMatrix = (projectMatrix in file("openapi-circe-yaml"))
   .settings(commonSettings)

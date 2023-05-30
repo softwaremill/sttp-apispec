@@ -18,8 +18,10 @@ trait JsonSchemaCirceEncoders {
       val minKey = if (s.exclusiveMinimum.getOrElse(false)) "exclusiveMinimum" else "minimum"
       val maxKey = if (s.exclusiveMaximum.getOrElse(false)) "exclusiveMaximum" else "maximum"
       JsonObject(
+        s"$$id" := s.$id,
         s"$$schema" := s.$schema,
         "allOf" := s.allOf,
+        "anyOf" := s.anyOf,
         "title" := s.title,
         "required" := s.required,
         "type" := (if (s.nullable.getOrElse(false))
@@ -53,6 +55,10 @@ trait JsonSchemaCirceEncoders {
         "then" := s.`then`,
         "else" := s.`else`,
         "$defs" := s.$defs,
+        "const" := s.const,
+        "unevaluatedProperties" := s.unevaluatedProperties,
+        "dependentRequired" := s.dependentRequired,
+        "dependentSchemas" := s.dependentSchemas,
         "extensions" := s.extensions
       )
     }

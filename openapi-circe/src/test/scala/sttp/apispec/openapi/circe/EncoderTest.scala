@@ -5,10 +5,12 @@ package threeone
 
 import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
+import sttp.apispec.test._
 
 import scala.collection.immutable.ListMap
 
 class EncoderTest extends AnyFunSuite with ResourcePlatform with circe.SttpOpenAPI3_1CirceEncoders {
+  override val basedir = "openapi-circe"
 
   val petstore: OpenAPI = OpenAPI(
     openapi = "3.1.0",

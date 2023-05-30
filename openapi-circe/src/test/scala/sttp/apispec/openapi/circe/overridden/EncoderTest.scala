@@ -5,9 +5,10 @@ import sttp.apispec._
 import sttp.apispec.openapi._
 import org.scalatest.funsuite.AnyFunSuite
 import scala.collection.immutable.ListMap
-import sttp.apispec.openapi.circe.ResourcePlatform
+import sttp.apispec.test._
 
 class EncoderTest extends AnyFunSuite with ResourcePlatform {
+  override val basedir = "openapi-circe"
   def refOr[A](a: A): ReferenceOr[A] = Right(a)
 
   test("any boolean") {

@@ -1,12 +1,17 @@
-package sttp.apispec.openapi.circe
+package sttp.apispec.test
 
 import io.circe.{Json, Error}
 import io.circe.parser.decode
 
 trait ResourcePlatform {
-  def rscPath(path: String): String = "openapi-circe/src/test/resources" + path
 
-  def rsc(path: String): String = {
+  /**
+   * @return Base directory of sbt project we should read resources from
+   */
+  def basedir: String
+  def resourcesPath(path: String): String = s"$basedir/src/test/resources$path"
+
+  def resourceAsString(path: String): String = {
     import scalajs.js.Dynamic.{global => g}
     val fs = g.require("fs")
 
@@ -14,11 +19,11 @@ trait ResourcePlatform {
       fs.readFileSync(name).toString
     }
 
-    readFile(rscPath(path))
+    readFile(resourcesPath(path))
   }
 
   def readJson(path: String): Either[Error, Json] = {
-    val string = rsc(path)
+    val string = resourceAsString(path)
     decode[Json](string)
   }
 }

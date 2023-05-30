@@ -63,8 +63,20 @@ trait JsonSchemaCirceDecoders {
     implicit def listPatternMapDecoder[A: Decoder]: Decoder[ListMap[Pattern, ReferenceOr[A]]] =
       Decoder.decodeOption(Decoder.decodeMapLike[Pattern, ReferenceOr[A], ListMap]).map(_.getOrElse(ListMap.empty))
 
+    implicit def listdependentFieldsDecoder: Decoder[ListMap[String, List[String]]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[String, List[String], ListMap]).map(_.getOrElse(ListMap.empty))
+
     implicit def listReference[A: Decoder]: Decoder[List[A]] =
       Decoder.decodeOption(Decoder.decodeList[A]).map(_.getOrElse(Nil))
+
+    def translateDefinitionsTo$def[A](decoder: Decoder[A]) = Decoder.instance { c =>
+      val modded = c.withFocus(_.mapObject { obj =>
+        val map = obj.toMap
+        val definitions = map.get("definitions").orElse(map.get("$defs"))
+        definitions.map(j => obj.remove("definitions").remove("$defs").add("$defs", j)).getOrElse(obj)
+      })
+      decoder.tryDecode(modded)
+    }
 
     def translateMinMax[A](decoder: Decoder[A]) = Decoder.instance { c =>
       val modded = c.withFocus(_.mapObject { obj =>
@@ -87,11 +99,13 @@ trait JsonSchemaCirceDecoders {
 
     withExtensions(
       translateMinMax(
-        deriveDecoder[Schema].map(s =>
-          s.`type` match {
-            case Some(ArraySchemaType(x :: SchemaType.Null :: Nil)) => s.copy(`type` = Some(x), nullable = Some(true))
-            case _                                                  => s
-          }
+        translateDefinitionsTo$def(
+          deriveDecoder[Schema].map(s =>
+            s.`type` match {
+              case Some(ArraySchemaType(x :: SchemaType.Null :: Nil)) => s.copy(`type` = Some(x), nullable = Some(true))
+              case _                                                  => s
+            }
+          )
         )
       )
     )
