@@ -5,9 +5,9 @@ import io.circe.parser.decode
 
 trait ResourcePlatform {
 
-  /**
-   * @return Base directory of sbt project we should read resources from
-   */
+  /** @return
+    *   Base directory of sbt project we should read resources from
+    */
   def basedir: String
   def resourcesPath(path: String): String = s"$basedir/src/test/resources$path"
 
