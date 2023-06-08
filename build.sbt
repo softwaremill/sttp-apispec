@@ -3,7 +3,7 @@ import com.softwaremill.Publish.ossPublishSettings
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 
-val scala2_12 = "2.12.17"
+val scala2_12 = "2.12.18"
 val scala2_13 = "2.13.10"
 val scala3 = "3.3.0"
 
