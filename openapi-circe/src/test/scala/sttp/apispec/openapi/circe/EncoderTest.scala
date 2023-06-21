@@ -9,7 +9,7 @@ import sttp.apispec.test._
 
 import scala.collection.immutable.ListMap
 
-class EncoderTest extends AnyFunSuite with ResourcePlatform with circe.SttpOpenAPI3_1CirceEncoders {
+class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirceEncoders {
   override val basedir = "openapi-circe"
 
   val petstore: OpenAPI = OpenAPI(
