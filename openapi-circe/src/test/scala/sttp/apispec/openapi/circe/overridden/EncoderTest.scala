@@ -12,7 +12,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
   def refOr[A](a: A): ReferenceOr[A] = Right(a)
 
   test("any boolean") {
-    object obj extends sttp.apispec.openapi.circe.SttpOpenAPI3_1CirceEncoders
+    object obj extends sttp.apispec.openapi.circe.SttpOpenAPICirceEncoders
     import obj._
 
     val components = Components(
@@ -35,7 +35,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
   }
 
   test("any object") {
-    object obj extends sttp.apispec.openapi.circe.SttpOpenAPI3_1CirceEncoders {
+    object obj extends sttp.apispec.openapi.circe.SttpOpenAPICirceEncoders {
       override val anyObjectEncoding: AnySchema.Encoding = AnySchema.Encoding.Object
     }
 

@@ -63,24 +63,24 @@ import sttp.apispec.openapi._
 
 import scala.collection.immutable.ListMap
 
-val openApi3_0 = OpenAPI(
-  openapi = "3.0.3",
+val openApi3_1_0 = OpenAPI(
+  openapi = "3.1.0",
   info = Info(title = "Fruits", version = "1.0"),
   paths = Paths(ListMap("/" ->
     PathItem(get = Some(Operation(
       operationId = Some("getRoot"),
       responses = Responses(ListMap(ResponsesCodeKey(200) -> Right(Response(description = "")))))))))
-) // define example OpenAPI 3.0.3 model
+) // define example OpenAPI 3.1.0 model
 
-val openApi3_1 = openApi3_0.openapi("3.1.0") // and example OpenAPI 3.1.0 model
+val openApi3_0_3 = openApi3_1_0.openapi("3.0.3") // and example OpenAPI 3.0.3 model
 ```
 
 Encode it to the Open API YAML string:
 ```scala
 import sttp.apispec.openapi.circe.yaml._
 
-val yaml = openApi3_0.toYaml // converts model to OpenApi 3.0.3 yaml string
-val yaml3_1 = openApi3_1.toYaml3_1 // converts model to OpenApi 3.1.0 yaml string
+val yaml3_1_0 = openApi3_1_0.toYaml // converts model to OpenApi 3.1.0 yaml string
+val yaml3_0_3 = openApi3_0_3.toYaml3_0_3 // converts model to OpenApi 3.0.3 yaml string
 ```
 
 ### Async API
