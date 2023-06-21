@@ -11,25 +11,25 @@ trait SttpOpenAPICirceYaml {
 
     /** Converts `OpenAPI` to Open Api 3.0.3 YAML string */
     def toYaml3_0_3: String = {
-      import sttp.apispec.openapi.circe._
+      import sttp.apispec.openapi.circe_openapi_3_0_3._
       Printer(dropNullKeys = true, preserveOrder = true).pretty(openAPI.asJson)
     }
 
     /** Converts `OpenAPI` to Open Api 3.0.3 YAML string */
     def toYaml3_0_3(stringStyle: StringStyle): String = {
-      import sttp.apispec.openapi.circe._
+      import sttp.apispec.openapi.circe_openapi_3_0_3._
       Printer(dropNullKeys = true, preserveOrder = true, stringStyle = stringStyle).pretty(openAPI.asJson)
     }
 
     /** Converts `OpenAPI` to Open Api 3.1.0 YAML string */
     def toYaml: String = {
-      import sttp.apispec.openapi.circe_openapi_3_1._
+      import sttp.apispec.openapi.circe._
       Printer(dropNullKeys = true, preserveOrder = true).pretty(openAPI.asJson)
     }
 
     /** Converts `OpenAPI` to Open Api 3.1.0 YAML string */
     def toYaml(stringStyle: StringStyle): String = {
-      import sttp.apispec.openapi.circe_openapi_3_1._
+      import sttp.apispec.openapi.circe._
       Printer(dropNullKeys = true, preserveOrder = true, stringStyle = stringStyle).pretty(openAPI.asJson)
     }
   }
