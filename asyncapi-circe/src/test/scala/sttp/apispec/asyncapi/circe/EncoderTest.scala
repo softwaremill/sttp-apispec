@@ -7,12 +7,10 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import scala.collection.immutable.ListMap
 import io.circe.syntax._
-import sttp.apispec.test.ResourcePlatform
 
-class EncoderTest extends AnyFunSuite with ResourcePlatform {
-  override def basedir: String = "asyncapi-circe"
+class EncoderTest extends AnyFunSuite{
 
-  private val tokenUrl = basedir + "-token"
+  private val tokenUrl = "asyncapi-circe" + "-token"
 
   test("encode as expected") {
     val expected =
@@ -39,7 +37,30 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
   }
 
   test("encode security schema with empty scopes") {
-    val Right(expectedSecuritySchema) = readJson("/securitySchema/security-schema-with-empty-scopes.json")
+    val expectedSecuritySchema =
+      parse(
+        """{
+          |  "type" : "oauth2",
+          |  "description" : null,
+          |  "name" : null,
+          |  "in" : null,
+          |  "scheme" : null,
+          |  "bearerFormat" : null,
+          |  "flows" : {
+          |    "implicit" : null,
+          |    "password" : null,
+          |    "clientCredentials" : {
+          |      "authorizationUrl" : null,
+          |      "tokenUrl" : "asyncapi-circe-token",
+          |      "refreshUrl" : null,
+          |      "scopes" : {
+          |
+          |      }
+          |    },
+          |    "authorizationCode" : null
+          |  },
+          |  "openIdConnectUrl" : null
+          |}""".stripMargin)
 
     val scopesRequirement: ListMap[String, String] = ListMap.empty[String, String]
     val clientCredentialsSecurityScheme: Option[SecurityScheme] =
@@ -72,7 +93,30 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
   }
 
   test("encode security schema with not empty scopes") {
-    val Right(expectedSecuritySchema) = readJson("/securitySchema/security-schema-with-scopes.json")
+    val expectedSecuritySchema =
+      parse(
+        """{
+          |  "type" : "oauth2",
+          |  "description" : null,
+          |  "name" : null,
+          |  "in" : null,
+          |  "scheme" : null,
+          |  "bearerFormat" : null,
+          |  "flows" : {
+          |    "implicit" : null,
+          |    "password" : null,
+          |    "clientCredentials" : {
+          |      "authorizationUrl" : null,
+          |      "tokenUrl" : "asyncapi-circe-token",
+          |      "refreshUrl" : null,
+          |      "scopes" : {
+          |        "example" : "description"
+          |      }
+          |    },
+          |    "authorizationCode" : null
+          |  },
+          |  "openIdConnectUrl" : null
+          |}""".stripMargin)
 
     val scopesRequirement: ListMap[String, String] = ListMap("example" -> "description")
     val clientCredentialsSecurityScheme: Option[SecurityScheme] =
