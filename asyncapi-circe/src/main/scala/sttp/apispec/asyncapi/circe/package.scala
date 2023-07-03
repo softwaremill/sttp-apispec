@@ -18,7 +18,13 @@ package circe {
     // note: these are strict val-s, order matters!
     override val openApi30: Boolean = true
 
-    implicit val encoderOAuthFlow: Encoder[OAuthFlow] = deriveEncoder[OAuthFlow].mapJsonObject(expandExtensions)
+    implicit val encoderOAuthFlow: Encoder[OAuthFlow] = {
+      import scala.collection.immutable.ListMap
+      implicit def encodeListMap: Encoder[ListMap[String, String]] = doEncodeListMap(nullWhenEmpty = false)
+
+      deriveEncoder[OAuthFlow].mapJsonObject(expandExtensions)
+    }
+
     implicit val encoderOAuthFlows: Encoder[OAuthFlows] = deriveEncoder[OAuthFlows].mapJsonObject(expandExtensions)
     implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
       deriveEncoder[SecurityScheme].mapJsonObject(expandExtensions)
