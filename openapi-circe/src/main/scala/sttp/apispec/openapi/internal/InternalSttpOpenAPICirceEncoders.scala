@@ -10,7 +10,11 @@ import sttp.apispec.internal.JsonSchemaCirceEncoders
 import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
-  implicit val encoderOAuthFlow: Encoder[OAuthFlow] = deriveEncoder[OAuthFlow].mapJsonObject(expandExtensions)
+  implicit val encoderOAuthFlow: Encoder[OAuthFlow] = {
+    implicit def encodeListMap: Encoder[ListMap[String, String]] = doEncodeListMap(nullWhenEmpty = false)
+
+    deriveEncoder[OAuthFlow].mapJsonObject(expandExtensions)
+  }
   implicit val encoderOAuthFlows: Encoder[OAuthFlows] = deriveEncoder[OAuthFlows].mapJsonObject(expandExtensions)
   implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
     deriveEncoder[SecurityScheme].mapJsonObject(expandExtensions)

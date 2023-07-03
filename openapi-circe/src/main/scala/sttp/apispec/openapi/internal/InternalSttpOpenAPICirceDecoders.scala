@@ -17,7 +17,12 @@ trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
   )
   implicit val tagDecoder: Decoder[Tag] = withExtensions(deriveDecoder[Tag])
 
-  implicit val oauthFlowDecoder: Decoder[OAuthFlow] = withExtensions(deriveDecoder[OAuthFlow])
+  implicit val oauthFlowDecoder: Decoder[OAuthFlow] = {
+    implicit def listMapDecoder: Decoder[ListMap[String, String]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[String, String, ListMap]).map(_.getOrElse(ListMap.empty))
+
+    withExtensions(deriveDecoder[OAuthFlow])
+  }
   implicit val oauthFlowsDecoder: Decoder[OAuthFlows] = withExtensions(deriveDecoder[OAuthFlows])
   implicit val securitySchemeDecoder: Decoder[SecurityScheme] = withExtensions(deriveDecoder[SecurityScheme])
 

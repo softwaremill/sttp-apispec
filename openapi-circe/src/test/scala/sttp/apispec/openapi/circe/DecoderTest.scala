@@ -4,9 +4,12 @@ package circe
 
 import sttp.apispec.test._
 import org.scalatest.funsuite.AnyFunSuite
+import scala.collection.immutable.ListMap
 
 class DecoderTest extends AnyFunSuite with ResourcePlatform {
   override val basedir = "openapi-circe"
+
+  private val tokenUrl = basedir + "-token"
 
   test("petstore deserialize") {
     val Right(openapi) = readJson("/petstore/basic-petstore.json").flatMap(_.as[OpenAPI]): @unchecked
@@ -41,5 +44,27 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     assert(schemas.nonEmpty)
     val Right(model) = schemas("model"): @unchecked
     assert(model.asInstanceOf[Schema].properties.size === 12)
+  }
+
+  test("decode security schema with not empty scopes") {
+    val expectedScopes = Some(Some(ListMap("example" -> "description")))
+    val expectedToken = Some(Some(Some(tokenUrl)))
+
+    val Right(securityScheme) =
+      readJson("/securitySchema/security-schema-with-scopes.json").flatMap(_.as[SecurityScheme]): @unchecked
+
+    assert(securityScheme.flows.map(_.clientCredentials.map(_.tokenUrl)) === expectedToken)
+    assert(securityScheme.flows.map(_.clientCredentials.map(_.scopes)) === expectedScopes)
+  }
+
+  test("decode security schema with empty scopes") {
+    val expectedScopes = Some(Some(ListMap.empty[String, String]))
+    val expectedToken = Some(Some(Some(tokenUrl)))
+
+    val Right(securityScheme) =
+      readJson("/securitySchema/security-schema-with-empty-scopes.json").flatMap(_.as[SecurityScheme]): @unchecked
+
+    assert(securityScheme.flows.map(_.clientCredentials.map(_.tokenUrl)) === expectedToken)
+    assert(securityScheme.flows.map(_.clientCredentials.map(_.scopes)) === expectedScopes)
   }
 }

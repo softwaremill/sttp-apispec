@@ -1,0 +1,22 @@
+{
+  "type" : "oauth2",
+  "description" : null,
+  "name" : null,
+  "in" : null,
+  "scheme" : null,
+  "bearerFormat" : null,
+  "flows" : {
+    "implicit" : null,
+    "password" : null,
+    "clientCredentials" : {
+      "authorizationUrl" : null,
+      "tokenUrl" : "openapi-circe-token",
+      "refreshUrl" : null,
+      "scopes" : {
+        "example" : "description"
+      }
+    },
+    "authorizationCode" : null
+  },
+  "openIdConnectUrl" : null
+}
