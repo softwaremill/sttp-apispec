@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import scala.collection.immutable.ListMap
 import io.circe.syntax._
 
-class EncoderTest extends AnyFunSuite{
+class EncoderTest extends AnyFunSuite {
 
   private val tokenUrl = "asyncapi-circe" + "-token"
 
@@ -38,8 +38,7 @@ class EncoderTest extends AnyFunSuite{
 
   test("encode security schema with empty scopes") {
     val expectedSecuritySchema =
-      parse(
-        """{
+      parse("""{
           |  "type" : "oauth2",
           |  "description" : null,
           |  "name" : null,
@@ -94,8 +93,7 @@ class EncoderTest extends AnyFunSuite{
 
   test("encode security schema with not empty scopes") {
     val expectedSecuritySchema =
-      parse(
-        """{
+      parse("""{
           |  "type" : "oauth2",
           |  "description" : null,
           |  "name" : null,
