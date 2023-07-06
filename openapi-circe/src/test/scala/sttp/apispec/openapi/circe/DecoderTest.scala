@@ -9,8 +9,6 @@ import scala.collection.immutable.ListMap
 class DecoderTest extends AnyFunSuite with ResourcePlatform {
   override val basedir = "openapi-circe"
 
-  private val tokenUrl = basedir + "-token"
-
   test("petstore deserialize") {
     val Right(openapi) = readJson("/petstore/basic-petstore.json").flatMap(_.as[OpenAPI]): @unchecked
 
@@ -48,7 +46,7 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
 
   test("decode security schema with not empty scopes") {
     val expectedScopes = Some(Some(ListMap("example" -> "description")))
-    val expectedToken = Some(Some(Some(tokenUrl)))
+    val expectedToken = Some(Some(Some("openapi-circe-token")))
 
     val Right(securityScheme) =
       readJson("/securitySchema/security-schema-with-scopes.json").flatMap(_.as[SecurityScheme]): @unchecked
@@ -59,7 +57,7 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
 
   test("decode security schema with empty scopes") {
     val expectedScopes = Some(Some(ListMap.empty[String, String]))
-    val expectedToken = Some(Some(Some(tokenUrl)))
+    val expectedToken = Some(Some(Some("openapi-circe-token")))
 
     val Right(securityScheme) =
       readJson("/securitySchema/security-schema-with-empty-scopes.json").flatMap(_.as[SecurityScheme]): @unchecked

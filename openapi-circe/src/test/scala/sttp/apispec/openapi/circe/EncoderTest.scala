@@ -12,10 +12,7 @@ import scala.collection.immutable.ListMap
 class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirceEncoders {
   override val basedir = "openapi-circe"
 
-  private val tokenUrl = basedir + "-token"
-
   val petstore: OpenAPI = OpenAPI(
-    openapi = "3.1.0",
     info = Info(
       title = "Sample Pet Store App",
       summary = Some("A pet store manager."),
@@ -114,7 +111,6 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
     )
 
     val openapi = OpenAPI(
-      openapi = "3.1.0",
       info = Info(title = "API", version = "1.0.0"),
       components = Some(components)
     )
@@ -143,7 +139,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
               Some(
                 OAuthFlow(
                   authorizationUrl = None,
-                  tokenUrl = Some(tokenUrl),
+                  tokenUrl = Some("openapi-circe-token"),
                   refreshUrl = None,
                   scopes = scopesRequirement
                 )
@@ -176,7 +172,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
               Some(
                 OAuthFlow(
                   authorizationUrl = None,
-                  tokenUrl = Some(tokenUrl),
+                  tokenUrl = Some("openapi-circe-token"),
                   refreshUrl = None,
                   scopes = scopesRequirement
                 )

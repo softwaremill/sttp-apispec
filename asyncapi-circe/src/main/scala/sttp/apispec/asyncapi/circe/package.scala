@@ -19,6 +19,7 @@ package circe {
     override val openApi30: Boolean = true
 
     implicit val encoderOAuthFlow: Encoder[OAuthFlow] = {
+      // #79: all OAuth flow object MUST include a scopes field, but it MAY be empty.
       import scala.collection.immutable.ListMap
       implicit def encodeListMap: Encoder[ListMap[String, String]] = doEncodeListMap(nullWhenEmpty = false)
 

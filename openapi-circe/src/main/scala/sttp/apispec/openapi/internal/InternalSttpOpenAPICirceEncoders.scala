@@ -11,6 +11,7 @@ import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
   implicit val encoderOAuthFlow: Encoder[OAuthFlow] = {
+    // #79: all OAuth flow object MUST include a scopes field, but it MAY be empty.
     implicit def encodeListMap: Encoder[ListMap[String, String]] = doEncodeListMap(nullWhenEmpty = false)
 
     deriveEncoder[OAuthFlow].mapJsonObject(expandExtensions)
