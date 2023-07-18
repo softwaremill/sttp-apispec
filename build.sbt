@@ -29,7 +29,7 @@ val scala3Settings = Seq(
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.apispec",
   mimaPreviousArtifacts := Set.empty,
-  versionScheme := Some("semver-spec")
+  versionScheme := Some("early-semver")
 ) ++ scala3Settings
 
 val commonJvmSettings = commonSettings ++ Seq(
@@ -87,9 +87,9 @@ lazy val projectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STT
 val compileAndTest = "compile->compile;test->test"
 
 lazy val rootProject = (project in file("."))
-  .settings(commonSettings: _*)
+  .settings(commonSettings*)
   .settings(publish / skip := true, name := "sttp-apispec", scalaVersion := scala2_13)
-  .aggregate(projectAggregates: _*)
+  .aggregate(projectAggregates*)
 
 lazy val circeTestUtils: ProjectMatrix = (projectMatrix in file("circe-testutils"))
   .settings(commonSettings)
