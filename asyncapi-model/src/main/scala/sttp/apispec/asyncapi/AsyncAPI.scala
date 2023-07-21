@@ -14,14 +14,14 @@ import sttp.apispec.{
 import scala.collection.immutable.ListMap
 
 case class AsyncAPI(
-    asyncapi: String = "2.0.0",
-    id: Option[String],
+    asyncapi: String = "2.6.0",
+    id: Option[String] = None,
     info: Info,
-    servers: ListMap[String, Server],
-    channels: ListMap[String, ReferenceOr[ChannelItem]],
-    components: Option[Components],
-    tags: List[Tag],
-    externalDocs: Option[ExternalDocumentation],
+    servers: ListMap[String, Server] = ListMap.empty,
+    channels: ListMap[String, ReferenceOr[ChannelItem]] = ListMap.empty,
+    components: Option[Components] = None,
+    tags: List[Tag] = Nil,
+    externalDocs: Option[ExternalDocumentation] = None,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 ) {
   def id(id: String): AsyncAPI = copy(id = Some(id))
@@ -71,24 +71,42 @@ case class ServerVariable(
 )
 
 case class ChannelItem(
-    description: Option[String],
-    subscribe: Option[Operation],
-    publish: Option[Operation],
-    parameters: ListMap[String, ReferenceOr[Parameter]],
-    bindings: List[ChannelBinding],
+    description: Option[String] = None,
+    subscribe: Option[Operation] = None,
+    publish: Option[Operation] = None,
+    parameters: ListMap[String, ReferenceOr[Parameter]] = ListMap.empty,
+    bindings: List[ChannelBinding] = Nil,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 )
+
+object ChannelItem {
+  def empty: ChannelItem =
+    ChannelItem()
+
+  def subscribe(op: Operation): ChannelItem = ChannelItem(subscribe = Some(op))
+
+  def publish(op: Operation): ChannelItem = ChannelItem(publish = Some(op))
+}
+
+
 case class Operation(
-    operationId: Option[String],
-    summary: Option[String],
-    description: Option[String],
-    tags: List[Tag],
-    externalDocs: Option[ExternalDocumentation],
-    bindings: List[OperationBinding],
-    traits: List[OperationTrait],
-    message: Option[ReferenceOr[Message]],
+    operationId: Option[String] = None,
+    summary: Option[String] = None,
+    description: Option[String] = None,
+    tags: List[Tag] = Nil,
+    externalDocs: Option[ExternalDocumentation] = None,
+    bindings: List[OperationBinding] = Nil,
+    traits: List[OperationTrait] = Nil,
+    message: Option[ReferenceOr[Message]] = None,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 )
+
+object Operation {
+  def empty: Operation = Operation()
+
+  def inlineMessage(payload: Message): Operation =
+    Operation(message = Some(Right(payload)))
+}
 
 case class OperationTrait(
     operationId: Option[String],
@@ -139,6 +157,14 @@ case class WebSocketMessageBinding() extends MessageBinding
 case class KafkaMessageBinding(key: Option[Schema], bindingVersion: Option[String]) extends MessageBinding
 
 sealed trait Message
+
+object Message {
+  def singleInline(payload: String, schemaFormat: Option[String] = None): SingleMessage =
+    SingleMessage(
+      payload = Some(Left(AnyValue(payload))),
+      schemaFormat = schemaFormat
+    )
+}
 case class OneOfMessage(oneOf: List[SingleMessage]) extends Message
 case class SingleMessage(
     headers: Option[ReferenceOr[Schema]] = None,
