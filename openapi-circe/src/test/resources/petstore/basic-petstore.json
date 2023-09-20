@@ -19,8 +19,18 @@
   "paths": {
     "/pets": {
       "get": {
-        "operationId": "getPets",
         "description": "Gets all pets",
+        "operationId": "getPets",
+        "parameters": [
+          {
+            "explode": true,
+            "name": "species",
+            "in": "query",
+            "schema": {
+              "type": "array"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
