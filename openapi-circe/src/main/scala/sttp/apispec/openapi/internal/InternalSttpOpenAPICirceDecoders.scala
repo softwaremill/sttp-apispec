@@ -87,7 +87,15 @@ trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
       extensions <- c.getOrElse[ListMap[String, ExtensionValue]]("extensions")(ListMap.empty)
     } yield Responses(responses, extensions)
   })
-  implicit val parameterDecoder: Decoder[Parameter] = withExtensions(deriveDecoder[Parameter])
+  implicit val parameterDecoder: Decoder[Parameter] = {
+    implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, ReferenceOr[A]]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[String, ReferenceOr[A], ListMap]).map(_.getOrElse(ListMap.empty))
+
+    implicit def listMapMediaTypeDecoder: Decoder[ListMap[String, MediaType]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[String, MediaType, ListMap]).map(_.getOrElse(ListMap.empty))
+
+    withExtensions(deriveDecoder[Parameter])
+  }
   implicit val callbackDecoder: Decoder[Callback] = deriveDecoder[Callback]
   implicit val operationDecoder: Decoder[Operation] = {
     implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, ReferenceOr[A]]] =
