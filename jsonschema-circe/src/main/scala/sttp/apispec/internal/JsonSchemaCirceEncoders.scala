@@ -225,7 +225,7 @@ trait JsonSchemaCirceEncoders {
   private[apispec] def expandExtensions(jsonObject: JsonObject): JsonObject = {
     val extensions = jsonObject("extensions")
     val jsonWithoutExt = jsonObject.filterKeys(_ != "extensions")
-    extensions.flatMap(_.asObject).map(extObject => jsonWithoutExt.deepMerge(extObject)).getOrElse(jsonWithoutExt)
+    extensions.flatMap(_.asObject).map(extObject => extObject.deepMerge(jsonWithoutExt)).getOrElse(jsonWithoutExt)
   }
 
 }
