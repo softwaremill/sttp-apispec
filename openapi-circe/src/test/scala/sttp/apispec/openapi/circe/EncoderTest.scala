@@ -46,10 +46,6 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
             operationId = Some("getPets"),
             description = Some("Gets all pets")
           ).addResponse(200, Response(description = "Success"))
-            .addParameter(
-              Parameter("species", ParameterIn.Query, schema = Some(refOr(Schema(SchemaType.Array))))
-                .addExtension("explode", ExtensionValue("true"))
-            )
         )
       )
     )

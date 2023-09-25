@@ -88,6 +88,7 @@ object ChannelItem {
   def publish(op: Operation): ChannelItem = ChannelItem(publish = Some(op))
 }
 
+
 case class Operation(
     operationId: Option[String] = None,
     summary: Option[String] = None,

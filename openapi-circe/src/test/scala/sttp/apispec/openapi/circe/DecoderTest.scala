@@ -2,9 +2,8 @@ package sttp.apispec
 package openapi
 package circe
 
-import org.scalatest.funsuite.AnyFunSuite
 import sttp.apispec.test._
-
+import org.scalatest.funsuite.AnyFunSuite
 import scala.collection.immutable.ListMap
 
 class DecoderTest extends AnyFunSuite with ResourcePlatform {
