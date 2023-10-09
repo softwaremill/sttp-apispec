@@ -16,7 +16,18 @@ package circe {
 
   trait SttpAsyncAPICirceEncoders extends JsonSchemaCirceEncoders {
     // note: these are strict val-s, order matters!
-    override val openApi30: Boolean = true
+    implicit val encoderReference: Encoder[Reference] = deriveEncoder[Reference]
+    implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
+      case Left(Reference(ref, summary, description)) =>
+        Json
+          .obj(
+            s"$$ref" := ref,
+            "summary" := summary,
+            "description" := description
+          )
+          .dropNullValues
+      case Right(t) => implicitly[Encoder[T]].apply(t)
+    }
 
     implicit val encoderOAuthFlow: Encoder[OAuthFlow] = {
       // #79: all OAuth flow object MUST include a scopes field, but it MAY be empty.
@@ -111,10 +122,10 @@ package circe {
 
     private def nullIfEmpty[T](a: List[T])(otherwise: => Json): Json = if (a.isEmpty) Json.Null else otherwise
 
-    implicit val encoderMessagePayload: Encoder[Option[Either[AnyValue, ReferenceOr[Schema]]]] = {
+    implicit val encoderMessagePayload: Encoder[Option[Either[AnyValue, Schema]]] = {
       case None           => Json.Null
       case Some(Left(av)) => encoderAnyValue.apply(av)
-      case Some(Right(s)) => encoderReferenceOr[Schema].apply(s)
+      case Some(Right(s)) => encoderSchema.apply(s)
     }
 
     implicit val encoderMessageTrait: Encoder[MessageTrait] =

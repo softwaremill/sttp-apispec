@@ -26,16 +26,17 @@ object AnySchema {
 
 // todo: xml
 case class Schema(
+    $ref: Option[String] = None,
     $schema: Option[String] = None,
-    allOf: List[ReferenceOr[SchemaLike]] = List.empty,
+    allOf: List[SchemaLike] = List.empty,
     title: Option[String] = None,
     required: List[String] = List.empty,
     `type`: Option[SchemaType] = None,
-    prefixItems: Option[List[ReferenceOr[SchemaLike]]] = None,
-    items: Option[ReferenceOr[SchemaLike]] = None,
-    contains: Option[ReferenceOr[SchemaLike]] = None,
-    properties: ListMap[String, ReferenceOr[SchemaLike]] = ListMap.empty,
-    patternProperties: ListMap[Pattern, ReferenceOr[SchemaLike]] = ListMap.empty,
+    prefixItems: Option[List[SchemaLike]] = None,
+    items: Option[SchemaLike] = None,
+    contains: Option[SchemaLike] = None,
+    properties: ListMap[String, SchemaLike] = ListMap.empty,
+    patternProperties: ListMap[Pattern, SchemaLike] = ListMap.empty,
     description: Option[String] = None,
     format: Option[String] = None,
     default: Option[ExampleValue] = None,
@@ -44,9 +45,9 @@ case class Schema(
     writeOnly: Option[Boolean] = None,
     example: Option[ExampleValue] = None,
     deprecated: Option[Boolean] = None,
-    oneOf: List[ReferenceOr[SchemaLike]] = List.empty,
+    oneOf: List[SchemaLike] = List.empty,
     discriminator: Option[Discriminator] = None,
-    additionalProperties: Option[ReferenceOr[SchemaLike]] = None,
+    additionalProperties: Option[SchemaLike] = None,
     pattern: Option[Pattern] = None,
     minLength: Option[Int] = None,
     maxLength: Option[Int] = None,
@@ -57,18 +58,18 @@ case class Schema(
     minItems: Option[Int] = None,
     maxItems: Option[Int] = None,
     `enum`: Option[List[ExampleSingleValue]] = None,
-    not: Option[ReferenceOr[SchemaLike]] = None,
-    `if`: Option[ReferenceOr[SchemaLike]] = None,
-    `then`: Option[ReferenceOr[SchemaLike]] = None,
-    `else`: Option[ReferenceOr[SchemaLike]] = None,
+    not: Option[SchemaLike] = None,
+    `if`: Option[SchemaLike] = None,
+    `then`: Option[SchemaLike] = None,
+    `else`: Option[SchemaLike] = None,
     $defs: Option[ListMap[String, SchemaLike]] = None,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty,
     $id: Option[String] = None,
     const: Option[ExampleValue] = None,
-    anyOf: List[ReferenceOr[SchemaLike]] = List.empty,
-    unevaluatedProperties: Option[ReferenceOr[SchemaLike]] = None,
+    anyOf: List[SchemaLike] = List.empty,
+    unevaluatedProperties: Option[SchemaLike] = None,
     dependentRequired: ListMap[String, List[String]] = ListMap.empty,
-    dependentSchemas: ListMap[String, ReferenceOr[SchemaLike]] = ListMap.empty
+    dependentSchemas: ListMap[String, SchemaLike] = ListMap.empty
 ) extends SchemaLike
 
 case class Discriminator(propertyName: String, mapping: Option[ListMap[String, String]])
@@ -76,8 +77,10 @@ case class Discriminator(propertyName: String, mapping: Option[ListMap[String, S
 object Schema {
   def apply(schemaType: SchemaType): Schema = new Schema(`type` = Some(schemaType))
 
-  def apply(references: List[ReferenceOr[Schema]], discriminator: Option[Discriminator]): Schema =
-    new Schema(oneOf = references, discriminator = discriminator)
+  def oneOf(references: List[SchemaLike], discriminator: Option[Discriminator]): Schema =
+    Schema(oneOf = references, discriminator = discriminator)
+
+  def referenceTo(prefix: String, $ref: String): Schema = Schema($ref = Some(s"$prefix${$ref}"))
 }
 
 sealed trait SchemaType

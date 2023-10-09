@@ -28,7 +28,7 @@ class EncoderTest extends AnyFunSuite {
     val comp = Components(messages =
       ListMap(
         "string" -> Right(
-          SingleMessage(payload = Some(Right(Right(Schema(SchemaType.String)))), contentType = Some("text/plain"))
+          SingleMessage(payload = Some(Right(Schema(SchemaType.String))), contentType = Some("text/plain"))
         )
       )
     )

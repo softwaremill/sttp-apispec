@@ -1,10 +1,10 @@
-package sttp.apispec
-package openapi
-package circe
-package threeone
+package sttp.apispec.openapi.circe.threeone
 
 import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
+import sttp.apispec._
+import sttp.apispec.openapi._
+import sttp.apispec.openapi.circe.SttpOpenAPICirceEncoders
 import sttp.apispec.test._
 
 import scala.collection.immutable.ListMap
@@ -63,48 +63,38 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
 
     val components = Components(
       schemas = ListMap(
-        "model" -> refOr(
-          Schema(SchemaType.Object).copy(
-            properties = ListMap(
-              "one" -> refOr(
-                schemaTypeAndDescription("type array", ArraySchemaType(List(SchemaType.Integer, SchemaType.String)))
-              ),
-              "two" -> refOr(schemaTypeAndDescription("type 'null'", SchemaType.Null)),
-              "three" -> refOr(
-                schemaTypeAndDescription(
-                  "type array including 'null'",
-                  ArraySchemaType(List(SchemaType.String, SchemaType.Null))
-                )
-              ),
-              "four" -> refOr(schemaTypeAndDescription("array with no items", SchemaType.Array)),
-              "five" -> refOr(
-                schemaTypeAndDescription("singular example", SchemaType.String)
-                  .copy(example = Some(ExampleSingleValue("exampleValue")))
-              ),
-              "six" -> refOr(
-                Schema(
-                  description = Some("exclusiveMinimum true"),
-                  exclusiveMinimum = Some(true),
-                  minimum = Some(BigDecimal(10))
-                )
-              ),
-              "seven" -> refOr(Schema(description = Some("exclusiveMinimum false"), minimum = Some(BigDecimal(10)))),
-              "eight" -> refOr(
-                Schema(
-                  description = Some("exclusiveMaximum true"),
-                  exclusiveMaximum = Some(true),
-                  maximum = Some(BigDecimal(20))
-                )
-              ),
-              "nine" -> refOr(Schema(description = Some("exclusiveMaximum false"), maximum = Some(BigDecimal(20)))),
-              "ten" -> refOr(
-                schemaTypeAndDescription("nullable string", SchemaType.String).copy(nullable = Some(true))
-              ),
-              "eleven" -> refOr(
-                schemaTypeAndDescription("x-nullable string", ArraySchemaType(List(SchemaType.String, SchemaType.Null)))
-              ),
-              "twelve" -> refOr(Schema(description = Some("file/binary")))
-            )
+        "model" -> Schema(SchemaType.Object).copy(
+          properties = ListMap(
+            "one" -> schemaTypeAndDescription(
+              "type array",
+              ArraySchemaType(List(SchemaType.Integer, SchemaType.String))
+            ),
+            "two" -> schemaTypeAndDescription("type 'null'", SchemaType.Null),
+            "three" -> schemaTypeAndDescription(
+              "type array including 'null'",
+              ArraySchemaType(List(SchemaType.String, SchemaType.Null))
+            ),
+            "four" -> schemaTypeAndDescription("array with no items", SchemaType.Array),
+            "five" -> schemaTypeAndDescription("singular example", SchemaType.String)
+              .copy(example = Some(ExampleSingleValue("exampleValue"))),
+            "six" -> Schema(
+              description = Some("exclusiveMinimum true"),
+              exclusiveMinimum = Some(true),
+              minimum = Some(BigDecimal(10))
+            ),
+            "seven" -> Schema(description = Some("exclusiveMinimum false"), minimum = Some(BigDecimal(10))),
+            "eight" -> Schema(
+              description = Some("exclusiveMaximum true"),
+              exclusiveMaximum = Some(true),
+              maximum = Some(BigDecimal(20))
+            ),
+            "nine" -> Schema(description = Some("exclusiveMaximum false"), maximum = Some(BigDecimal(20))),
+            "ten" -> schemaTypeAndDescription("nullable string", SchemaType.String).copy(nullable = Some(true)),
+            "eleven" -> schemaTypeAndDescription(
+              "x-nullable string",
+              ArraySchemaType(List(SchemaType.String, SchemaType.Null))
+            ),
+            "twelve" -> Schema(description = Some("file/binary"))
           )
         )
       )

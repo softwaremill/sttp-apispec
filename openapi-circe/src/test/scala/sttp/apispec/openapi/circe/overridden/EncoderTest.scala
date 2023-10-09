@@ -17,13 +17,12 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     val components = Components(
       schemas = ListMap(
-        "anything_boolean" -> refOr(AnySchema.Anything),
-        "nothing_boolean" -> refOr(AnySchema.Nothing)
+        "anything_boolean" -> AnySchema.Anything,
+        "nothing_boolean" -> AnySchema.Nothing
       )
     )
 
     val openapi = OpenAPI(
-      openapi = "3.1.0",
       info = Info(title = "API", version = "1.0.0"),
       components = Some(components)
     )
@@ -43,13 +42,12 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     val components = Components(
       schemas = ListMap(
-        "anything_object" -> refOr(AnySchema.Anything),
-        "nothing_object" -> refOr(AnySchema.Nothing)
+        "anything_object" -> AnySchema.Anything,
+        "nothing_object" -> AnySchema.Nothing
       )
     )
 
     val openapi = OpenAPI(
-      openapi = "3.1.0",
       info = Info(title = "API", version = "1.0.0"),
       components = Some(components)
     )

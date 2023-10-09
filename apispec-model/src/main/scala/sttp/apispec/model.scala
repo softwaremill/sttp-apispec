@@ -2,12 +2,6 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
-case class Reference($ref: String, summary: Option[String] = None, description: Option[String] = None)
-
-object Reference {
-  def to(prefix: String, $ref: String): Reference = new Reference(s"$prefix${$ref}")
-}
-
 sealed trait ExampleValue
 case class ExampleSingleValue(value: Any) extends ExampleValue
 case class ExampleMultipleValue(values: List[Any]) extends ExampleValue

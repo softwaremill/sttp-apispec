@@ -19,6 +19,7 @@ trait JsonSchemaCirceEncoders {
       val maxKey = if (s.exclusiveMaximum.getOrElse(false)) "exclusiveMaximum" else "maximum"
       JsonObject(
         s"$$id" := s.$id,
+        s"$$ref" := s.$ref,
         s"$$schema" := s.$schema,
         "allOf" := s.allOf,
         "anyOf" := s.anyOf,
@@ -105,18 +106,6 @@ trait JsonSchemaCirceEncoders {
     .mapJsonObject(expandExtensions)
 
   // note: these are strict val-s, order matters!
-  implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
-    case Left(Reference(ref, summary, description)) =>
-      Json
-        .obj(
-          s"$$ref" := ref,
-          "summary" := summary,
-          "description" := description
-        )
-        .dropNullValues
-    case Right(t) => implicitly[Encoder[T]].apply(t)
-  }
-
   implicit val extensionValue: Encoder[ExtensionValue] =
     Encoder.instance(e => parse(e.value).getOrElse(Json.fromString(e.value)))
 
@@ -175,8 +164,6 @@ trait JsonSchemaCirceEncoders {
     case s: AnySchema => encoderAnySchema(s)
     case s: Schema    => encoderSchema(s)
   }
-
-  implicit val encoderReference: Encoder[Reference] = deriveEncoder[Reference]
 
   implicit def encodeList[T: Encoder]: Encoder[List[T]] = {
     case Nil        => Json.Null

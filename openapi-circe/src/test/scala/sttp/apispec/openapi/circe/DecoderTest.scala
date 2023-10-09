@@ -21,8 +21,8 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
     assert(schemas.nonEmpty)
-    assert(schemas("anything_boolean") === Right(AnySchema.Anything))
-    assert(schemas("nothing_boolean") === Right(AnySchema.Nothing))
+    assert(schemas("anything_boolean") === AnySchema.Anything)
+    assert(schemas("nothing_boolean") === AnySchema.Nothing)
   }
 
   test("spec any nothing schema object") {
@@ -31,8 +31,8 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
     assert(schemas.nonEmpty)
-    assert(schemas("anything_object") === Right(AnySchema.Anything))
-    assert(schemas("nothing_object") === Right(AnySchema.Nothing))
+    assert(schemas("anything_object") === AnySchema.Anything)
+    assert(schemas("nothing_object") === AnySchema.Nothing)
   }
 
   test("all schemas types") {
@@ -40,7 +40,7 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
     assert(schemas.nonEmpty)
-    val Right(model) = schemas("model"): @unchecked
+    val model = schemas("model")
     assert(model.asInstanceOf[Schema].properties.size === 12)
   }
 
