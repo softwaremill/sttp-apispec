@@ -11,6 +11,8 @@ import sttp.apispec.internal.JsonSchemaCirceDecoders
 import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
+  implicit val referenceDecoder: Decoder[Reference] = deriveDecoder[Reference]
+  implicit def decodeReferenceOr[A: Decoder]: Decoder[ReferenceOr[A]] = referenceDecoder.either(Decoder[A])
 
   implicit val externalDocumentationDecoder: Decoder[ExternalDocumentation] = withExtensions(
     deriveDecoder[ExternalDocumentation]
@@ -115,7 +117,7 @@ trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
     def getComp[A: Decoder](name: String): Decoder.Result[Comp[A]] =
       c.get[Option[Comp[A]]](name).map(_.getOrElse(ListMap.empty))
     for {
-      schemas <- getComp[SchemaLike]("schemas")
+      schemas <- c.get[Option[ListMap[String, SchemaLike]]]("schemas").map(_.getOrElse(ListMap.empty))
       responses <- getComp[Response]("responses")
       parameters <- getComp[Parameter]("parameters")
       examples <- getComp[Example]("examples")

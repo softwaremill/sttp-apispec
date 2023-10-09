@@ -8,9 +8,6 @@ import io.circe.generic.semiauto.deriveDecoder
 import scala.collection.immutable.ListMap
 
 trait JsonSchemaCirceDecoders {
-  implicit val referenceDecoder: Decoder[Reference] = deriveDecoder[Reference]
-  implicit def decodeReferenceOr[A: Decoder]: Decoder[ReferenceOr[A]] = referenceDecoder.either(Decoder[A])
-
   implicit val decodeBasicSchemaType: Decoder[BasicSchemaType] = Decoder.decodeString.emap {
     case SchemaType.Integer.value => SchemaType.Integer.asRight
     case SchemaType.Boolean.value => SchemaType.Boolean.asRight
@@ -57,13 +54,13 @@ trait JsonSchemaCirceDecoders {
     Decoder.decodeMapLike[String, ExtensionValue, ListMap].map(_.filter(_._1.startsWith("x-")))
 
   implicit val schemaDecoder: Decoder[Schema] = {
-    implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, ReferenceOr[A]]] =
-      Decoder.decodeOption(Decoder.decodeMapLike[String, ReferenceOr[A], ListMap]).map(_.getOrElse(ListMap.empty))
+    implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, A]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[String, A, ListMap]).map(_.getOrElse(ListMap.empty))
 
-    implicit def listPatternMapDecoder[A: Decoder]: Decoder[ListMap[Pattern, ReferenceOr[A]]] =
-      Decoder.decodeOption(Decoder.decodeMapLike[Pattern, ReferenceOr[A], ListMap]).map(_.getOrElse(ListMap.empty))
+    implicit def listPatternMapDecoder[A: Decoder]: Decoder[ListMap[Pattern, A]] =
+      Decoder.decodeOption(Decoder.decodeMapLike[Pattern, A, ListMap]).map(_.getOrElse(ListMap.empty))
 
-    implicit def listdependentFieldsDecoder: Decoder[ListMap[String, List[String]]] =
+    implicit def listDependentFieldsDecoder: Decoder[ListMap[String, List[String]]] =
       Decoder.decodeOption(Decoder.decodeMapLike[String, List[String], ListMap]).map(_.getOrElse(ListMap.empty))
 
     implicit def listReference[A: Decoder]: Decoder[List[A]] =

@@ -4,7 +4,6 @@ import sttp.apispec.{
   ExampleValue,
   ExtensionValue,
   ExternalDocumentation,
-  ReferenceOr,
   Schema,
   SecurityRequirement,
   SecurityScheme,
@@ -166,9 +165,9 @@ object Message {
 }
 case class OneOfMessage(oneOf: List[SingleMessage]) extends Message
 case class SingleMessage(
-    headers: Option[ReferenceOr[Schema]] = None,
-    payload: Option[Either[AnyValue, ReferenceOr[Schema]]] = None,
-    correlationId: Option[ReferenceOr[Schema]] = None,
+    headers: Option[Schema] = None,
+    payload: Option[Either[AnyValue, Schema]] = None,
+    correlationId: Option[Schema] = None,
     schemaFormat: Option[String] = None,
     contentType: Option[String] = None,
     name: Option[String] = None,
@@ -184,8 +183,8 @@ case class SingleMessage(
 ) extends Message
 
 case class MessageTrait(
-    headers: Option[ReferenceOr[Schema]] = None,
-    correlationId: Option[ReferenceOr[Schema]] = None,
+    headers: Option[Schema] = None,
+    correlationId: Option[Schema] = None,
     schemaFormat: Option[String] = None,
     contentType: Option[String] = None,
     name: Option[String] = None,
@@ -201,7 +200,7 @@ case class MessageTrait(
 
 // TODO: serverBindings, channelBindings, operationBindings, messageBindings
 case class Components(
-    schemas: ListMap[String, ReferenceOr[Schema]] = ListMap.empty,
+    schemas: ListMap[String, Schema] = ListMap.empty,
     messages: ListMap[String, ReferenceOr[Message]] = ListMap.empty,
     securitySchemes: ListMap[String, ReferenceOr[SecurityScheme]] = ListMap.empty,
     parameters: ListMap[String, ReferenceOr[Parameter]] = ListMap.empty,
@@ -218,3 +217,9 @@ case class CorrelationId(
 )
 
 case class AnyValue(value: String)
+
+case class Reference($ref: String, summary: Option[String] = None, description: Option[String] = None)
+
+object Reference {
+  def to(prefix: String, $ref: String): Reference = new Reference(s"$prefix${$ref}")
+}
