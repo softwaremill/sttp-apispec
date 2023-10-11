@@ -13,6 +13,9 @@ trait JsonSchemaCirceEncoders {
 
   def openApi30: Boolean = false
 
+  private[apispec] def addNullable(isNullable: Option[Boolean])(json: Json, f: Json => Json): Json =
+    if (isNullable.getOrElse(false)) f(json) else json
+
   val jsonSchemaEncoder: Encoder[Schema] = Encoder.AsObject
     .instance { (s: Schema) =>
       val minKey = if (s.exclusiveMinimum.getOrElse(false)) "exclusiveMinimum" else "minimum"
@@ -22,12 +25,12 @@ trait JsonSchemaCirceEncoders {
         s"$$ref" := s.$ref,
         s"$$schema" := s.$schema,
         "allOf" := s.allOf,
-        "anyOf" := s.anyOf,
+        "anyOf" := addNullable(s.nullable)
+        (s.anyOf.asJson, _.mapArray(anyOf => anyOf :+ Json.fromJsonObject(JsonObject(("type", Json.fromString("null")))))),
         "title" := s.title,
         "required" := s.required,
-        "type" := (if (s.nullable.getOrElse(false))
-                     s.`type`.map(s => Json.arr(s.asJson, Json.fromString("null"))).asJson
-                   else s.`type`.asJson),
+        "type" := addNullable(s.nullable)
+        (s.`type`.asJson, json => Json.arr(json, Json.fromString("null"))),
         "prefixItems" := s.prefixItems,
         "items" := s.items,
         "contains" := s.contains,
@@ -40,7 +43,8 @@ trait JsonSchemaCirceEncoders {
         "writeOnly" := s.writeOnly,
         "example" := s.example,
         "deprecated" := s.deprecated,
-        "oneOf" := s.oneOf,
+        "oneOf" := addNullable(s.nullable)
+        (s.oneOf.asJson, _.mapArray(oneOf => oneOf :+ Json.fromJsonObject(JsonObject(("type", Json.fromString("null")))))),
         "discriminator" := s.discriminator,
         "additionalProperties" := s.additionalProperties,
         "pattern" := s.pattern,
