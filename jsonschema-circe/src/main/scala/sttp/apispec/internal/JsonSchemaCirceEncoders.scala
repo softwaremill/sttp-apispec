@@ -18,9 +18,9 @@ trait JsonSchemaCirceEncoders {
       val minKey = if (s.exclusiveMinimum.getOrElse(false)) "exclusiveMinimum" else "minimum"
       val maxKey = if (s.exclusiveMaximum.getOrElse(false)) "exclusiveMaximum" else "maximum"
       JsonObject(
-        s"$$id" := s.$id,
-        s"$$ref" := s.$ref,
-        s"$$schema" := s.$schema,
+        "$id" := s.$id,
+        "$ref" := s.$ref,
+        "$schema" := s.$schema,
         "allOf" := s.allOf,
         "anyOf" := s.anyOf,
         "title" := s.title,
@@ -68,6 +68,7 @@ trait JsonSchemaCirceEncoders {
   val encoderSchema30: Encoder[Schema] = Encoder.AsObject
     .instance { (s: Schema) =>
       JsonObject(
+        "$ref" := s.$ref,
         "allOf" := s.allOf,
         "title" := s.title,
         "required" := s.required,
