@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       STTP_NATIVE: 1
-      JAVA_OPTS: -Xmx4G -Xss4M
+      JAVA_OPTS: -Xmx4G -Xss4M # larger stack needed due to Circe generating large trees: https://github.com/lampepfl/dotty/issues/18669
     steps:
     - name: Checkout
       uses: actions/checkout@v2
