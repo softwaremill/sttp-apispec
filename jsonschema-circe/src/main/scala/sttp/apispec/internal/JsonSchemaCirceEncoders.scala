@@ -17,7 +17,13 @@ trait JsonSchemaCirceEncoders {
     .instance { (s: Schema) =>
       val minKey = if (s.exclusiveMinimum.getOrElse(false)) "exclusiveMinimum" else "minimum"
       val maxKey = if (s.exclusiveMaximum.getOrElse(false)) "exclusiveMaximum" else "maximum"
-      JsonObject(
+
+      val needsNullableWrapper = (s.$ref, s.nullable) match {
+        case (Some(_), Some(true)) => true
+        case _                     => false
+      }
+
+      val result = JsonObject(
         "$id" := s.$id,
         "$ref" := s.$ref,
         "$schema" := s.$schema,
@@ -62,12 +68,23 @@ trait JsonSchemaCirceEncoders {
         "dependentSchemas" := s.dependentSchemas,
         "extensions" := s.extensions
       )
+
+      // nullable ref types in openapi 3.1
+      if (needsNullableWrapper) JsonObject("oneOf" := Json.arr(result.asJson, JsonObject("type" := "null").asJson))
+      else result
     }
     .mapJsonObject(expandExtensions)
 
   val encoderSchema30: Encoder[Schema] = Encoder.AsObject
     .instance { (s: Schema) =>
-      JsonObject(
+      val needsNullableWrapper = (s.$ref, s.nullable) match {
+        case (Some(_), Some(true)) => true
+        case _                     => false
+      }
+
+      val isNullable = s.nullable.filter(_ => !needsNullableWrapper)
+
+      val result = JsonObject(
         "$ref" := s.$ref,
         "allOf" := s.allOf,
         "title" := s.title,
@@ -100,9 +117,14 @@ trait JsonSchemaCirceEncoders {
         "maxItems" := s.maxItems,
         "enum" := s.`enum`,
         "not" := s.not,
-        "nullable" := s.nullable,
+        "nullable" := isNullable,
         "extensions" := s.extensions
       )
+
+      // nullable ref types in openapi 3.0
+      // See: https://stackoverflow.com/questions/40920441/how-to-specify-a-property-can-be-null-or-a-reference-with-swagger
+      if (needsNullableWrapper) JsonObject("allOf" := Json.arr(result.asJson), "nullable" := true)
+      else result
     }
     .mapJsonObject(expandExtensions)
 
