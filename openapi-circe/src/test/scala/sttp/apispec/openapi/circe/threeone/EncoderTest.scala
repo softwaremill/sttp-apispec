@@ -68,8 +68,9 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
     val withComponents = withPathItem.components(Components(schemas = ListMap(
       "Pet" -> petSchema
     )))
-
-    val serialized = withComponents.asJson
+    val server = Server(url = "http://petstore.swagger.io/v1")
+    val withServer = withComponents.servers(List(server))
+    val serialized = withServer.asJson
     val Right(json) = readJson("/petstore/basic-petstore.json"): @unchecked
 
     assert(serialized === json)

@@ -45,7 +45,7 @@ trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
   implicit val infoDecoder: Decoder[Info] = withExtensions(deriveDecoder[Info])
 
   implicit val serverVariableDecoder: Decoder[ServerVariable] = deriveDecoder[ServerVariable]
-  implicit val serverDecoder: Decoder[Server] = deriveDecoder[Server]
+  implicit val serverDecoder: Decoder[Server] = withExtensions(deriveDecoder[Server])
   implicit val linkDecoder: Decoder[Link] = deriveDecoder[Link]
 
   implicit val parameterInDecoder: Decoder[ParameterIn] = Decoder.decodeString.emap {
