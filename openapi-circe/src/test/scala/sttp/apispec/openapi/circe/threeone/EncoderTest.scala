@@ -37,6 +37,10 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
 
   def refOr[A](a: A): ReferenceOr[A] = Right(a)
 
+  def arrayOf(s: SchemaLike) = Schema(`type` = Some(SchemaType.Array), items = Some(s))
+
+  def ref(s: String): SchemaLike = Schema($ref = Some(s))
+
   test("petstore serialize") {
     val withPathItem = petstore.addPathItem(
       "/pets",
@@ -45,12 +49,28 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
           Operation(
             operationId = Some("getPets"),
             description = Some("Gets all pets")
-          ).addResponse(200, Response(description = "Success"))
+          ).addResponse(200, Response(
+            description = "Success", 
+            content = ListMap("application/json" ->
+              MediaType(schema = Some(arrayOf(ref("#/components/schemas/Pet"))))
+            )  
+          ))
         )
       )
     )
-
-    val serialized = withPathItem.asJson
+    val petSchema = Schema(
+        `type` = Some(SchemaType.Object), 
+        properties = 
+          ListMap("id" -> Schema(`type` = Some(SchemaType.Integer), format = Some("int32")),
+            "name" -> Schema(`type` = Some(SchemaType.String))
+          )
+      )
+    val withComponents = withPathItem.components(Components(schemas = ListMap(
+      "Pet" -> petSchema
+    )))
+    val server = Server(url = "http://petstore.swagger.io/v1")
+    val withServer = withComponents.servers(List(server))
+    val serialized = withServer.asJson
     val Right(json) = readJson("/petstore/basic-petstore.json"): @unchecked
 
     assert(serialized === json)
