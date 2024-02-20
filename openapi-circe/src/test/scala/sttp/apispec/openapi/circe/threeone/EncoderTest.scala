@@ -49,25 +49,33 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
           Operation(
             operationId = Some("getPets"),
             description = Some("Gets all pets")
-          ).addResponse(200, Response(
-            description = "Success", 
-            content = ListMap("application/json" ->
-              MediaType(schema = Some(arrayOf(ref("#/components/schemas/Pet"))))
-            )  
-          ))
+          ).addResponse(
+            200,
+            Response(
+              description = "Success",
+              content = ListMap(
+                "application/json" ->
+                  MediaType(schema = Some(arrayOf(ref("#/components/schemas/Pet"))))
+              )
+            )
+          )
         )
       )
     )
     val petSchema = Schema(
-        `type` = Some(SchemaType.Object), 
-        properties = 
-          ListMap("id" -> Schema(`type` = Some(SchemaType.Integer), format = Some("int32")),
-            "name" -> Schema(`type` = Some(SchemaType.String))
-          )
+      `type` = Some(SchemaType.Object),
+      properties = ListMap(
+        "id" -> Schema(`type` = Some(SchemaType.Integer), format = Some("int32")),
+        "name" -> Schema(`type` = Some(SchemaType.String))
       )
-    val withComponents = withPathItem.components(Components(schemas = ListMap(
-      "Pet" -> petSchema
-    )))
+    )
+    val withComponents = withPathItem.components(
+      Components(schemas =
+        ListMap(
+          "Pet" -> petSchema
+        )
+      )
+    )
     val server = Server(url = "http://petstore.swagger.io/v1")
     val withServer = withComponents.servers(List(server))
     val serialized = withServer.asJson
