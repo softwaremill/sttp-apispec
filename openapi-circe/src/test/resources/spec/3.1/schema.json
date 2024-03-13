@@ -68,6 +68,13 @@
           },
           "twelve": {
             "description": "file/binary"
+          },
+          "thirteen": {
+            "description": "array with unique items",
+            "type": [
+              "string"
+            ],
+            "uniqueItems": true
           }
         }
       }
