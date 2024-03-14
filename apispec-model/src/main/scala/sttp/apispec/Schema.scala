@@ -34,6 +34,7 @@ case class Schema(
     `type`: Option[SchemaType] = None,
     prefixItems: Option[List[SchemaLike]] = None,
     items: Option[SchemaLike] = None,
+    uniqueItems: Option[Boolean] = None,
     contains: Option[SchemaLike] = None,
     properties: ListMap[String, SchemaLike] = ListMap.empty,
     patternProperties: ListMap[Pattern, SchemaLike] = ListMap.empty,

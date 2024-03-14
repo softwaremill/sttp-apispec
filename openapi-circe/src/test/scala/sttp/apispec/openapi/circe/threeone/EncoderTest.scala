@@ -114,7 +114,9 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
               "x-nullable string",
               ArraySchemaType(List(SchemaType.String, SchemaType.Null))
             ),
-            "twelve" -> Schema(description = Some("file/binary"))
+            "twelve" -> Schema(description = Some("file/binary")),
+            "thirteen" -> schemaTypeAndDescription("array with unique items", ArraySchemaType(List(SchemaType.String)))
+              .copy(uniqueItems = Some(true)),
           )
         )
       )
