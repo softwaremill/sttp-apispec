@@ -2,9 +2,7 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
-sealed trait ExampleValue
-case class ExampleSingleValue(value: Any) extends ExampleValue
-case class ExampleMultipleValue(values: List[Any]) extends ExampleValue
+case class ExampleValue(value: Any)
 
 case class Tag(
     name: String,

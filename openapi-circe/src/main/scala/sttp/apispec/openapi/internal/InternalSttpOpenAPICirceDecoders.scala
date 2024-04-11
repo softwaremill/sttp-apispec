@@ -29,9 +29,6 @@ trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
   implicit def listMapStringStringDecoder: Decoder[ListMap[String, String]] =
     listMapStringADecoder
 
-  implicit val externalDocumentationDecoder: Decoder[ExternalDocumentation] = withExtensions(
-    deriveDecoder[ExternalDocumentation]
-  )
   implicit val tagDecoder: Decoder[Tag] = withExtensions(deriveDecoder[Tag])
 
   // #79: all OAuth flow object MUST include a scopes field, but it MAY be empty.

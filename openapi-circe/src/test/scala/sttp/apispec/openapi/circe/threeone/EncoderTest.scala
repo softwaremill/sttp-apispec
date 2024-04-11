@@ -37,7 +37,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
 
   def refOr[A](a: A): ReferenceOr[A] = Right(a)
 
-  def arrayOf(s: SchemaLike) = Schema(`type` = Some(SchemaType.Array), items = Some(s))
+  def arrayOf(s: SchemaLike) = Schema(`type` = Some(List(SchemaType.Array)), items = Some(s))
 
   def ref(s: String): SchemaLike = Schema($ref = Some(s))
 
@@ -50,19 +50,19 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
             operationId = Some("getPets"),
             description = Some("Gets all pets")
           ).addResponse(200, Response(
-            description = "Success", 
+            description = "Success",
             content = ListMap("application/json" ->
               MediaType(schema = Some(arrayOf(ref("#/components/schemas/Pet"))))
-            )  
+            )
           ))
         )
       )
     )
     val petSchema = Schema(
-        `type` = Some(SchemaType.Object), 
-        properties = 
-          ListMap("id" -> Schema(`type` = Some(SchemaType.Integer), format = Some("int32")),
-            "name" -> Schema(`type` = Some(SchemaType.String))
+        `type` = Some(List(SchemaType.Object)),
+        properties =
+          ListMap("id" -> Schema(`type` = Some(List(SchemaType.Integer)), format = Some("int32")),
+            "name" -> Schema(`type` = Some(List(SchemaType.String)))
           )
       )
     val withComponents = withPathItem.components(Components(schemas = ListMap(
@@ -77,9 +77,8 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
   }
 
   test("full schema") {
-
-    def schemaTypeAndDescription(desc: String, typ: SchemaType) =
-      Schema(description = Some(desc), `type` = Some(typ))
+    def schemaTypeAndDescription(desc: String, types: SchemaType*) =
+      Schema(description = Some(desc), `type` = Some(types.toList))
 
     val components = Components(
       schemas = ListMap(
@@ -87,35 +86,35 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
           properties = ListMap(
             "one" -> schemaTypeAndDescription(
               "type array",
-              ArraySchemaType(List(SchemaType.Integer, SchemaType.String))
+              SchemaType.Integer,
+              SchemaType.String
             ),
             "two" -> schemaTypeAndDescription("type 'null'", SchemaType.Null),
             "three" -> schemaTypeAndDescription(
               "type array including 'null'",
-              ArraySchemaType(List(SchemaType.String, SchemaType.Null))
+              SchemaType.String,
+              SchemaType.Null
             ),
             "four" -> schemaTypeAndDescription("array with no items", SchemaType.Array),
-            "five" -> schemaTypeAndDescription("singular example", SchemaType.String)
-              .copy(example = Some(ExampleSingleValue("exampleValue"))),
+            "five" -> schemaTypeAndDescription("examples", SchemaType.String)
+              .copy(examples = Some(List(ExampleValue("exampleValue"), ExampleValue("otherExample")))),
             "six" -> Schema(
               description = Some("exclusiveMinimum true"),
-              exclusiveMinimum = Some(true),
-              minimum = Some(BigDecimal(10))
+              exclusiveMinimum = Some(BigDecimal(10)),
             ),
             "seven" -> Schema(description = Some("exclusiveMinimum false"), minimum = Some(BigDecimal(10))),
             "eight" -> Schema(
               description = Some("exclusiveMaximum true"),
-              exclusiveMaximum = Some(true),
-              maximum = Some(BigDecimal(20))
+              exclusiveMaximum = Some(BigDecimal(20)),
             ),
             "nine" -> Schema(description = Some("exclusiveMaximum false"), maximum = Some(BigDecimal(20))),
-            "ten" -> schemaTypeAndDescription("nullable string", SchemaType.String).copy(nullable = Some(true)),
-            "eleven" -> schemaTypeAndDescription(
-              "x-nullable string",
-              ArraySchemaType(List(SchemaType.String, SchemaType.Null))
+            "ten" -> schemaTypeAndDescription(
+              "nullable string",
+              SchemaType.String,
+              SchemaType.Null
             ),
-            "twelve" -> Schema(description = Some("file/binary")),
-            "thirteen" -> schemaTypeAndDescription("array with unique items", ArraySchemaType(List(SchemaType.String)))
+            "eleven" -> Schema(description = Some("file/binary")),
+            "twelve" -> schemaTypeAndDescription("array with unique items", SchemaType.Array)
               .copy(uniqueItems = Some(true)),
           )
         )

@@ -32,9 +32,9 @@
             "type": "array"
           },
           "five": {
-            "description": "singular example",
+            "description": "examples",
             "type": "string",
-            "example": "exampleValue"
+            "examples": ["exampleValue", "otherExample"]
           },
           "six": {
             "description": "exclusiveMinimum true",
@@ -60,20 +60,11 @@
             ]
           },
           "eleven": {
-            "description": "x-nullable string",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "twelve": {
             "description": "file/binary"
           },
-          "thirteen": {
+          "twelve": {
             "description": "array with unique items",
-            "type": [
-              "string"
-            ],
+            "type": "array",
             "uniqueItems": true
           }
         }

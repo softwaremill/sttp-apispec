@@ -41,8 +41,6 @@ package circe {
     implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
       deriveEncoder[SecurityScheme].mapJsonObject(expandExtensions)
 
-    implicit val encoderExternalDocumentation: Encoder[ExternalDocumentation] =
-      deriveEncoder[ExternalDocumentation].mapJsonObject(expandExtensions)
     implicit val encoderTag: Encoder[Tag] = deriveEncoder[Tag].mapJsonObject(expandExtensions)
 
     implicit val encoderAnyValue: Encoder[AnyValue] = (av: AnyValue) => {
