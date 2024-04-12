@@ -97,7 +97,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform with SttpOpenAPICirc
             ),
             "four" -> schemaTypeAndDescription("array with no items", SchemaType.Array),
             "five" -> schemaTypeAndDescription("examples", SchemaType.String)
-              .copy(examples = Some(List(ExampleValue("exampleValue"), ExampleValue("otherExample")))),
+              .copy(examples = Some(List(ExampleValue.string("exampleValue"), ExampleValue.string("otherExample")))),
             "six" -> Schema(
               description = Some("exclusiveMinimum true"),
               exclusiveMinimum = Some(BigDecimal(10)),

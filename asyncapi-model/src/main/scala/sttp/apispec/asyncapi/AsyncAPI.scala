@@ -165,37 +165,37 @@ object Message {
 }
 case class OneOfMessage(oneOf: List[SingleMessage]) extends Message
 case class SingleMessage(
-    headers: Option[Schema] = None,
-    payload: Option[Either[AnyValue, Schema]] = None,
-    correlationId: Option[Schema] = None,
-    schemaFormat: Option[String] = None,
-    contentType: Option[String] = None,
-    name: Option[String] = None,
-    title: Option[String] = None,
-    summary: Option[String] = None,
-    description: Option[String] = None,
-    tags: List[Tag] = Nil,
-    externalDocs: Option[ExternalDocumentation] = None,
-    bindings: List[MessageBinding] = Nil,
-    examples: List[Map[String, List[ExampleValue]]] = Nil,
-    traits: List[ReferenceOr[MessageTrait]] = Nil,
-    extensions: ListMap[String, ExtensionValue] = ListMap.empty
+                          headers: Option[Schema] = None,
+                          payload: Option[Either[AnyValue, Schema]] = None,
+                          correlationId: Option[Schema] = None,
+                          schemaFormat: Option[String] = None,
+                          contentType: Option[String] = None,
+                          name: Option[String] = None,
+                          title: Option[String] = None,
+                          summary: Option[String] = None,
+                          description: Option[String] = None,
+                          tags: List[Tag] = Nil,
+                          externalDocs: Option[ExternalDocumentation] = None,
+                          bindings: List[MessageBinding] = Nil,
+                          examples: List[Map[String, List[ExampleValue]]] = Nil,
+                          traits: List[ReferenceOr[MessageTrait]] = Nil,
+                          extensions: ListMap[String, ExtensionValue] = ListMap.empty
 ) extends Message
 
 case class MessageTrait(
-    headers: Option[Schema] = None,
-    correlationId: Option[Schema] = None,
-    schemaFormat: Option[String] = None,
-    contentType: Option[String] = None,
-    name: Option[String] = None,
-    title: Option[String] = None,
-    summary: Option[String] = None,
-    description: Option[String] = None,
-    tags: List[Tag] = Nil,
-    externalDocs: Option[ExternalDocumentation] = None,
-    bindings: List[MessageBinding] = Nil,
-    examples: ListMap[String, ExampleValue] = ListMap.empty,
-    extensions: ListMap[String, ExtensionValue] = ListMap.empty
+                         headers: Option[Schema] = None,
+                         correlationId: Option[Schema] = None,
+                         schemaFormat: Option[String] = None,
+                         contentType: Option[String] = None,
+                         name: Option[String] = None,
+                         title: Option[String] = None,
+                         summary: Option[String] = None,
+                         description: Option[String] = None,
+                         tags: List[Tag] = Nil,
+                         externalDocs: Option[ExternalDocumentation] = None,
+                         bindings: List[MessageBinding] = Nil,
+                         examples: ListMap[String, ExampleValue] = ListMap.empty,
+                         extensions: ListMap[String, ExtensionValue] = ListMap.empty
 )
 
 // TODO: serverBindings, channelBindings, operationBindings, messageBindings

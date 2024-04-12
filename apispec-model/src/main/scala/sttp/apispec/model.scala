@@ -2,8 +2,6 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
-case class ExampleValue(value: Any)
-
 case class Tag(
     name: String,
     description: Option[String] = None,

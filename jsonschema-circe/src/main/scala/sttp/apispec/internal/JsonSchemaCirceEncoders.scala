@@ -72,7 +72,7 @@ trait JsonSchemaCirceEncoders {
           "enum" := s.`enum`,
           "const" := s.const,
           "allOf" := wrappedNullableRef30.map(List(_)).getOrElse(s.allOf),
-          "anyOf" := (if(wrappedNullableRef30.isDefined) Nil else s.anyOf),
+          "anyOf" := (if (wrappedNullableRef30.isDefined) Nil else s.anyOf),
           "oneOf" := s.oneOf,
           "not" := s.not,
           "if" := s.`if`,
@@ -122,18 +122,8 @@ trait JsonSchemaCirceEncoders {
   implicit val extensionValue: Encoder[ExtensionValue] =
     Encoder.instance(e => parse(e.value).getOrElse(Json.fromString(e.value)))
 
-  implicit val encoderExampleValue: Encoder[ExampleValue] = {
-    case ExampleValue(value: String)     => parse(value).getOrElse(Json.fromString(value))
-    case ExampleValue(value: Int)        => Json.fromInt(value)
-    case ExampleValue(value: Long)       => Json.fromLong(value)
-    case ExampleValue(value: Float)      => Json.fromFloatOrString(value)
-    case ExampleValue(value: Double)     => Json.fromDoubleOrString(value)
-    case ExampleValue(value: Boolean)    => Json.fromBoolean(value)
-    case ExampleValue(value: BigDecimal) => Json.fromBigDecimal(value)
-    case ExampleValue(value: BigInt)     => Json.fromBigInt(value)
-    case ExampleValue(null)              => Json.Null
-    case ExampleValue(value)             => Json.fromString(value.toString)
-  }
+  implicit val encoderExampleValue: Encoder[ExampleValue] =
+    e => parse(e.json).fold(f => throw f.underlying, s => s)
 
   implicit val encoderSchemaType: Encoder[SchemaType] =
     _.value.asJson
