@@ -137,8 +137,7 @@ case class Schema(
       else copy(`type` = Some(types :+ SchemaType.Null))
 
     case None =>
-      val nullSchema = Schema(`type` = Some(List(SchemaType.Null)))
-
+      val nullSchema = Schema(SchemaType.Null)
       if(anyOf.contains(nullSchema)) this // ensure idempotency
       else if (anyOf.nonEmpty) copy(anyOf = anyOf :+ nullSchema)
       else Schema(anyOf = List(this, nullSchema))
