@@ -129,7 +129,7 @@ case class Schema(
 ) extends SchemaLike {
 
   /** Returns a Schema that allows `null` values in addition to the current schema. The implementation is idempotent,
-    * i.e. calling this method multiple times will not change the schema.
+    * i.e. `schema.nullable.nullable == schema.nullable`.
     */
   def nullable: Schema = `type` match {
     case Some(types) =>
@@ -148,8 +148,8 @@ case class Schema(
 case class Discriminator(propertyName: String, mapping: Option[ListMap[String, String]])
 
 object Schema {
-  def apply(schemaType: SchemaType): Schema =
-    new Schema(`type` = Some(List(schemaType)))
+  def apply(schemaType: SchemaType, moreTypes: SchemaType*): Schema =
+    new Schema(`type` = Some(schemaType :: moreTypes.toList))
 
   def oneOf(references: List[SchemaLike], discriminator: Option[Discriminator]): Schema =
     Schema(oneOf = references, discriminator = discriminator)
