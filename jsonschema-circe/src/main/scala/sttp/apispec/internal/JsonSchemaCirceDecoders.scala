@@ -87,7 +87,7 @@ trait JsonSchemaCirceDecoders {
     // but we model it as a List in the schema case class, and so the derived decoder expects an array.
     def adjustType(obj: JsonObject): JsonObject =
       obj("type") match {
-        case Some(tpe) if !tpe.isArray => obj.add("type", Json.arr(tpe))
+        case Some(tpe) if tpe.isString => obj.add("type", Json.arr(tpe))
         case _ => obj
       }
 
