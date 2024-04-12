@@ -41,7 +41,7 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
     assert(schemas.nonEmpty)
     val model = schemas("model")
-    assert(model.asInstanceOf[Schema].properties.size === 13)
+    assert(model.asInstanceOf[Schema].properties.size === 12)
   }
 
   test("decode security schema with not empty scopes") {
