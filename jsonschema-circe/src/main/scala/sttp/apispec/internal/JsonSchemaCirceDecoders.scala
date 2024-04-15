@@ -28,8 +28,19 @@ trait JsonSchemaCirceDecoders {
 
   implicit val discriminatorDecoder: Decoder[Discriminator] = deriveDecoder[Discriminator]
 
-  implicit val jsonStringDecoder: Decoder[ExampleValue] =
-    Decoder[Json].map(json => ExampleValue.rawJson(json.noSpaces))
+  implicit val exampleSingleValueDecoder: Decoder[ExampleSingleValue] =
+    Decoder[Json].map(json => json.asString.map(ExampleSingleValue(_)).getOrElse(ExampleSingleValue(json)))
+
+  implicit val exampleMultipleValueDecoder: Decoder[ExampleMultipleValue] =
+    Decoder[List[Json]].map { json =>
+      val listString = json.flatMap(_.asString)
+      if (listString.nonEmpty) {
+        ExampleMultipleValue(listString)
+      } else ExampleMultipleValue(json)
+    }
+
+  implicit val exampleValueDecoder: Decoder[ExampleValue] =
+    exampleMultipleValueDecoder.widen[ExampleValue].or(exampleSingleValueDecoder.widen[ExampleValue])
 
   implicit val extensionValueDecoder: Decoder[ExtensionValue] = Decoder[Json].map(j => ExtensionValue(j.spaces2))
 

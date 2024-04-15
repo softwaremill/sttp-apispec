@@ -35,6 +35,16 @@
           "exampleValue"
         ]
       },
+      "multi valued example" : {
+        "type" : "array",
+        "description" : "multi valued example",
+        "examples" : [
+          [
+            "ex1",
+            "ex1"
+          ]
+        ]
+      },
       "min/max": {
         "minimum": 10,
         "maximum": 20,

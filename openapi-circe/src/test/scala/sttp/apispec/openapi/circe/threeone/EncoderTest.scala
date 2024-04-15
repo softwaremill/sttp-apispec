@@ -88,7 +88,9 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
         schemaComponent("nullable string")(Schema(SchemaType.String, SchemaType.Null)),
         schemaComponent("nullable reference")(Schema.referenceTo("#/components/schemas/", "Foo").nullable),
         schemaComponent("single example")(Schema(SchemaType.String)
-          .copy(examples = Some(List(ExampleValue.string("exampleValue"))))),
+          .copy(examples = Some(List(ExampleSingleValue("exampleValue"))))),
+        schemaComponent("multi valued example")(Schema(SchemaType.Array)
+          .copy(examples = Some(List(ExampleMultipleValue(List("ex1", "ex1")))))),
         schemaComponent("min/max")(Schema(
           minimum = Some(BigDecimal(10)),
           maximum = Some(BigDecimal(20)),
@@ -114,15 +116,13 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     val schemas31 = ListMap(
       schemaComponent("multiple examples")(Schema(SchemaType.String)
-        .copy(examples = Some(List("ex1", "ex2").map(ExampleValue.string)))),
+        .copy(examples = Some(List("ex1", "ex2").map(ExampleSingleValue)))),
     )
 
     val openApiJson = fullSchemaOpenApi.copy(
       components = fullSchemaOpenApi.components.map(c => c.copy(schemas = c.schemas ++ schemas31))
     ).asJson
     val Right(json) = readJson("/spec/3.1/schema.json"): @unchecked
-
-    println(openApiJson)
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
   }
@@ -132,8 +132,6 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     val openApiJson = fullSchemaOpenApi.copy(openapi = "3.0.1").asJson
     val Right(json) = readJson("/spec/3.0/schema.json"): @unchecked
-
-    println(openApiJson)
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
   }

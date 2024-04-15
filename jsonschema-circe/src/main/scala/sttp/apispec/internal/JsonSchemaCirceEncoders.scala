@@ -122,8 +122,27 @@ trait JsonSchemaCirceEncoders {
   implicit val extensionValue: Encoder[ExtensionValue] =
     Encoder.instance(e => parse(e.value).getOrElse(Json.fromString(e.value)))
 
-  implicit val encoderExampleValue: Encoder[ExampleValue] =
-    e => parse(e.json).fold(f => throw f.underlying, s => s)
+  implicit val encoderExampleSingleValue: Encoder[ExampleSingleValue] = {
+    case ExampleSingleValue(value: String)     => parse(value).getOrElse(Json.fromString(value))
+    case ExampleSingleValue(value: Int)        => Json.fromInt(value)
+    case ExampleSingleValue(value: Long)       => Json.fromLong(value)
+    case ExampleSingleValue(value: Float)      => Json.fromFloatOrString(value)
+    case ExampleSingleValue(value: Double)     => Json.fromDoubleOrString(value)
+    case ExampleSingleValue(value: Boolean)    => Json.fromBoolean(value)
+    case ExampleSingleValue(value: BigDecimal) => Json.fromBigDecimal(value)
+    case ExampleSingleValue(value: BigInt)     => Json.fromBigInt(value)
+    case ExampleSingleValue(null)              => Json.Null
+    case ExampleSingleValue(value)             => Json.fromString(value.toString)
+  }
+
+  implicit val encoderMultipleExampleValue: Encoder[ExampleMultipleValue] = { e =>
+    Json.arr(e.values.map(v => encoderExampleSingleValue(ExampleSingleValue(v))): _*)
+  }
+
+  implicit val encoderExampleValue: Encoder[ExampleValue] = {
+    case e: ExampleMultipleValue => encoderMultipleExampleValue.apply(e)
+    case e: ExampleSingleValue   => encoderExampleSingleValue.apply(e)
+  }
 
   implicit val encoderSchemaType: Encoder[SchemaType] =
     _.value.asJson
