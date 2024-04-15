@@ -4,13 +4,13 @@ import scala.collection.immutable.ListMap
 
 case class SecurityScheme(
     `type`: String,
-    description: Option[String],
-    name: Option[String],
-    in: Option[String],
-    scheme: Option[String],
-    bearerFormat: Option[String],
-    flows: Option[OAuthFlows],
-    openIdConnectUrl: Option[String],
+    description: Option[String] = None,
+    name: Option[String] = None,
+    in: Option[String] = None,
+    scheme: Option[String] = None,
+    bearerFormat: Option[String] = None,
+    flows: Option[OAuthFlows] = None,
+    openIdConnectUrl: Option[String] = None,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 )
 
@@ -23,9 +23,9 @@ case class OAuthFlows(
 )
 
 case class OAuthFlow(
-    authorizationUrl: Option[String],
-    tokenUrl: Option[String],
-    refreshUrl: Option[String],
-    scopes: ListMap[String, String],
+    authorizationUrl: Option[String] = None,
+    tokenUrl: Option[String] = None,
+    refreshUrl: Option[String] = None,
+    scopes: ListMap[String, String] = ListMap.empty,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 )
