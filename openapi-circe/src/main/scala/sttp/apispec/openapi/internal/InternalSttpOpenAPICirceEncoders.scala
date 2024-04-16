@@ -82,8 +82,6 @@ trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
   implicit val encoderServerVariable: Encoder[ServerVariable] =
     deriveEncoder[ServerVariable].mapJsonObject(expandExtensions)
   implicit val encoderServer: Encoder[Server] = deriveEncoder[Server].mapJsonObject(expandExtensions)
-  implicit val encoderExternalDocumentation: Encoder[ExternalDocumentation] =
-    deriveEncoder[ExternalDocumentation].mapJsonObject(expandExtensions)
   implicit val encoderTag: Encoder[Tag] = deriveEncoder[Tag].mapJsonObject(expandExtensions)
   implicit val encoderInfo: Encoder[Info] = deriveEncoder[Info].mapJsonObject(expandExtensions)
   implicit val encoderContact: Encoder[Contact] = deriveEncoder[Contact].mapJsonObject(expandExtensions)

@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.0",
+  "openapi": "3.0.1",
   "info": {
     "title": "API",
     "version": "1.0.0"
@@ -11,19 +11,15 @@
         "description": "type 'null'"
       },
       "nullable string": {
-        "type": [
-          "string",
-          "null"
-        ],
+        "type": "string",
+        "nullable": true,
         "description": "nullable string"
       },
       "nullable reference": {
-        "anyOf": [
+        "nullable": true,
+        "allOf": [
           {
             "$ref": "#/components/schemas/Foo"
-          },
-          {
-            "type": "null"
           }
         ],
         "description": "nullable reference"
@@ -31,18 +27,14 @@
       "single example": {
         "type": "string",
         "description": "single example",
-        "examples": [
-          "exampleValue"
-        ]
+        "example": "exampleValue"
       },
       "multi valued example" : {
         "type" : "array",
         "description" : "multi valued example",
-        "examples" : [
-          [
-            "ex1",
-            "ex1"
-          ]
+        "example" : [
+          "ex1",
+          "ex1"
         ]
       },
       "min/max": {
@@ -51,8 +43,10 @@
         "description": "min/max"
       },
       "exclusive min/max": {
-        "exclusiveMinimum": 10,
-        "exclusiveMaximum": 20,
+        "minimum": 10,
+        "exclusiveMinimum": true,
+        "maximum": 20,
+        "exclusiveMaximum": true,
         "description": "exclusive min/max"
       },
       "exclusiveMinimum false": {
@@ -70,14 +64,6 @@
         "type": "array",
         "uniqueItems": true,
         "description": "array with unique items"
-      },
-      "multiple examples": {
-        "type": "string",
-        "description": "multiple examples",
-        "examples": [
-          "ex1",
-          "ex2"
-        ]
       }
     }
   }

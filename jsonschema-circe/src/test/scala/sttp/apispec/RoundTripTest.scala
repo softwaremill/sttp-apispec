@@ -15,6 +15,6 @@ class RoundTripTest extends AnyFunSuite with ResourcePlatform {
       $id = Some("http://yourdomain.com/schemas/myschema.json")
     )
     val decoded = Decoder[Schema].decodeJson(simple.asJson)
-    assert(decoded.isRight)
+    assert(decoded.isRight, decoded.fold(_.toString, _ => ""))
   }
 }

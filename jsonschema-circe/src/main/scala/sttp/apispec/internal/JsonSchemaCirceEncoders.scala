@@ -2,9 +2,9 @@ package sttp.apispec
 package internal
 
 import io.circe._
-import io.circe.syntax._
 import io.circe.generic.semiauto.deriveEncoder
 import io.circe.parser.parse
+import io.circe.syntax._
 
 import scala.collection.immutable.ListMap
 
@@ -13,120 +13,107 @@ trait JsonSchemaCirceEncoders {
 
   def openApi30: Boolean = false
 
-  val jsonSchemaEncoder: Encoder[Schema] = Encoder.AsObject
+  implicit lazy val encoderSchema: Encoder[Schema] = Encoder.AsObject
     .instance { (s: Schema) =>
-      val minKey = if (s.exclusiveMinimum.getOrElse(false)) "exclusiveMinimum" else "minimum"
-      val maxKey = if (s.exclusiveMaximum.getOrElse(false)) "exclusiveMaximum" else "maximum"
+      val nullSchema = Schema(`type` = Some(List(SchemaType.Null)))
 
-      val needsNullableWrapper = (s.$ref, s.nullable) match {
-        case (Some(_), Some(true)) => true
-        case _                     => false
+      // Nullable $ref Schema is represented as {"anyOf": [{"$ref": "some-ref"}, {"type": "null"}]}
+      // In OpenAPI 3.0, we need to translate it to {"allOf": [{"$ref": "some-ref"}], "nullable": true}
+      val wrappedNullableRef30 = s.anyOf match {
+        case List(refSchema: Schema, `nullSchema`) if refSchema.$ref.isDefined && openApi30 =>
+          Some(refSchema)
+        case _ => None
       }
 
-      val result = JsonObject(
-        "$id" := s.$id,
-        "$ref" := s.$ref,
-        "$schema" := s.$schema,
-        "allOf" := s.allOf,
-        "anyOf" := s.anyOf,
-        "title" := s.title,
-        "required" := s.required,
-        "type" := (if (s.nullable.getOrElse(false))
-                     s.`type`.map(s => Json.arr(s.asJson, Json.fromString("null"))).asJson
-                   else s.`type`.asJson),
-        "prefixItems" := s.prefixItems,
-        "items" := s.items,
-        "uniqueItems" := s.uniqueItems,
-        "contains" := s.contains,
-        "properties" := s.properties,
-        "patternProperties" := s.patternProperties,
-        "description" := s.description,
-        "format" := s.format,
-        "default" := s.default,
-        "readOnly" := s.readOnly,
-        "writeOnly" := s.writeOnly,
-        "example" := s.example,
-        "deprecated" := s.deprecated,
-        "oneOf" := s.oneOf,
-        "discriminator" := s.discriminator,
-        "additionalProperties" := s.additionalProperties,
-        "pattern" := s.pattern,
-        "minLength" := s.minLength,
-        "maxLength" := s.maxLength,
-        minKey := s.minimum,
-        maxKey := s.maximum,
-        "minItems" := s.minItems,
-        "maxItems" := s.maxItems,
-        "enum" := s.`enum`,
-        "not" := s.not,
-        "if" := s.`if`,
-        "then" := s.`then`,
-        "else" := s.`else`,
-        "$defs" := s.$defs,
-        "const" := s.const,
-        "unevaluatedProperties" := s.unevaluatedProperties,
-        "dependentRequired" := s.dependentRequired,
-        "dependentSchemas" := s.dependentSchemas,
-        "extensions" := s.extensions
-      )
-
-      // nullable ref types in openapi 3.1
-      if (needsNullableWrapper) JsonObject("oneOf" := Json.arr(result.asJson, JsonObject("type" := "null").asJson))
-      else result
-    }
-    .mapJsonObject(expandExtensions)
-
-  val encoderSchema30: Encoder[Schema] = Encoder.AsObject
-    .instance { (s: Schema) =>
-      val needsNullableWrapper = (s.$ref, s.nullable) match {
-        case (Some(_), Some(true)) => true
-        case _                     => false
+      val typeAndNullable = s.`type` match {
+        case Some(List(tpe)) =>
+          List("type" := tpe)
+        case Some(List(tpe, SchemaType.Null)) if openApi30 =>
+          List("type" := tpe, "nullable" := true)
+        case None if wrappedNullableRef30.isDefined =>
+          List("nullable" := true)
+        case t =>
+          List("type" := t)
       }
 
-      val isNullable = s.nullable.filter(_ => !needsNullableWrapper)
+      val minFields = (s.minimum, s.exclusiveMinimum) match {
+        case (None, Some(min)) if openApi30 =>
+          Vector("minimum" := min, "exclusiveMinimum" := true)
+        case _ =>
+          Vector("minimum" := s.minimum, "exclusiveMinimum" := s.exclusiveMinimum)
+      }
 
-      val result = JsonObject(
-        "$ref" := s.$ref,
-        "allOf" := s.allOf,
-        "title" := s.title,
-        "required" := s.required,
-        "type" := s.`type`,
-        "prefixItems" := s.prefixItems,
-        "items" := s.items,
-        "uniqueItems" := s.uniqueItems,
-        "contains" := s.contains,
-        "properties" := s.properties,
-        "patternProperties" := s.patternProperties,
-        "description" := s.description,
-        "format" := s.format,
-        "default" := s.default,
-        "readOnly" := s.readOnly,
-        "writeOnly" := s.writeOnly,
-        // the current Schema model currently supports a single, optional example; if multiple examples support is added, they should be serialised to "examples"
-        "example" := s.example,
-        "deprecated" := s.deprecated,
-        "oneOf" := s.oneOf,
-        "discriminator" := s.discriminator,
-        "additionalProperties" := s.additionalProperties,
-        "pattern" := s.pattern,
-        "minLength" := s.minLength,
-        "maxLength" := s.maxLength,
-        "minimum" := s.minimum,
-        "exclusiveMinimum" := s.exclusiveMinimum,
-        "maximum" := s.maximum,
-        "exclusiveMaximum" := s.exclusiveMaximum,
-        "minItems" := s.minItems,
-        "maxItems" := s.maxItems,
-        "enum" := s.`enum`,
-        "not" := s.not,
-        "nullable" := isNullable,
-        "extensions" := s.extensions
+      val maxFields = (s.maximum, s.exclusiveMaximum) match {
+        case (None, Some(max)) if openApi30 =>
+          Vector("maximum" := max, "exclusiveMaximum" := true)
+        case _ =>
+          Vector("maximum" := s.maximum, "exclusiveMaximum" := s.exclusiveMaximum)
+      }
+
+      val exampleFields = s.examples match {
+        case Some(List(example)) if openApi30 =>
+          Vector("example" := example)
+        case _ =>
+          Vector("examples" := s.examples)
+      }
+
+      JsonObject.fromIterable(
+        Vector(
+          "$schema" := s.$schema,
+          "$vocabulary" := s.$vocabulary,
+          "$id" := s.$id,
+          "$anchor" := s.$anchor,
+          "$dynamicAnchor" := s.$dynamicAnchor,
+          "$ref" := s.$ref,
+          "$dynamicRef" := s.$dynamicRef,
+          "$comment" := s.$comment,
+          "$defs" := s.$defs,
+          "title" := s.title,
+          "description" := s.description,
+          "default" := s.default,
+          "deprecated" := s.deprecated,
+          "readOnly" := s.readOnly,
+          "writeOnly" := s.writeOnly
+        ) ++ exampleFields ++ typeAndNullable ++ Vector(
+          "enum" := s.`enum`,
+          "const" := s.const,
+          "format" := s.format,
+          "allOf" := wrappedNullableRef30.map(List(_)).getOrElse(s.allOf),
+          "anyOf" := (if (wrappedNullableRef30.isDefined) Nil else s.anyOf),
+          "oneOf" := s.oneOf,
+          "not" := s.not,
+          "if" := s.`if`,
+          "then" := s.`then`,
+          "else" := s.`else`,
+          "dependentSchemas" := s.dependentSchemas,
+          "multipleOf" := s.multipleOf
+        ) ++ minFields ++ maxFields ++ Vector(
+          "maxLength" := s.maxLength,
+          "minLength" := s.minLength,
+          "pattern" := s.pattern,
+          "maxItems" := s.maxItems,
+          "minItems" := s.minItems,
+          "uniqueItems" := s.uniqueItems,
+          "maxContains" := s.maxContains,
+          "minContains" := s.minContains,
+          "prefixItems" := s.prefixItems,
+          "items" := s.items,
+          "contains" := s.contains,
+          "unevaluatedItems" := s.unevaluatedItems,
+          "maxProperties" := s.maxProperties,
+          "minProperties" := s.minProperties,
+          "required" := s.required,
+          "dependentRequired" := s.dependentRequired,
+          "discriminator" := s.discriminator,
+          "properties" := s.properties,
+          "patternProperties" := s.patternProperties,
+          "additionalProperties" := s.additionalProperties,
+          "propertyNames" := s.propertyNames,
+          "unevaluatedProperties" := s.unevaluatedProperties,
+          "externalDocs" := s.externalDocs,
+          "extensions" := s.extensions
+        )
       )
-
-      // nullable ref types in openapi 3.0
-      // See: https://stackoverflow.com/questions/40920441/how-to-specify-a-property-can-be-null-or-a-reference-with-swagger
-      if (needsNullableWrapper) JsonObject("allOf" := Json.arr(result.asJson), "nullable" := true)
-      else result
     }
     .mapJsonObject(expandExtensions)
 
@@ -156,18 +143,20 @@ trait JsonSchemaCirceEncoders {
     case e: ExampleSingleValue   => encoderExampleSingleValue.apply(e)
   }
 
-  implicit val encoderSchemaType: Encoder[SchemaType] = {
-    case e: BasicSchemaType   => e.value.asJson
-    case ArraySchemaType(typ) => typ.map(_.value.asJson).asJson
-  }
+  implicit val encoderSchemaType: Encoder[SchemaType] =
+    _.value.asJson
+
   implicit val encoderKeyPattern: KeyEncoder[Pattern] =
     KeyEncoder.encodeKeyString.contramap(_.value)
+
   implicit val encoderPattern: Encoder[Pattern] =
     Encoder.encodeString.contramap(_.value)
 
-  implicit val encoderDiscriminator: Encoder[Discriminator] = deriveEncoder[Discriminator]
+  implicit val encoderDiscriminator: Encoder[Discriminator] =
+    deriveEncoder[Discriminator]
 
-  implicit lazy val encoderSchema: Encoder[Schema] = if (openApi30) encoderSchema30 else jsonSchemaEncoder
+  implicit val encoderExternalDocumentation: Encoder[ExternalDocumentation] =
+    deriveEncoder[ExternalDocumentation].mapJsonObject(expandExtensions)
 
   implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
     case AnySchema.Anything =>
@@ -178,9 +167,7 @@ trait JsonSchemaCirceEncoders {
     case AnySchema.Nothing =>
       anyObjectEncoding match {
         case AnySchema.Encoding.Object =>
-          Json.obj(
-            "not" := Json.obj()
-          )
+          Json.obj("not" := Json.obj())
         case AnySchema.Encoding.Boolean => Json.False
       }
   }

@@ -3,12 +3,13 @@ package internal
 
 import cats.syntax.all._
 import io.circe._
-import io.circe.syntax._
 import io.circe.generic.semiauto.deriveDecoder
+import io.circe.syntax._
+
 import scala.collection.immutable.ListMap
 
 trait JsonSchemaCirceDecoders {
-  implicit val decodeBasicSchemaType: Decoder[BasicSchemaType] = Decoder.decodeString.emap {
+  implicit val decodeSchemaType: Decoder[SchemaType] = Decoder.decodeString.emap {
     case SchemaType.Integer.value => SchemaType.Integer.asRight
     case SchemaType.Boolean.value => SchemaType.Boolean.asRight
     case SchemaType.String.value  => SchemaType.String.asRight
@@ -19,18 +20,13 @@ trait JsonSchemaCirceDecoders {
     case err                      => s"$err is an unknown schema type".asLeft
   }
 
-  implicit val decodeArraySchemaType: Decoder[ArraySchemaType] = {
-    Decoder.decodeList(decodeBasicSchemaType).map(ArraySchemaType.apply)
-  }
-
   implicit val decodePatternKey: KeyDecoder[Pattern] =
     KeyDecoder.decodeKeyString.map(Pattern.apply)
 
   implicit val decodePattern: Decoder[Pattern] =
     Decoder.decodeString.map(Pattern.apply)
 
-  implicit val decodeSchemaType: Decoder[SchemaType] =
-    decodeBasicSchemaType.widen[SchemaType].or(decodeArraySchemaType.widen[SchemaType])
+  implicit val discriminatorDecoder: Decoder[Discriminator] = deriveDecoder[Discriminator]
 
   implicit val exampleSingleValueDecoder: Decoder[ExampleSingleValue] =
     Decoder[Json].map(json => json.asString.map(ExampleSingleValue(_)).getOrElse(ExampleSingleValue(json)))
@@ -43,8 +39,6 @@ trait JsonSchemaCirceDecoders {
       } else ExampleMultipleValue(json)
     }
 
-  implicit val discriminatorDecoder: Decoder[Discriminator] = deriveDecoder[Discriminator]
-
   implicit val exampleValueDecoder: Decoder[ExampleValue] =
     exampleMultipleValueDecoder.widen[ExampleValue].or(exampleSingleValueDecoder.widen[ExampleValue])
 
@@ -52,6 +46,10 @@ trait JsonSchemaCirceDecoders {
 
   implicit val extensionsDecoder: Decoder[ListMap[String, ExtensionValue]] =
     Decoder.decodeMapLike[String, ExtensionValue, ListMap].map(_.filter(_._1.startsWith("x-")))
+
+  // OpenAPI extension to JSON Schema
+  implicit val externalDocumentationDecoder: Decoder[ExternalDocumentation] =
+    withExtensions(deriveDecoder[ExternalDocumentation])
 
   implicit val schemaDecoder: Decoder[Schema] = {
     implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, A]] =
@@ -66,47 +64,59 @@ trait JsonSchemaCirceDecoders {
     implicit def listReference[A: Decoder]: Decoder[List[A]] =
       Decoder.decodeOption(Decoder.decodeList[A]).map(_.getOrElse(Nil))
 
-    def translateDefinitionsTo$def[A](decoder: Decoder[A]) = Decoder.instance { c =>
-      val modded = c.withFocus(_.mapObject { obj =>
-        val map = obj.toMap
-        val definitions = map.get("definitions").orElse(map.get("$defs"))
-        definitions.map(j => obj.remove("definitions").remove("$defs").add("$defs", j)).getOrElse(obj)
-      })
-      decoder.tryDecode(modded)
+    def translateDefinitionsTo$def(obj: JsonObject): JsonObject = {
+      val map = obj.toMap
+      val definitions = map.get("definitions").orElse(map.get("$defs"))
+      definitions.map(j => obj.remove("definitions").remove("$defs").add("$defs", j)).getOrElse(obj)
     }
 
-    def translateMinMax[A](decoder: Decoder[A]) = Decoder.instance { c =>
-      val modded = c.withFocus(_.mapObject { obj =>
-        val map = obj.toMap
-        val min = map
-          .get("exclusiveMinimum")
-          .map { m =>
-            if (m.isNumber) obj.remove("exclusiveMinimum").add("exclusiveMinimum", Json.True).add("minimum", m) else obj
-          }
-          .getOrElse(obj)
-        map
-          .get("exclusiveMaximum")
-          .map { m =>
-            if (m.isNumber) min.remove("exclusiveMaximum").add("exclusiveMaximum", Json.True).add("maximum", m) else min
-          }
-          .getOrElse(min)
-      })
-      decoder.tryDecode(modded)
-    }
+    // OAS 3.0: { "maximum": 10, "exclusiveMaximum": true }
+    // OAS 3.1: { "exclusiveMaximum": 10 }
+    def adjustMaximum(obj: JsonObject): JsonObject =
+      (obj("maximum"), obj("exclusiveMaximum")) match {
+        case (Some(max), Some(Json.True)) => obj.remove("maximum").add("exclusiveMaximum", max)
+        case _ => obj
+      }
 
-    withExtensions(
-      translateMinMax(
-        translateDefinitionsTo$def(
-          deriveDecoder[Schema].map(s =>
-            s.`type` match {
-              case Some(ArraySchemaType(x :: SchemaType.Null :: Nil)) => s.copy(`type` = Some(x), nullable = Some(true))
-              case _                                                  => s
-            }
-          )
-        )
+    // OAS 3.0: { "minimum": 10, "exclusiveMinimum": true }
+    // OAS 3.1: { "exclusiveMinimum": 10 }
+    def adjustMinimum(obj: JsonObject): JsonObject =
+      (obj("minimum"), obj("exclusiveMinimum")) match {
+        case (Some(min), Some(Json.True)) => obj.remove("minimum").add("exclusiveMinimum", min)
+        case _ => obj
+      }
+
+    // OAS 3.0: { "example": "exampleValue" }
+    // OAS 3.1: { "examples": ["exampleValue"] }
+    def adjustExample(obj: JsonObject): JsonObject =
+      obj("example") match {
+        case Some(example) => obj.remove("example").add("examples", Json.arr(example))
+        case _ => obj
+      }
+
+    // Both OAS 3.0 and OAS 3.1 allow `type` to be a string or an array of strings,
+    // but we model it as a List in the schema case class, and so the derived decoder expects an array.
+    def adjustType(obj: JsonObject): JsonObject =
+      obj("type") match {
+        case Some(tpe) if tpe.isString => obj.add("type", Json.arr(tpe))
+        case _ => obj
+      }
+
+    def adjustSyntax(decoder: Decoder[Schema]) = Decoder.instance { c =>
+      val nullable = c.get[Boolean]("nullable").contains(true)
+      val modded = c.withFocus(_
+        .mapObject(adjustType)
+        .mapObject(adjustMaximum)
+        .mapObject(adjustMinimum)
+        .mapObject(adjustExample)
+        .mapObject(translateDefinitionsTo$def)
       )
-    )
+      decoder.tryDecode(modded).map(s => if(nullable) s.nullable else s)
+    }
+
+    adjustSyntax(withExtensions(deriveDecoder[Schema]))
   }
+
   implicit val anySchemaDecoder: Decoder[AnySchema] = Decoder.instance { c =>
     def fromBool(b: Boolean) =
       if (b) AnySchema.Anything else AnySchema.Nothing
