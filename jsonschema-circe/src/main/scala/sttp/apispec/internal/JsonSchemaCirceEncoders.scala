@@ -67,10 +67,17 @@ trait JsonSchemaCirceEncoders {
           "$ref" := s.$ref,
           "$dynamicRef" := s.$dynamicRef,
           "$comment" := s.$comment,
-          "$defs" := s.$defs
+          "$defs" := s.$defs,
+          "title" := s.title,
+          "description" := s.description,
+          "default" := s.default,
+          "deprecated" := s.deprecated,
+          "readOnly" := s.readOnly,
+          "writeOnly" := s.writeOnly
         ) ++ typeAndNullable ++ Vector(
           "enum" := s.`enum`,
           "const" := s.const,
+          "format" := s.format,
           "allOf" := wrappedNullableRef30.map(List(_)).getOrElse(s.allOf),
           "anyOf" := (if (wrappedNullableRef30.isDefined) Nil else s.anyOf),
           "oneOf" := s.oneOf,
@@ -103,13 +110,6 @@ trait JsonSchemaCirceEncoders {
           "additionalProperties" := s.additionalProperties,
           "propertyNames" := s.propertyNames,
           "unevaluatedProperties" := s.unevaluatedProperties,
-          "format" := s.format,
-          "title" := s.title,
-          "description" := s.description,
-          "default" := s.default,
-          "deprecated" := s.deprecated,
-          "readOnly" := s.readOnly,
-          "writeOnly" := s.writeOnly
         ) ++ exampleFields ++ Vector(
           "externalDocs" := s.externalDocs,
           "extensions" := s.extensions

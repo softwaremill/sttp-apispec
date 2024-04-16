@@ -38,11 +38,24 @@ case class Schema(
     $comment: Option[String] = None,
     $defs: Option[ListMap[String, SchemaLike]] = None,
 
+    // Annotations
+    // https://json-schema.org/draft/2020-12/json-schema-validation#section-9
+    title: Option[String] = None,
+    description: Option[String] = None,
+    default: Option[ExampleValue] = None,
+    deprecated: Option[Boolean] = None,
+    readOnly: Option[Boolean] = None,
+    writeOnly: Option[Boolean] = None,
+    examples: Option[List[ExampleValue]] = None,
+
     // General assertions
     // https://json-schema.org/draft/2020-12/json-schema-validation#section-6.1
     `type`: Option[List[SchemaType]] = None,
     `enum`: Option[List[ExampleValue]] = None,
     const: Option[ExampleValue] = None,
+
+    // https://json-schema.org/draft/2020-12/json-schema-validation#section-7
+    format: Option[String] = None,
 
     // Logical applicators
     // https://json-schema.org/draft/2020-12/json-schema-core#section-10.2.1
@@ -107,18 +120,6 @@ case class Schema(
     // https://json-schema.org/draft/2020-12/json-schema-core#section-11.3
     unevaluatedProperties: Option[SchemaLike] = None,
 
-    // https://json-schema.org/draft/2020-12/json-schema-validation#section-7
-    format: Option[String] = None,
-
-    // Annotations
-    // https://json-schema.org/draft/2020-12/json-schema-validation#section-9
-    title: Option[String] = None,
-    description: Option[String] = None,
-    default: Option[ExampleValue] = None,
-    deprecated: Option[Boolean] = None,
-    readOnly: Option[Boolean] = None,
-    writeOnly: Option[Boolean] = None,
-    examples: Option[List[ExampleValue]] = None,
     // OpenAPI specific
     // https://spec.openapis.org/oas/v3.1.0#fixed-fields-19
     externalDocs: Option[ExternalDocumentation] = None,
