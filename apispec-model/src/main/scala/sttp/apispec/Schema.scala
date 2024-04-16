@@ -123,8 +123,6 @@ case class Schema(
     // OpenAPI specific
     // https://spec.openapis.org/oas/v3.1.0#fixed-fields-19
     externalDocs: Option[ExternalDocumentation] = None,
-
-    // OpenAPI specific
     // https://spec.openapis.org/oas/v3.1.0#specification-extensions
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 ) extends SchemaLike {

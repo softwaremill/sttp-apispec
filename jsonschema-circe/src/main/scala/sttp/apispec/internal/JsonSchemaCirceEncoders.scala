@@ -74,7 +74,7 @@ trait JsonSchemaCirceEncoders {
           "deprecated" := s.deprecated,
           "readOnly" := s.readOnly,
           "writeOnly" := s.writeOnly
-        ) ++ typeAndNullable ++ Vector(
+        ) ++ exampleFields ++ typeAndNullable ++ Vector(
           "enum" := s.`enum`,
           "const" := s.const,
           "format" := s.format,
@@ -110,7 +110,6 @@ trait JsonSchemaCirceEncoders {
           "additionalProperties" := s.additionalProperties,
           "propertyNames" := s.propertyNames,
           "unevaluatedProperties" := s.unevaluatedProperties,
-        ) ++ exampleFields ++ Vector(
           "externalDocs" := s.externalDocs,
           "extensions" := s.extensions
         )
