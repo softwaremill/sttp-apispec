@@ -136,6 +136,9 @@ case class Schema(
       else copy(`type` = Some(types :+ SchemaType.Null))
 
     case None =>
+      // Representing nullable schemas (without explicit `type`) using `anyOf` is safer than `oneOf`.
+      // If `oneOf` was used, and the original schema was already nullable, `null` would not be a valid
+      // value for the resulting schema.
       val nullSchema = Schema(SchemaType.Null)
       if(anyOf.contains(nullSchema)) this // ensure idempotency
       else if (anyOf.nonEmpty) copy(anyOf = anyOf :+ nullSchema)
