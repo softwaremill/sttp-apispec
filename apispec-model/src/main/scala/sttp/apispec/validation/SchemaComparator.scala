@@ -66,9 +66,10 @@ private class SchemaComparator(
         .filter(name => schema == Schema.referenceTo(RefPrefix, name))
   }
 
-  // strip annotations so that schemas can be compared structurally for equivalence
+  // strip fields which do not affect schema comparison
   private def deannotate(schema: Schema): Schema =
     schema.copy(
+      $comment = None,
       title = None,
       description = None,
       default = None,
