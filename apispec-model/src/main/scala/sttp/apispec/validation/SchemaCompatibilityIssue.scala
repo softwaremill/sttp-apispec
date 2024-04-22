@@ -1,6 +1,6 @@
 package sttp.apispec.validation
 
-import sttp.apispec.{Pattern, Schema, SchemaType}
+import sttp.apispec.{ExampleSingleValue, ExampleValue, Pattern, Schema, SchemaType}
 
 sealed abstract class SchemaCompatibilityIssue extends Product {
   def description: String
@@ -47,8 +47,8 @@ case class TypeMismatch(
 
 case class EnumMismatch(
   // None indicates that the writer schema has no enum values
-  incompatibleWriterValues: Option[List[Any]],
-  readerValues: List[Any]
+  incompatibleWriterValues: Option[List[ExampleValue]],
+  readerValues: List[ExampleValue]
 ) extends SchemaCompatibilityIssue {
   def description: String = {
     val writerValuesRepr =

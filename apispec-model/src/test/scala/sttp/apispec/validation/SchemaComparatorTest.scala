@@ -1,7 +1,7 @@
 package sttp.apispec.validation
 
 import org.scalatest.funsuite.AnyFunSuite
-import sttp.apispec.{Pattern, Schema, SchemaType}
+import sttp.apispec.{ExampleSingleValue, Pattern, Schema, SchemaType}
 
 import scala.collection.immutable.ListMap
 
@@ -127,6 +127,37 @@ class SchemaComparatorTest extends AnyFunSuite {
     assert(compare(writerTreeSchema, readerTreeSchema) == Nil)
     assert(compare(writerTreeSchema, strictReaderTreeSchema) == List(
       MoreRequiredProperties(Set("value"))
+    ))
+  }
+
+  test("enum and const") {
+    def enums(values: Any*): List[ExampleSingleValue] =
+      values.toList.map(ExampleSingleValue)
+
+    def enumSchema(values: String*): Schema = values.toList match {
+      case single :: Nil => stringSchema.copy(enum = Some(List(single).map(ExampleSingleValue)))
+      case multiple => stringSchema.copy(enum = Some(multiple.map(ExampleSingleValue)))
+    }
+
+    assert(compare(enumSchema("a"), stringSchema) == Nil)
+    assert(compare(enumSchema("a"), enumSchema("a")) == Nil)
+    assert(compare(enumSchema("a"), enumSchema("a", "b")) == Nil)
+    assert(compare(enumSchema("a", "b"), enumSchema("a", "b", "c")) == Nil)
+
+    assert(compare(stringSchema, enumSchema("a", "b")) == List(
+      EnumMismatch(None, enums("a", "b"))
+    ))
+    assert(compare(enumSchema("a"), enumSchema("b")) == List(
+      EnumMismatch(Some(enums("a")), enums("b"))
+    ))
+    assert(compare(enumSchema("a"), enumSchema("b", "c")) == List(
+      EnumMismatch(Some(enums("a")), enums("b", "c"))
+    ))
+    assert(compare(enumSchema("a", "b"), enumSchema("c")) == List(
+      EnumMismatch(Some(enums("a", "b")), enums("c"))
+    ))
+    assert(compare(enumSchema("a", "b"), enumSchema("b", "c")) == List(
+      EnumMismatch(Some(enums("a")), enums("b", "c"))
     ))
   }
 
