@@ -273,5 +273,60 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
+  test("string assertions") {
+    assert(compare(
+      stringSchema.copy(
+        maxLength = Some(10),
+        minLength = Some(1),
+        pattern = Some(Pattern("[a-z]+")),
+      ),
+      stringSchema,
+    ) == Nil)
+
+    assert(compare(
+      stringSchema.copy(
+        maxLength = Some(8),
+        minLength = Some(3),
+        pattern = Some(Pattern("[a-z]+")),
+      ),
+      stringSchema.copy(
+        maxLength = Some(10),
+        minLength = Some(1),
+      ),
+    ) == Nil)
+
+    assert(compare(
+      stringSchema,
+      stringSchema.copy(
+        maxLength = Some(10),
+        minLength = Some(1),
+        pattern = Some(Pattern("[a-z]+")),
+      ),
+    ) == List(
+      StringLengthBoundsMismatch(
+        Bounds(Some(Bound.inclusive(0)), None),
+        Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(10)))),
+      PatternMismatch(None, Pattern("[a-z]+"))
+    ))
+
+    assert(compare(
+      stringSchema.copy(
+        maxLength = Some(10),
+        minLength = Some(1),
+        pattern = Some(Pattern("[a-z]+")),
+      ),
+      stringSchema.copy(
+        maxLength = Some(10),
+        minLength = Some(2),
+        pattern = Some(Pattern("[A-Z]+")),
+      ),
+    ) == List(
+      StringLengthBoundsMismatch(
+        Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(10))),
+        Bounds(Some(Bound.inclusive(2)), Some(Bound.inclusive(10)))),
+      PatternMismatch(Some(Pattern("[a-z]+")), Pattern("[A-Z]+"))
+    ))
+  }
+
   //TODO significantly more tests
 }
