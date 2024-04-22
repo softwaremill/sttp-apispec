@@ -155,8 +155,8 @@ class SchemaComparatorTest extends AnyFunSuite {
       values.toList.map(ExampleSingleValue)
 
     def enumSchema(values: String*): Schema = values.toList match {
-      case single :: Nil => stringSchema.copy(enum = Some(List(single).map(ExampleSingleValue)))
-      case multiple => stringSchema.copy(enum = Some(multiple.map(ExampleSingleValue)))
+      case single :: Nil => stringSchema.copy(`enum` = Some(List(single).map(ExampleSingleValue)))
+      case multiple => stringSchema.copy(`enum` = Some(multiple.map(ExampleSingleValue)))
     }
 
     assert(compare(enumSchema("a"), stringSchema) == Nil)
