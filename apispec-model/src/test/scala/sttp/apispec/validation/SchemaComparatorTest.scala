@@ -67,6 +67,13 @@ class SchemaComparatorTest extends AnyFunSuite {
   private def compare(writerSchema: Schema, readerSchema: Schema): List[SchemaCompatibilityIssue] =
     SchemaComparator.compare(writerSchema, readerSchema, writerSchemas, readerSchemas)
 
+  test("ignoring annotations") {
+    assert(compare(
+      stringSchema.copy(title = Some("SomeTitle")),
+      stringSchema.copy(title = Some("OtherTitle"))
+    ) == Nil)
+  }
+
   test("comparing with empty schema") {
     assert(compare(Schema.Nothing, Schema.Empty) == Nil)
     assert(compare(Schema.Empty, Schema.Empty) == Nil)
