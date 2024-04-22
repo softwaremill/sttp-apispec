@@ -1,7 +1,7 @@
 package sttp.apispec.validation
 
 import org.scalatest.funsuite.AnyFunSuite
-import sttp.apispec.{ExampleSingleValue, Pattern, Schema, SchemaType}
+import sttp.apispec.{ExampleSingleValue, Pattern, Schema, SchemaFormat, SchemaType}
 
 import scala.collection.immutable.ListMap
 
@@ -130,7 +130,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("enum and const") {
+  test("enum and const mismatch") {
     def enums(values: Any*): List[ExampleSingleValue] =
       values.toList.map(ExampleSingleValue)
 
@@ -159,6 +159,44 @@ class SchemaComparatorTest extends AnyFunSuite {
     assert(compare(enumSchema("a", "b"), enumSchema("b", "c")) == List(
       EnumMismatch(Some(enums("a")), enums("b", "c"))
     ))
+  }
+
+  test("format mismatch") {
+    assert(compare(
+      stringSchema,
+      stringSchema.copy(format = Some(SchemaFormat.Date)),
+    ) == List(
+      FormatMismatch(None, SchemaFormat.Date)
+    ))
+
+    assert(compare(
+      stringSchema.copy(format = Some(SchemaFormat.Binary)),
+      stringSchema.copy(format = Some(SchemaFormat.Date)),
+    ) == List(
+      FormatMismatch(Some(SchemaFormat.Binary), SchemaFormat.Date)
+    ))
+
+    assert(compare(
+      integerSchema.copy(format = Some(SchemaFormat.Int64)),
+      integerSchema.copy(format = Some(SchemaFormat.Int32)),
+    ) == List(
+      FormatMismatch(Some(SchemaFormat.Int64), SchemaFormat.Int32)
+    ))
+
+    assert(compare(
+      stringSchema.copy(format = Some(SchemaFormat.Date)),
+      stringSchema,
+    ) == Nil)
+
+    assert(compare(
+      integerSchema.copy(format = Some(SchemaFormat.Int32)),
+      integerSchema.copy(format = Some(SchemaFormat.Int64)),
+    ) == Nil)
+
+    assert(compare(
+      numberSchema.copy(format = Some(SchemaFormat.Float)),
+      numberSchema.copy(format = Some(SchemaFormat.Double)),
+    ) == Nil)
   }
 
   //TODO significantly more tests
