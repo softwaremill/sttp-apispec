@@ -121,12 +121,31 @@ class SchemaComparatorTest extends AnyFunSuite {
     assert(compare(ref("Something"), ref("Something")) == List(
       TypeMismatch(List(SchemaType.String), List(SchemaType.Integer))
     ))
+    assert(compare(ref("Integer"), ref("Something")) == Nil)
+    assert(compare(ref("Something"), ref("String")) == Nil)
   }
 
   test("recursive schemas") {
     assert(compare(writerTreeSchema, readerTreeSchema) == Nil)
     assert(compare(writerTreeSchema, strictReaderTreeSchema) == List(
       MoreRequiredProperties(Set("value"))
+    ))
+  }
+
+  test("nullable schemas") {
+    assert(compare(stringSchema, stringSchema.nullable) == Nil)
+    assert(compare(opaqueSchema, opaqueSchema.nullable) == Nil)
+    assert(compare(ref("String"), ref("String").nullable) == Nil)
+    assert(compare(integerSchema.nullable, numberSchema.nullable) == Nil)
+
+    assert(compare(stringSchema.nullable, stringSchema) == List(
+      TypeMismatch(List(SchemaType.Null), List(SchemaType.String))
+    ))
+    assert(compare(opaqueSchema.nullable, opaqueSchema) == List(
+      GeneralSchemaMismatch(opaqueSchema.nullable, opaqueSchema) //TODO better issue?
+    ))
+    assert(compare(ref("String").nullable, ref("String")) == List(
+      GeneralSchemaMismatch(ref("String").nullable, stringSchema) //TODO better issue?
     ))
   }
 
