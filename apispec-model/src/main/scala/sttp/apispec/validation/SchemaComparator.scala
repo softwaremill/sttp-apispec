@@ -52,6 +52,7 @@ private class SchemaComparator(
       case s@LocalReference(name) =>
         def noSchema: Nothing =
           throw new NoSuchElementException(s"could not resolve schema reference ${s.$ref.get}")
+
         normalize(named.getOrElse(name, noSchema), named)
       case s => s
     }
@@ -198,7 +199,7 @@ private class SchemaComparator(
       types.nonEmpty && !types.contains(SchemaType.Array) && !types.contains(SchemaType.Object)
     } && s == Schema( // check if the schema contains only primitive type assertions
       `type` = s.`type`,
-      enum = s.`enum`,
+      `enum` = s.`enum`,
       const = s.`const`,
       format = s.format,
 
@@ -275,7 +276,7 @@ private class SchemaComparator(
 
   private def discriminatorMapping(schema: Schema): Option[ListMap[String, SchemaLike]] =
     schema.discriminator.map { disc =>
-      val baseMapping = schema.oneOf.collect({ case s@LocalReference(name) => name -> s }).to(ListMap)
+      val baseMapping = ListMap(schema.oneOf.collect({ case s@LocalReference(name) => name -> s }): _*)
       baseMapping ++ disc.mapping.getOrElse(ListMap.empty).map {
         case (name, ref) => name -> Schema($ref = Some(ref))
       }

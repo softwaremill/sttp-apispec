@@ -8,7 +8,7 @@ sealed abstract class SchemaCompatibilityIssue extends Product {
   override def toString: String = s"$productPrefix($description)"
 
   protected def pluralize(what: String, coll: Seq[Any]): String =
-    if (coll.sizeIs == 1) s"$what ${coll.head}"
+    if (coll.lengthCompare(1) == 0) s"$what ${coll.head}"
     else s"${what}s ${coll.mkString(", ")}"
 
   protected def form(coll: Seq[Any], singular: String, plural: String): String =
