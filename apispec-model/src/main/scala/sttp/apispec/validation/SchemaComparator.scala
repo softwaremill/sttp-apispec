@@ -52,7 +52,6 @@ private class SchemaComparator(
       case s@LocalReference(name) =>
         def noSchema: Nothing =
           throw new NoSuchElementException(s"could not resolve schema reference ${s.$ref.get}")
-        //TODO: detect cycles and handle recursive schema definitions
         normalize(named.getOrElse(name, noSchema), named)
       case s => s
     }
