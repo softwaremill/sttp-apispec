@@ -114,10 +114,7 @@ private class SchemaComparator(
       checkType(writerSchema, readerSchema).toList ++
         checkRequiredProperties(writerSchema, readerSchema).toList ++
         checkDependentRequired(writerSchema, readerSchema) ++
-        propIssues ++
-        checkPropertyNames(writerSchema, readerSchema).toList ++
-        checkAdditionalProperties(writerSchema, readerSchema).toList ++
-        checkMinMaxProperties(writerSchema, readerSchema).toList
+        propIssues
 
     } else if (isCoproductSchema(writerSchema) && isCoproductSchema(readerSchema) &&
       // if readerSchema does not have a discriminator, we fall back to GeneralSchemaMismatch
@@ -167,9 +164,9 @@ private class SchemaComparator(
         prefixItemsIssues
 
     } else if (isMapSchema(writerSchema) && isMapSchema(readerSchema)) {
-      checkAdditionalProperties(writerSchema, readerSchema).toList ++
+      checkType(writerSchema, readerSchema).toList ++
+        checkAdditionalProperties(writerSchema, readerSchema).toList ++
         checkPropertyNames(writerSchema, readerSchema).toList ++
-        checkType(writerSchema, readerSchema).toList ++
         checkMinMaxProperties(writerSchema, readerSchema).toList
 
     } else if (readerSchema == Schema.Nothing) {
@@ -230,7 +227,6 @@ private class SchemaComparator(
       s.prefixItems.isDefined &&
       s == Schema(
         `type` = s.`type`,
-        items = s.items,
         prefixItems = s.prefixItems,
         maxItems = s.maxItems,
         minItems = s.minItems,
@@ -252,13 +248,9 @@ private class SchemaComparator(
       s.properties.nonEmpty &&
       s == Schema(
         `type` = s.`type`,
-        propertyNames = s.propertyNames,
         properties = s.properties,
         required = s.required,
         dependentRequired = s.dependentRequired,
-        additionalProperties = s.additionalProperties,
-        maxProperties = s.maxProperties,
-        minProperties = s.minProperties
       )
 
   // coproduct schema is a schema with `oneOf` or `anyOf` of pure references, with an optional discriminator object
@@ -423,13 +415,13 @@ private class SchemaComparator(
     else Some(MinMaxPropertiesMismatch(writerBounds, readerBounds))
   }
 
-  private def checkRequiredProperties(writerSchema: Schema, readerSchema: Schema): Option[MoreRequiredProperties] = {
+  private def checkRequiredProperties(writerSchema: Schema, readerSchema: Schema): Option[MissingRequiredProperties] = {
     val newRequired = readerSchema.required.toSet -- writerSchema.required.toSet
     if (newRequired.isEmpty) None
-    else Some(MoreRequiredProperties(newRequired))
+    else Some(MissingRequiredProperties(newRequired))
   }
 
-  private def checkDependentRequired(writerSchema: Schema, readerSchema: Schema): List[MoreDependentRequired] =
+  private def checkDependentRequired(writerSchema: Schema, readerSchema: Schema): List[MissingDependentRequiredProperties] =
     readerSchema.dependentRequired.toList.flatMap { case (property, required) =>
       // if the writer schema does not require or define a schema for this property, we assume that it will never
       // be passed (even if it's implicitly allowed by patternProperties/additionalProperties)
@@ -442,7 +434,7 @@ private class SchemaComparator(
       writerRequired.flatMap { wr =>
         val moreRequired = required.toSet -- wr.toSet
         if (moreRequired.isEmpty) None
-        else Some(MoreDependentRequired(property, moreRequired))
+        else Some(MissingDependentRequiredProperties(property, moreRequired))
       }
     }
 

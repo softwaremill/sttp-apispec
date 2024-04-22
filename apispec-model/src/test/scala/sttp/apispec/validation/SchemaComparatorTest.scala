@@ -9,6 +9,7 @@ class SchemaComparatorTest extends AnyFunSuite {
   private val stringSchema = Schema(SchemaType.String)
   private val integerSchema = Schema(SchemaType.Integer)
   private val numberSchema = Schema(SchemaType.Number)
+  private val booleanSchema = Schema(SchemaType.Boolean)
 
   // A schema with internal structure currently not understood by SchemaComparator.
   // Such Schema can only be compared for equality (this may change in the future as SchemaComparator is improved).
@@ -128,7 +129,7 @@ class SchemaComparatorTest extends AnyFunSuite {
   test("recursive schemas") {
     assert(compare(writerTreeSchema, readerTreeSchema) == Nil)
     assert(compare(writerTreeSchema, strictReaderTreeSchema) == List(
-      MoreRequiredProperties(Set("value"))
+      MissingRequiredProperties(Set("value"))
     ))
   }
 
@@ -325,6 +326,37 @@ class SchemaComparatorTest extends AnyFunSuite {
         Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(10))),
         Bounds(Some(Bound.inclusive(2)), Some(Bound.inclusive(10)))),
       PatternMismatch(Some(Pattern("[a-z]+")), Pattern("[A-Z]+"))
+    ))
+  }
+
+  test("product schema properties") {
+    assert(compare(
+      Schema(SchemaType.Object).copy(
+        properties = ListMap(
+          "a" -> stringSchema,
+          "b" -> integerSchema,
+          "c" -> booleanSchema,
+          "d" -> stringSchema,
+        ),
+        required = List("a", "b", "d")
+      ),
+      Schema(SchemaType.Object).copy(
+        properties = ListMap(
+          "a" -> stringSchema,
+          "b" -> numberSchema,
+          "c" -> stringSchema,
+          "e" -> stringSchema,
+          "f" -> stringSchema,
+        ),
+        required = List("a", "b", "e"),
+        dependentRequired = ListMap("c" -> List("f"))
+      ),
+    ) == List(
+      MissingRequiredProperties(Set("e")),
+      MissingDependentRequiredProperties("c", Set("f")),
+      IncompatibleProperty("c", List(
+        TypeMismatch(List(SchemaType.Boolean), List(SchemaType.String))
+      )),
     ))
   }
 

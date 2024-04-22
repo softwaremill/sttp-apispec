@@ -125,13 +125,13 @@ case class MinMaxPropertiesMismatch(
     s"target object size (minProperties/maxProperties) $readerBounds is stricter than $writerBounds"
 }
 
-case class MoreRequiredProperties(
+case class MissingRequiredProperties(
   newRequiredProperties: Set[String]
 ) extends SchemaCompatibilityIssue {
-  def description: String = s"target schema introduced new required properties: ${newRequiredProperties.mkString(", ")}"
+  def description: String = s"target schema requires properties: ${newRequiredProperties.mkString(", ")}"
 }
 
-case class MoreDependentRequired(
+case class MissingDependentRequiredProperties(
   property: String,
   newRequiredProperties: Set[String]
 ) extends SchemaCompatibilityIssue {
