@@ -218,5 +218,60 @@ class SchemaComparatorTest extends AnyFunSuite {
     ) == Nil)
   }
 
+  test("numerical assertions") {
+    assert(compare(
+      integerSchema.copy(
+        multipleOf = Some(BigDecimal(2)),
+        minimum = Some(BigDecimal(1)),
+        maximum = Some(BigDecimal(10)),
+      ),
+      integerSchema,
+    ) == Nil)
+
+    assert(compare(
+      integerSchema.copy(
+        multipleOf = Some(BigDecimal(4)),
+        minimum = Some(BigDecimal(2)),
+        maximum = Some(BigDecimal(9)),
+      ),
+      integerSchema.copy(
+        multipleOf = Some(BigDecimal(2)),
+        minimum = Some(BigDecimal(1)),
+        maximum = Some(BigDecimal(10)),
+      ),
+    ) == Nil)
+
+    assert(compare(
+      integerSchema,
+      integerSchema.copy(
+        multipleOf = Some(BigDecimal(2)),
+        minimum = Some(BigDecimal(1)),
+        maximum = Some(BigDecimal(10)),
+      )
+    ) == List(
+      MultipleOfMismatch(None, BigDecimal(2)),
+      NumericBoundsMismatch(Bounds(None, None), Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(10))))
+    ))
+
+    assert(compare(
+      integerSchema.copy(
+        multipleOf = Some(BigDecimal(3)),
+        minimum = Some(BigDecimal(1)),
+        maximum = Some(BigDecimal(10)),
+      ),
+      integerSchema.copy(
+        multipleOf = Some(BigDecimal(2)),
+        exclusiveMinimum = Some(BigDecimal(1)),
+        maximum = Some(BigDecimal(10)),
+      )
+    ) == List(
+      MultipleOfMismatch(Some(BigDecimal(3)), BigDecimal(2)),
+      NumericBoundsMismatch(
+        Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(10))),
+        Bounds(Some(Bound.exclusive(1)), Some(Bound.inclusive(10)))
+      )
+    ))
+  }
+
   //TODO significantly more tests
 }

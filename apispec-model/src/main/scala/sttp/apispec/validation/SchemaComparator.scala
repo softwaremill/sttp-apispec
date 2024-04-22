@@ -352,11 +352,11 @@ private class SchemaComparator(
       .orElse(schema.exclusiveMaximum.map(Bound.exclusive))
   )
 
-  private def checkNumericBounds(writerSchema: Schema, readerSchema: Schema): Option[BoundsMismatch] = {
+  private def checkNumericBounds(writerSchema: Schema, readerSchema: Schema): Option[NumericBoundsMismatch] = {
     val writerBounds = bounds(writerSchema)
     val readerBounds = bounds(readerSchema)
     if (readerBounds.contains(writerBounds)) None
-    else Some(BoundsMismatch(writerBounds, readerBounds))
+    else Some(NumericBoundsMismatch(writerBounds, readerBounds))
   }
 
   private def stringLengthBounds(schema: Schema): Bounds[Int] = Bounds(

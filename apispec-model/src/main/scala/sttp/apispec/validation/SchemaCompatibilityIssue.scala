@@ -79,7 +79,7 @@ case class MultipleOfMismatch(
   }
 }
 
-case class BoundsMismatch(
+case class NumericBoundsMismatch(
   writerBounds: Bounds[BigDecimal],
   readerBounds: Bounds[BigDecimal]
 ) extends SchemaCompatibilityIssue {
