@@ -139,16 +139,19 @@ case class Schema(
       // Representing nullable schemas (without explicit `type`) using `anyOf` is safer than `oneOf`.
       // If `oneOf` was used, and the original schema was already nullable, `null` would not be a valid
       // value for the resulting schema.
-      val nullSchema = Schema(SchemaType.Null)
-      if(anyOf.contains(nullSchema)) this // ensure idempotency
-      else if (anyOf.nonEmpty) copy(anyOf = anyOf :+ nullSchema)
-      else Schema(anyOf = List(this, nullSchema))
+      if(anyOf.contains(Schema.Null)) this // ensure idempotency
+      else if (anyOf.nonEmpty) copy(anyOf = anyOf :+ Schema.Null)
+      else Schema(anyOf = List(this, Schema.Null))
   }
 }
 
 case class Discriminator(propertyName: String, mapping: Option[ListMap[String, String]])
 
 object Schema {
+  final val Empty = Schema()
+  final val Nothing = Schema(not = Some(Empty))
+  final val Null = Schema(SchemaType.Null)
+
   def apply(schemaType: SchemaType, moreTypes: SchemaType*): Schema =
     new Schema(`type` = Some(schemaType :: moreTypes.toList))
 
@@ -171,13 +174,13 @@ object SchemaType {
 }
 
 object SchemaFormat {
-  val Int32: Option[String] = Some("int32")
-  val Int64: Option[String] = Some("int64")
-  val Float: Option[String] = Some("float")
-  val Double: Option[String] = Some("double")
-  val Byte: Option[String] = Some("byte")
-  val Binary: Option[String] = Some("binary")
-  val Date: Option[String] = Some("date")
-  val DateTime: Option[String] = Some("date-time")
-  val Password: Option[String] = Some("password")
+  final val Int32 = "int32"
+  final val Int64 = "int64"
+  final val Float = "float"
+  final val Double = "double"
+  final val Byte = "byte"
+  final val Binary = "binary"
+  final val Date = "date"
+  final val DateTime = "date-time"
+  final val Password = "password"
 }
