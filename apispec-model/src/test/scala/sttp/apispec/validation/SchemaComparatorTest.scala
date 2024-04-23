@@ -624,8 +624,8 @@ class SchemaComparatorTest extends AnyFunSuite {
       )),
       ObjectSizeBoundsMismatch(
         Bounds(Some(Bound.inclusive(0)), None),
-        Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(12))
-        )
-      )))
+        Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(12)))
+      ))
+    )
   }
 }
