@@ -441,5 +441,60 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
+  test("comparing map schemas") {
+    assert(compare(
+      objectSchema.copy(
+        additionalProperties = Some(integerSchema),
+        propertyNames = Some(stringSchema.copy(maxLength = Some(8))),
+        minProperties = Some(1),
+        maxProperties = Some(10),
+      ),
+      objectSchema.copy(
+        additionalProperties = Some(numberSchema),
+      ),
+    ) == Nil)
+
+    assert(compare(
+      objectSchema.copy(
+        additionalProperties = Some(integerSchema),
+        propertyNames = Some(stringSchema.copy(maxLength = Some(8))),
+        minProperties = Some(2),
+        maxProperties = Some(10),
+      ),
+      objectSchema.copy(
+        additionalProperties = Some(numberSchema),
+        propertyNames = Some(stringSchema.copy(maxLength = Some(10))),
+        minProperties = Some(1),
+        maxProperties = Some(12),
+      ),
+    ) == Nil)
+
+    assert(compare(
+      objectSchema.copy(
+        additionalProperties = Some(stringSchema),
+      ),
+      objectSchema.copy(
+        additionalProperties = Some(numberSchema),
+        propertyNames = Some(stringSchema.copy(maxLength = Some(10))),
+        minProperties = Some(1),
+        maxProperties = Some(12),
+      ),
+    ) == List(
+      IncompatibleAdditionalProperties(List(
+        TypeMismatch(List(SchemaType.String), List(SchemaType.Number))
+      )),
+      IncompatiblePropertyNames(List(
+        StringLengthBoundsMismatch(
+          Bounds(Some(Bound.inclusive(0)), None),
+          Bounds(Some(Bound.inclusive(0)), Some(Bound.inclusive(10)))
+        )
+      )),
+      ObjectSizeBoundsMismatch(
+        Bounds(Some(Bound.inclusive(0)), None),
+        Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(12))
+      )
+    )))
+  }
+
   //TODO significantly more tests
 }

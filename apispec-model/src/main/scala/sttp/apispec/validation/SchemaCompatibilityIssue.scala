@@ -117,7 +117,7 @@ case class ArrayLengthBoundsMismatch(
     s"target array length (minItems/maxItems) bounds $readerBounds are stricter than $writerBounds"
 }
 
-case class MinMaxPropertiesMismatch(
+case class ObjectSizeBoundsMismatch(
   writerBounds: Bounds[Int],
   readerBounds: Bounds[Int]
 ) extends SchemaCompatibilityIssue {

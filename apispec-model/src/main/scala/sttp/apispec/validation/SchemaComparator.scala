@@ -414,11 +414,11 @@ private class SchemaComparator(
     schema.maxProperties.map(Bound.inclusive)
   )
 
-  private def checkMinMaxProperties(writerSchema: Schema, readerSchema: Schema): Option[MinMaxPropertiesMismatch] = {
+  private def checkMinMaxProperties(writerSchema: Schema, readerSchema: Schema): Option[ObjectSizeBoundsMismatch] = {
     val writerBounds = objectMinMaxProperties(writerSchema)
     val readerBounds = objectMinMaxProperties(readerSchema)
     if (readerBounds.contains(writerBounds)) None
-    else Some(MinMaxPropertiesMismatch(writerBounds, readerBounds))
+    else Some(ObjectSizeBoundsMismatch(writerBounds, readerBounds))
   }
 
   private def checkRequiredProperties(writerSchema: Schema, readerSchema: Schema): Option[MissingRequiredProperties] = {
@@ -475,8 +475,8 @@ private class SchemaComparator(
     writerSchema: Schema,
     readerSchema: Schema,
   ): Option[IncompatiblePropertyNames] = {
-    val writerPropertyNames = writerSchema.propertyNames.getOrElse(Schema.Empty)
-    val readerPropertyNames = readerSchema.propertyNames.getOrElse(Schema.Empty)
+    val writerPropertyNames = writerSchema.propertyNames.getOrElse(Schema(SchemaType.String))
+    val readerPropertyNames = readerSchema.propertyNames.getOrElse(Schema(SchemaType.String))
     compare(writerPropertyNames, readerPropertyNames) match {
       case Nil => None
       case issues => Some(IncompatiblePropertyNames(issues))
