@@ -1,7 +1,8 @@
 package sttp.apispec.validation
 
 import org.scalatest.funsuite.AnyFunSuite
-import sttp.apispec.{ExampleSingleValue, Pattern, Schema, SchemaFormat, SchemaType}
+import sttp.apispec.validation.SchemaComparator.RefPrefix
+import sttp.apispec._
 
 import scala.collection.immutable.ListMap
 
@@ -12,6 +13,41 @@ class SchemaComparatorTest extends AnyFunSuite {
   private val booleanSchema = Schema(SchemaType.Boolean)
   private val arraySchema = Schema(SchemaType.Array)
   private val objectSchema = Schema(SchemaType.Object)
+
+  // case schemas for coproduct
+  private val writerFooSchema = objectSchema.copy(
+    properties = ListMap(
+      "type" -> stringSchema,
+      "value" -> stringSchema
+    ),
+    required = List("type", "value")
+  )
+
+  private val readerFooSchema = objectSchema.copy(
+    properties = ListMap(
+      "type" -> stringSchema,
+      "value" -> stringSchema,
+      "flag" -> booleanSchema
+    ),
+    required = List("type", "value")
+  )
+
+  private val barSchema = objectSchema.copy(
+    properties = ListMap(
+      "type" -> stringSchema,
+      "value" -> integerSchema
+    ),
+    required = List("type", "value")
+  )
+
+  private val bazSchema = objectSchema.copy(
+    properties = ListMap(
+      "type" -> stringSchema,
+      "value" -> booleanSchema,
+      "extra" -> stringSchema
+    ),
+    required = List("type", "value", "extra")
+  )
 
   // A schema with internal structure currently not understood by SchemaComparator.
   // Such Schema can only be compared for equality (this may change in the future as SchemaComparator is improved).
@@ -55,13 +91,20 @@ class SchemaComparatorTest extends AnyFunSuite {
 
   private val writerSchemas = sharedSchemas ++ Map(
     "Something" -> stringSchema,
-    "WriterTree" -> writerTreeSchema
+    "WriterTree" -> writerTreeSchema,
+    // coproduct cases
+    "Foo" -> writerFooSchema,
+    "Bar" -> barSchema
   )
 
   private val readerSchemas = sharedSchemas ++ Map(
     "Something" -> integerSchema,
     "ReaderTree" -> readerTreeSchema,
-    "StrictReaderTree" -> strictReaderTreeSchema
+    "StrictReaderTree" -> strictReaderTreeSchema,
+    // coproduct cases
+    "Foo" -> readerFooSchema,
+    "Bar" -> barSchema,
+    "Baz" -> bazSchema
   )
 
   private def ref(name: String): Schema =
@@ -331,7 +374,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("product properties checking") {
+  test("comparing product schemas") {
     assert(compare(
       objectSchema.copy(
         properties = ListMap(
@@ -359,6 +402,79 @@ class SchemaComparatorTest extends AnyFunSuite {
       IncompatibleProperty("c", List(
         TypeMismatch(List(SchemaType.Boolean), List(SchemaType.String))
       )),
+    ))
+  }
+
+  test("compatible coproduct schemas") {
+    assert(compare(
+      Schema(
+        oneOf = List(ref("Foo"), ref("Bar")),
+        discriminator = Some(Discriminator("type", None))
+      ),
+      Schema(
+        oneOf = List(ref("Foo"), ref("Bar"), ref("Baz")),
+        discriminator = Some(Discriminator("type", None))
+      ),
+    ) == Nil)
+  }
+
+  test("incompatible coproduct schemas") {
+    assert(compare(
+      Schema(
+        oneOf = List(ref("Foo"), ref("Bar"), ref("Baz")),
+        discriminator = Some(Discriminator("type", None))
+      ),
+      Schema(
+        oneOf = List(ref("Foo"), ref("Bar")),
+        discriminator = Some(Discriminator("type", None))
+      ),
+    ) == List(
+      UnsupportedDiscriminatorValues(List("Baz"))
+    ))
+  }
+
+  test("discriminator property mismatch") {
+    assert(compare(
+      Schema(
+        oneOf = List(ref("Foo"), ref("Bar")),
+        discriminator = Some(Discriminator("kind", None))
+      ),
+      Schema(
+        oneOf = List(ref("Foo"), ref("Bar"), ref("Baz")),
+        discriminator = Some(Discriminator("type", None))
+      ),
+    ) == List(
+      DiscriminatorPropertyMismatch(Some("kind"), "type")
+    ))
+  }
+
+  test("unsupported discriminator values") {
+    assert(compare(
+      Schema(
+        oneOf = List(ref("Foo"), ref("Bar")),
+        discriminator = Some(Discriminator("type", Some(ListMap("WFoo" -> s"${RefPrefix}Foo"))))
+      ),
+      Schema(
+        oneOf = List(ref("Foo"), ref("Bar"), ref("Baz")),
+        discriminator = Some(Discriminator("type", Some(ListMap("RBar" -> s"${RefPrefix}Bar"))))
+      ),
+    ) == List(
+      UnsupportedDiscriminatorValues(List("WFoo", "Bar"))
+    ))
+  }
+
+  test("incompatible coproduct case schema") {
+    assert(compare(
+      Schema(
+        oneOf = List(ref("Foo"), ref("Bar")),
+        discriminator = Some(Discriminator("type", Some(ListMap("Baz" -> s"${RefPrefix}Bar"))))
+      ),
+      Schema(
+        oneOf = List(ref("Foo"), ref("Baz")),
+        discriminator = Some(Discriminator("type", None))
+      ),
+    ) == List(
+      IncompatibleDiscriminatorCase("Baz", compare(barSchema, bazSchema))
     ))
   }
 
@@ -492,7 +608,7 @@ class SchemaComparatorTest extends AnyFunSuite {
       ObjectSizeBoundsMismatch(
         Bounds(Some(Bound.inclusive(0)), None),
         Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(12))
-      )
-    )))
+        )
+      )))
   }
 }

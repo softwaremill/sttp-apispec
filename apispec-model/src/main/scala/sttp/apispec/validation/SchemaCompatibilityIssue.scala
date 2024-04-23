@@ -149,7 +149,7 @@ case class DiscriminatorPropertyMismatch(
   }
 }
 
-case class DiscriminatorValuesMismatch(
+case class UnsupportedDiscriminatorValues(
   unsupportedValues: List[String]
 ) extends SchemaCompatibilityIssue {
   def description: String =

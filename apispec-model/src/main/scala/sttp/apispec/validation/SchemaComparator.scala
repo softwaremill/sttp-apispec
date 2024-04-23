@@ -58,12 +58,20 @@ private class SchemaComparator(
     }
   }
 
+  private object LocalRef {
+    def unapply(ref: String): Option[String] =
+      if (ref.startsWith(RefPrefix)) Some(ref.stripPrefix(RefPrefix))
+      else None
+  }
+
   /** Matches a schema that is a pure reference to one of the component schemas */
   private object LocalReference {
     def unapply(schema: Schema): Option[String] =
-      schema.$ref.filter(_.startsWith(RefPrefix))
-        .map(_.stripPrefix(RefPrefix))
-        .filter(name => schema == Schema.referenceTo(RefPrefix, name))
+      schema.$ref
+        .filter(ref => schema == Schema($ref = Some(ref)))
+        .collect {
+          case LocalRef(name) => name
+        }
   }
 
   // strip fields which do not affect schema comparison
@@ -266,11 +274,17 @@ private class SchemaComparator(
       discriminator = s.discriminator,
     )
 
-  private def discriminatorMapping(schema: Schema): Option[ListMap[String, SchemaLike]] =
+  private def discriminatorMapping(schema: Schema): Option[ListMap[String, Schema]] =
     schema.discriminator.map { disc =>
-      val baseMapping = ListMap(schema.oneOf.collect({ case s@LocalReference(name) => name -> s }): _*)
-      baseMapping ++ disc.mapping.getOrElse(ListMap.empty).map {
-        case (name, ref) => name -> Schema($ref = Some(ref))
+      // schema name -> overridden discriminator value
+      val reverseMapping = disc.mapping.getOrElse(ListMap.empty).collect {
+        case (discValue, LocalRef(name)) => name -> discValue
+      }
+      // assuming that schema is valid and every reference in disc.mapping is also an element of oneOf/anyOf
+      ListMap.empty ++ (schema.oneOf ++ schema.anyOf).collect {
+        case s@LocalReference(name) =>
+          val discValue = reverseMapping.getOrElse(name, name)
+          discValue -> s
       }
     }
 
@@ -463,13 +477,13 @@ private class SchemaComparator(
   private def checkDiscriminatorValues(
     writerMapping: Option[ListMap[String, SchemaLike]],
     readerMapping: Option[ListMap[String, SchemaLike]],
-  ): Option[DiscriminatorValuesMismatch] =
+  ): Option[UnsupportedDiscriminatorValues] =
     for {
       wm <- writerMapping
       rm <- readerMapping
       unsupportedValues = wm.keySet -- rm.keySet
       if unsupportedValues.nonEmpty
-    } yield DiscriminatorValuesMismatch(unsupportedValues.toList)
+    } yield UnsupportedDiscriminatorValues(unsupportedValues.toList)
 
   private def checkPropertyNames(
     writerSchema: Schema,
