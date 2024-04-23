@@ -8,6 +8,29 @@ import scala.collection.mutable
 
 object SchemaComparator {
   final val RefPrefix = "#/components/schemas/"
+}
+
+/**
+ * Utility for comparing schemas for compatibility.
+ * See [[compare]] for more details.
+ *
+ * Since this class contains a cache of comparison results,
+ * it is meant to be reused between multiple schema comparisons.
+ *
+ * @param writerNamedSchemas named schemas which may be referred to by the writer schema
+ * @param readerNamedSchemas named schemas which may be referred to by the reader schema
+ */
+class SchemaComparator(
+  writerNamedSchemas: Map[String, Schema],
+  readerNamedSchemas: Map[String, Schema]
+) {
+
+  import SchemaComparator._
+
+  private val cache = new mutable.HashMap[(Schema, Schema), List[SchemaCompatibilityIssue]]
+
+  // keeps schema pairs for which comparison is ongoing in order to short circuit recursive schema comparisons
+  private val inComparison = new mutable.HashSet[(Schema, Schema)]
 
   /**
    * Compares two schemas for compatibility. More precisely, checks if data that is valid according to [[writerSchema]]
@@ -25,35 +48,11 @@ object SchemaComparator {
    * Before being compared, all schemas are stripped of keywords which do not affect the comparison, e.g. annotations
    * like `title`, `description`, etc.
    *
-   * @param writerSchema       schema of the data being written
-   * @param readerSchema       schema of the data being read
-   * @param writerNamedSchemas named schemas which may be referred to by the writer schema
-   * @param readerNamedSchemas named schemas which may be referred to by the reader schema
+   * @param writerSchema schema of the data being written
+   * @param readerSchema schema of the data being read
    * @return a list of incompatibilities between the schemas
    */
-  def compare(
-    writerSchema: Schema,
-    readerSchema: Schema,
-    writerNamedSchemas: Map[String, Schema] = Map.empty,
-    readerNamedSchemas: Map[String, Schema] = Map.empty
-  ): List[SchemaCompatibilityIssue] =
-    new SchemaComparator(writerNamedSchemas, readerNamedSchemas)
-      .compare(writerSchema, readerSchema)
-}
-
-private class SchemaComparator(
-  writerNamedSchemas: Map[String, Schema],
-  readerNamedSchemas: Map[String, Schema]
-) {
-
-  import SchemaComparator._
-
-  private val cache = new mutable.HashMap[(Schema, Schema), List[SchemaCompatibilityIssue]]
-
-  // keeps schema pairs for which comparison is ongoing in order to short circuit recursive schema comparisons
-  private val inComparison = new mutable.HashSet[(Schema, Schema)]
-
-  private def compare(writerSchema: SchemaLike, readerSchema: SchemaLike): List[SchemaCompatibilityIssue] = {
+  def compare(writerSchema: SchemaLike, readerSchema: SchemaLike): List[SchemaCompatibilityIssue] = {
     val normalizedWriterSchema = normalize(writerSchema, writerNamedSchemas)
     val normalizedReaderSchema = normalize(readerSchema, readerNamedSchemas)
     val cacheKey = (normalizedWriterSchema, normalizedReaderSchema)
