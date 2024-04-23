@@ -414,5 +414,32 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
+  test("comparing tuple schemas") {
+    assert(compare(
+      arraySchema.copy(
+        prefixItems = Some(List(integerSchema, stringSchema, booleanSchema)),
+      ),
+      arraySchema.copy(
+        prefixItems = Some(List(numberSchema, stringSchema)),
+      ),
+    ) == Nil)
+
+    assert(compare(
+      arraySchema.copy(
+        prefixItems = Some(List(integerSchema, stringSchema)),
+      ),
+      arraySchema.copy(
+        prefixItems = Some(List(numberSchema, booleanSchema, stringSchema)),
+      ),
+    ) == List(
+      IncompatiblePrefixItem(1, List(
+        TypeMismatch(List(SchemaType.String), List(SchemaType.Boolean))
+      )),
+      IncompatiblePrefixItem(2, List(
+        GeneralSchemaMismatch(Schema.Empty, stringSchema)
+      ))
+    ))
+  }
+
   //TODO significantly more tests
 }
