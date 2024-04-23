@@ -376,9 +376,9 @@ private class SchemaComparator(
         None
     }
 
-  private def checkUniqueItems(writerSchema: Schema, readerSchema: Schema): Option[UniqueItemsIntroduced.type] =
+  private def checkUniqueItems(writerSchema: Schema, readerSchema: Schema): Option[UniqueItemsRequired.type] =
     (writerSchema.uniqueItems, readerSchema.uniqueItems) match {
-      case (None | Some(false), Some(true)) => Some(UniqueItemsIntroduced)
+      case (None | Some(false), Some(true)) => Some(UniqueItemsRequired)
       case _ => None
     }
 
@@ -389,7 +389,7 @@ private class SchemaComparator(
 
   private def checkArrayLengthBounds(writerSchema: Schema, readerSchema: Schema): Option[ArrayLengthBoundsMismatch] = {
     val writerBounds = arrayLengthBounds(writerSchema)
-    val readerBounds = stringLengthBounds(readerSchema)
+    val readerBounds = arrayLengthBounds(readerSchema)
     if (readerBounds.contains(writerBounds)) None
     else Some(ArrayLengthBoundsMismatch(writerBounds, readerBounds))
   }

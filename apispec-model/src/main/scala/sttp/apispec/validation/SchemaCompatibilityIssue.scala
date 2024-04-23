@@ -105,7 +105,7 @@ case class PatternMismatch(
   }
 }
 
-case object UniqueItemsIntroduced extends SchemaCompatibilityIssue {
+case object UniqueItemsRequired extends SchemaCompatibilityIssue {
   def description: String = "target schema requires unique items"
 }
 

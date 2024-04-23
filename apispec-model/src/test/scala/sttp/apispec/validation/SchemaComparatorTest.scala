@@ -10,6 +10,8 @@ class SchemaComparatorTest extends AnyFunSuite {
   private val integerSchema = Schema(SchemaType.Integer)
   private val numberSchema = Schema(SchemaType.Number)
   private val booleanSchema = Schema(SchemaType.Boolean)
+  private val arraySchema = Schema(SchemaType.Array)
+  private val objectSchema = Schema(SchemaType.Object)
 
   // A schema with internal structure currently not understood by SchemaComparator.
   // Such Schema can only be compared for equality (this may change in the future as SchemaComparator is improved).
@@ -331,7 +333,7 @@ class SchemaComparatorTest extends AnyFunSuite {
 
   test("product properties checking") {
     assert(compare(
-      Schema(SchemaType.Object).copy(
+      objectSchema.copy(
         properties = ListMap(
           "a" -> stringSchema,
           "b" -> integerSchema,
@@ -340,7 +342,7 @@ class SchemaComparatorTest extends AnyFunSuite {
         ),
         required = List("a", "b", "d")
       ),
-      Schema(SchemaType.Object).copy(
+      objectSchema.copy(
         properties = ListMap(
           "a" -> stringSchema,
           "b" -> numberSchema,
@@ -357,6 +359,58 @@ class SchemaComparatorTest extends AnyFunSuite {
       IncompatibleProperty("c", List(
         TypeMismatch(List(SchemaType.Boolean), List(SchemaType.String))
       )),
+    ))
+  }
+
+  test("comparing collection schemas") {
+    assert(compare(
+      arraySchema.copy(
+        items = Some(integerSchema),
+        minItems = Some(1),
+        maxItems = Some(5),
+        uniqueItems = Some(true),
+      ),
+      arraySchema.copy(
+        items = Some(numberSchema)
+      ),
+    ) == Nil)
+
+    assert(compare(
+      arraySchema.copy(
+        items = Some(integerSchema),
+        minItems = Some(1),
+        maxItems = Some(5),
+        uniqueItems = Some(true),
+      ),
+      arraySchema.copy(
+        items = Some(numberSchema),
+        minItems = Some(1),
+        maxItems = Some(10),
+        uniqueItems = Some(true),
+      ),
+    ) == Nil)
+
+    assert(compare(
+      arraySchema.copy(
+        items = Some(integerSchema),
+        minItems = Some(1),
+        maxItems = Some(5),
+      ),
+      arraySchema.copy(
+        items = Some(stringSchema),
+        minItems = Some(2),
+        maxItems = Some(4),
+        uniqueItems = Some(true),
+      ),
+    ) == List(
+      ArrayLengthBoundsMismatch(
+        Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(5))),
+        Bounds(Some(Bound.inclusive(2)), Some(Bound.inclusive(4)))
+      ),
+      UniqueItemsRequired,
+      IncompatibleItems(List(
+        TypeMismatch(List(SchemaType.Integer), List(SchemaType.String))
+      ))
     ))
   }
 
