@@ -83,7 +83,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     assert(compare(stringSchema, Schema.Empty) == Nil)
     assert(compare(opaqueSchema, Schema.Empty) == Nil)
     assert(compare(Schema.Empty, stringSchema) == List(
-      TypeMismatch(SchemaType.Values.filterNot(_ == SchemaType.String), List(SchemaType.String))
+      TypeMismatch(SchemaType.Values.filter(_ != SchemaType.String), List(SchemaType.String))
     ))
   }
 
@@ -436,7 +436,7 @@ class SchemaComparatorTest extends AnyFunSuite {
         TypeMismatch(List(SchemaType.String), List(SchemaType.Boolean))
       )),
       IncompatiblePrefixItem(2, List(
-        TypeMismatch(SchemaType.Values.filterNot(_ == SchemaType.String), List(SchemaType.String))
+        TypeMismatch(SchemaType.Values.filter(_ != SchemaType.String), List(SchemaType.String))
       ))
     ))
   }
@@ -495,6 +495,4 @@ class SchemaComparatorTest extends AnyFunSuite {
       )
     )))
   }
-
-  //TODO significantly more tests
 }
