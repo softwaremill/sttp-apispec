@@ -71,7 +71,7 @@ private class SchemaComparator(
     case AnySchema.Anything => Schema.Empty
     case AnySchema.Nothing => Schema.Nothing
     case s: Schema => deannotate(s) match {
-      case s@LocalReference(name) =>
+      case s@LocalRefSchema(name) =>
         def noSchema: Nothing =
           throw new NoSuchElementException(s"could not resolve schema reference ${s.$ref.get}")
 
@@ -87,7 +87,7 @@ private class SchemaComparator(
   }
 
   /** Matches a schema that is a pure reference to one of the component schemas */
-  private object LocalReference {
+  private object LocalRefSchema {
     def unapply(schema: Schema): Option[String] =
       schema.$ref
         .filter(ref => schema == Schema($ref = Some(ref)))
@@ -288,7 +288,7 @@ private class SchemaComparator(
     // exactly one of `oneOf` and `anyOf` should be non-empty
     (s.oneOf.nonEmpty != s.anyOf.nonEmpty) &&
       (s.oneOf ++ s.anyOf).forall {
-        case LocalReference(_) => true
+        case LocalRefSchema(_) => true
         case _ => false
       } && s == Schema(
       oneOf = s.oneOf,
@@ -304,7 +304,7 @@ private class SchemaComparator(
       }
       // assuming that schema is valid and every reference in disc.mapping is also an element of oneOf/anyOf
       ListMap.empty ++ (schema.oneOf ++ schema.anyOf).collect {
-        case s@LocalReference(name) =>
+        case s@LocalRefSchema(name) =>
           val discValue = reverseMapping.getOrElse(name, name)
           discValue -> s
       }
