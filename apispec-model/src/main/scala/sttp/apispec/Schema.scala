@@ -171,6 +171,8 @@ object SchemaType {
   case object String extends SchemaType("string")
   case object Integer extends SchemaType("integer")
   case object Null extends SchemaType("null")
+
+  final val Values = List(Boolean, Object, Array, Number, String, Integer, Null)
 }
 
 object SchemaFormat {

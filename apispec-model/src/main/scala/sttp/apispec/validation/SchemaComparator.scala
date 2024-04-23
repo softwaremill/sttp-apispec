@@ -274,14 +274,20 @@ private class SchemaComparator(
       }
     }
 
+  private def getTypes(schema: Schema): Option[List[SchemaType]] = schema match {
+    case Schema.Empty => Some(SchemaType.Values)
+    case Schema.Nothing => Some(Nil)
+    case s => s.`type`
+  }
+
   /**
    * Checks if all writer types are compatible with at least one reader type.
    * This check assumes schemas that have at least one `type` defined.
    */
   private def checkType(writerSchema: Schema, readerSchema: Schema): Option[TypeMismatch] =
     for {
-      writerTypes <- writerSchema.`type`
-      readerTypes <- readerSchema.`type`
+      writerTypes <- getTypes(writerSchema)
+      readerTypes <- getTypes(readerSchema)
       incompatibleWriterTypes =
         writerTypes.filter(wtpe => !readerTypes.exists(rtpe => typesCompatible(wtpe, rtpe)))
       if incompatibleWriterTypes.nonEmpty
