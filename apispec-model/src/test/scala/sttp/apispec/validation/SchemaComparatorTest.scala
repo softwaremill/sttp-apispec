@@ -1,8 +1,8 @@
 package sttp.apispec.validation
 
 import org.scalatest.funsuite.AnyFunSuite
-import sttp.apispec.validation.SchemaComparator.RefPrefix
 import sttp.apispec._
+import sttp.apispec.validation.SchemaComparator.RefPrefix
 
 import scala.collection.immutable.ListMap
 
@@ -178,12 +178,14 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("comparing nullable schemas") {
+  test("compatible nullable schemas") {
     assert(compare(stringSchema, stringSchema.nullable) == Nil)
     assert(compare(opaqueSchema, opaqueSchema.nullable) == Nil)
     assert(compare(ref("String"), ref("String").nullable) == Nil)
     assert(compare(integerSchema.nullable, numberSchema.nullable) == Nil)
+  }
 
+  test("incompatible nullable schemas") {
     assert(compare(stringSchema.nullable, stringSchema) == List(
       TypeMismatch(List(SchemaType.Null), List(SchemaType.String))
     ))
@@ -195,20 +197,22 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("enum and const checking") {
-    def enums(values: Any*): List[ExampleSingleValue] =
-      values.toList.map(ExampleSingleValue)
+  private def enums(values: Any*): List[ExampleSingleValue] =
+    values.toList.map(ExampleSingleValue)
 
-    def enumSchema(values: String*): Schema = values.toList match {
-      case single :: Nil => stringSchema.copy(`enum` = Some(List(single).map(ExampleSingleValue)))
-      case multiple => stringSchema.copy(`enum` = Some(multiple.map(ExampleSingleValue)))
-    }
+  private def enumSchema(values: String*): Schema = values.toList match {
+    case single :: Nil => stringSchema.copy(`enum` = Some(List(single).map(ExampleSingleValue)))
+    case multiple => stringSchema.copy(`enum` = Some(multiple.map(ExampleSingleValue)))
+  }
 
+  test("compatible enum & const") {
     assert(compare(enumSchema("a"), stringSchema) == Nil)
     assert(compare(enumSchema("a"), enumSchema("a")) == Nil)
     assert(compare(enumSchema("a"), enumSchema("a", "b")) == Nil)
     assert(compare(enumSchema("a", "b"), enumSchema("a", "b", "c")) == Nil)
+  }
 
+  test("incompatible enum & const") {
     assert(compare(stringSchema, enumSchema("a", "b")) == List(
       EnumMismatch(None, enums("a", "b"))
     ))
@@ -226,7 +230,24 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("format checking") {
+  test("compatible formats") {
+    assert(compare(
+      stringSchema.copy(format = Some(SchemaFormat.Date)),
+      stringSchema,
+    ) == Nil)
+
+    assert(compare(
+      integerSchema.copy(format = Some(SchemaFormat.Int32)),
+      integerSchema.copy(format = Some(SchemaFormat.Int64)),
+    ) == Nil)
+
+    assert(compare(
+      numberSchema.copy(format = Some(SchemaFormat.Float)),
+      numberSchema.copy(format = Some(SchemaFormat.Double)),
+    ) == Nil)
+  }
+
+  test("incompatible formats") {
     assert(compare(
       stringSchema,
       stringSchema.copy(format = Some(SchemaFormat.Date)),
@@ -247,24 +268,9 @@ class SchemaComparatorTest extends AnyFunSuite {
     ) == List(
       FormatMismatch(Some(SchemaFormat.Int64), SchemaFormat.Int32)
     ))
-
-    assert(compare(
-      stringSchema.copy(format = Some(SchemaFormat.Date)),
-      stringSchema,
-    ) == Nil)
-
-    assert(compare(
-      integerSchema.copy(format = Some(SchemaFormat.Int32)),
-      integerSchema.copy(format = Some(SchemaFormat.Int64)),
-    ) == Nil)
-
-    assert(compare(
-      numberSchema.copy(format = Some(SchemaFormat.Float)),
-      numberSchema.copy(format = Some(SchemaFormat.Double)),
-    ) == Nil)
   }
 
-  test("numerical assertions checking") {
+  test("compatible numerical assertions") {
     assert(compare(
       integerSchema.copy(
         multipleOf = Some(BigDecimal(2)),
@@ -286,7 +292,9 @@ class SchemaComparatorTest extends AnyFunSuite {
         maximum = Some(BigDecimal(10)),
       ),
     ) == Nil)
+  }
 
+  test("incompatible numerical assertions") {
     assert(compare(
       integerSchema,
       integerSchema.copy(
@@ -319,7 +327,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("string assertions checking") {
+  test("compatible string assertions") {
     assert(compare(
       stringSchema.copy(
         maxLength = Some(10),
@@ -341,6 +349,9 @@ class SchemaComparatorTest extends AnyFunSuite {
       ),
     ) == Nil)
 
+  }
+
+  test("incompatible string assertions") {
     assert(compare(
       stringSchema,
       stringSchema.copy(
@@ -478,7 +489,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("comparing collection schemas") {
+  test("compatible collection schemas") {
     assert(compare(
       arraySchema.copy(
         items = Some(integerSchema),
@@ -505,7 +516,9 @@ class SchemaComparatorTest extends AnyFunSuite {
         uniqueItems = Some(true),
       ),
     ) == Nil)
+  }
 
+  test("incompatible collection schemas") {
     assert(compare(
       arraySchema.copy(
         items = Some(integerSchema),
@@ -530,7 +543,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("comparing tuple schemas") {
+  test("compatible tuple schemas") {
     assert(compare(
       arraySchema.copy(
         prefixItems = Some(List(integerSchema, stringSchema, booleanSchema)),
@@ -539,7 +552,9 @@ class SchemaComparatorTest extends AnyFunSuite {
         prefixItems = Some(List(numberSchema, stringSchema)),
       ),
     ) == Nil)
+  }
 
+  test("incompatible tuple schemas") {
     assert(compare(
       arraySchema.copy(
         prefixItems = Some(List(integerSchema, stringSchema)),
@@ -557,7 +572,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("comparing map schemas") {
+  test("compatible map schemas") {
     assert(compare(
       objectSchema.copy(
         additionalProperties = Some(integerSchema),
@@ -584,7 +599,9 @@ class SchemaComparatorTest extends AnyFunSuite {
         maxProperties = Some(12),
       ),
     ) == Nil)
+  }
 
+  test("incompatible map schemas") {
     assert(compare(
       objectSchema.copy(
         additionalProperties = Some(stringSchema),
