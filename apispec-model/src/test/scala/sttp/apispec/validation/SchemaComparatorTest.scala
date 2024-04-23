@@ -94,7 +94,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     assert(compare(opaqueSchema, Schema.Nothing) == List(NoValuesAllowed(opaqueSchema)))
   }
 
-  test("type mismatch") {
+  test("type checking") {
     assert(compare(integerSchema, numberSchema) == Nil)
     assert(compare(stringSchema, integerSchema) == List(
       TypeMismatch(List(SchemaType.String), List(SchemaType.Integer))
@@ -126,14 +126,14 @@ class SchemaComparatorTest extends AnyFunSuite {
     assert(compare(ref("Something"), ref("String")) == Nil)
   }
 
-  test("recursive schemas") {
+  test("comparing recursive schemas") {
     assert(compare(writerTreeSchema, readerTreeSchema) == Nil)
     assert(compare(writerTreeSchema, strictReaderTreeSchema) == List(
       MissingRequiredProperties(Set("value"))
     ))
   }
 
-  test("nullable schemas") {
+  test("comparing nullable schemas") {
     assert(compare(stringSchema, stringSchema.nullable) == Nil)
     assert(compare(opaqueSchema, opaqueSchema.nullable) == Nil)
     assert(compare(ref("String"), ref("String").nullable) == Nil)
@@ -150,7 +150,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("enum and const mismatch") {
+  test("enum and const checking") {
     def enums(values: Any*): List[ExampleSingleValue] =
       values.toList.map(ExampleSingleValue)
 
@@ -181,7 +181,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("format mismatch") {
+  test("format checking") {
     assert(compare(
       stringSchema,
       stringSchema.copy(format = Some(SchemaFormat.Date)),
@@ -219,7 +219,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ) == Nil)
   }
 
-  test("numerical assertions") {
+  test("numerical assertions checking") {
     assert(compare(
       integerSchema.copy(
         multipleOf = Some(BigDecimal(2)),
@@ -274,7 +274,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("string assertions") {
+  test("string assertions checking") {
     assert(compare(
       stringSchema.copy(
         maxLength = Some(10),
@@ -329,7 +329,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     ))
   }
 
-  test("product schema properties") {
+  test("product properties checking") {
     assert(compare(
       Schema(SchemaType.Object).copy(
         properties = ListMap(
