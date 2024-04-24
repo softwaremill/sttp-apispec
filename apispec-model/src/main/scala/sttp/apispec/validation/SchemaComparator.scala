@@ -27,10 +27,22 @@ class SchemaComparator(
 
   import SchemaComparator._
 
-  private val cache = new mutable.HashMap[(Schema, Schema), List[SchemaCompatibilityIssue]]
+  private val issuesCache = new mutable.HashMap[(Schema, Schema), List[SchemaCompatibilityIssue]]
+  private val identicalityCache = new mutable.HashMap[(Schema, Schema), Boolean]
 
-  // keeps schema pairs for which comparison is ongoing in order to short circuit recursive schema comparisons
-  private val inComparison = new mutable.HashSet[(Schema, Schema)]
+  /**
+   * Computes a value for a given key, using a cache. Computation of the value may recursively depend on the same key.
+   * In such cases, the recursion is short-circuited and the value is assumed to be equal to `recursiveValue`.
+   */
+  private def computeCached[K, V](cache: mutable.Map[K, V], key: K, recursiveValue: V)(compute: => V): V =
+    cache.get(key) match {
+      case Some(value) => value
+      case None =>
+        cache.put(key, recursiveValue)
+        val result = try compute finally cache.remove(key)
+        cache.put(key, result)
+        result
+    }
 
   /**
    * Compares two schemas for compatibility. More precisely, checks if data that is valid according to [[writerSchema]]
@@ -55,14 +67,9 @@ class SchemaComparator(
   def compare(writerSchema: SchemaLike, readerSchema: SchemaLike): List[SchemaCompatibilityIssue] = {
     val normalizedWriterSchema = normalize(writerSchema, writerNamedSchemas)
     val normalizedReaderSchema = normalize(readerSchema, readerNamedSchemas)
-    val cacheKey = (normalizedWriterSchema, normalizedReaderSchema)
-    // short-circuit recursive comparison of the same pair of schemas that is already being compared
-    if (inComparison(cacheKey)) Nil
-    else cache.getOrElseUpdate(cacheKey, {
-      inComparison.add(cacheKey)
-      try compareNormalized(normalizedWriterSchema, normalizedReaderSchema)
-      finally inComparison.remove(cacheKey)
-    })
+    computeCached(issuesCache, (normalizedWriterSchema, normalizedReaderSchema), Nil) {
+      compareNormalized(normalizedWriterSchema, normalizedReaderSchema)
+    }
   }
 
   // translate AnySchema to Schema, remove annotations and resolve references
@@ -107,7 +114,7 @@ class SchemaComparator(
     )
 
   private def compareNormalized(writerSchema: Schema, readerSchema: Schema): List[SchemaCompatibilityIssue] =
-    if (writerSchema == Schema.Nothing || readerSchema == Schema.Empty || writerSchema == readerSchema) {
+    if (writerSchema == Schema.Nothing || readerSchema == Schema.Empty) {
       Nil
     } else if (isPrimitiveSchema(writerSchema) && isPrimitiveSchema(readerSchema)) {
       checkType(writerSchema, readerSchema).toList ++
@@ -211,11 +218,71 @@ class SchemaComparator(
 
     } else checkType(writerSchema, readerSchema) match {
       case Some(typeMismatch) => List(typeMismatch)
+      case None if identical(writerSchema, readerSchema) => Nil
       case None =>
         // At this point we know that schemas are not equal, and we were unable to produce any
         // more specific incompatibility, so we just return a generic issue
         List(GeneralSchemaMismatch(writerSchema, readerSchema))
     }
+
+  /**
+   * Checks if two (already normalized) schemas are identical. Note: we can't simply compare schemas for equality
+   * with `==` because local references in the schemas may resolve to different schemas, i.e.
+   * - identical local references in `writerSchema` and `readerSchema` may resolve to different schemas
+   * - non-identical local references in `writerSchema` and `readerSchema` may resolve to identical schemas
+   */
+  private def identical(writerSchema: Schema, readerSchema: Schema): Boolean =
+    (writerSchema eq readerSchema) || computeCached(identicalityCache, (writerSchema, readerSchema), true) {
+      def identicalSubschema(writerSubschema: SchemaLike, readerSubschema: SchemaLike): Boolean =
+        identical(normalize(writerSubschema, writerNamedSchemas), normalize(readerSubschema, readerNamedSchemas))
+
+      def identicalSubschemaMap[K](writerSubschemas: ListMap[K, SchemaLike], readerSubschemas: ListMap[K, SchemaLike]): Boolean =
+        (writerSubschemas.keySet ++ readerSubschemas.keySet).forall { key =>
+          writerSubschemas.get(key).corresponds(readerSubschemas.get(key))(identicalSubschema)
+        }
+
+      removeSubschemas(writerSchema) == removeSubschemas(readerSchema) &&
+        writerSchema.$defs.corresponds(readerSchema.$defs)(identicalSubschemaMap) &&
+        writerSchema.allOf.corresponds(readerSchema.allOf)(identicalSubschema) &&
+        writerSchema.anyOf.corresponds(readerSchema.anyOf)(identicalSubschema) &&
+        writerSchema.oneOf.corresponds(readerSchema.oneOf)(identicalSubschema) &&
+        writerSchema.not.corresponds(readerSchema.not)(identicalSubschema) &&
+        writerSchema.`if`.corresponds(readerSchema.`if`)(identicalSubschema) &&
+        writerSchema.`then`.corresponds(readerSchema.`then`)(identicalSubschema) &&
+        writerSchema.`else`.corresponds(readerSchema.`else`)(identicalSubschema) &&
+        identicalSubschemaMap(writerSchema.dependentSchemas, readerSchema.dependentSchemas) &&
+        writerSchema.items.corresponds(readerSchema.items)(identicalSubschema) &&
+        writerSchema.prefixItems.corresponds(readerSchema.prefixItems)((w, r) => w.corresponds(r)(identicalSubschema)) &&
+        writerSchema.contains.corresponds(readerSchema.contains)(identicalSubschema) &&
+        writerSchema.unevaluatedItems.corresponds(readerSchema.unevaluatedItems)(identicalSubschema) &&
+        identicalSubschemaMap(writerSchema.properties, readerSchema.properties) &&
+        identicalSubschemaMap(writerSchema.patternProperties, readerSchema.patternProperties) &&
+        writerSchema.additionalProperties.corresponds(readerSchema.additionalProperties)(identicalSubschema) &&
+        writerSchema.propertyNames.corresponds(readerSchema.propertyNames)(identicalSubschema) &&
+        writerSchema.unevaluatedProperties.corresponds(readerSchema.unevaluatedProperties)(identicalSubschema)
+    }
+
+  private def removeSubschemas(schema: Schema): Schema =
+    schema.copy(
+      $defs = None,
+      allOf = Nil,
+      anyOf = Nil,
+      oneOf = Nil,
+      not = None,
+      `if` = None,
+      `then` = None,
+      `else` = None,
+      dependentSchemas = ListMap.empty,
+      items = None,
+      prefixItems = None,
+      contains = None,
+      unevaluatedItems = None,
+      properties = ListMap.empty,
+      patternProperties = ListMap.empty,
+      additionalProperties = None,
+      propertyNames = None,
+      unevaluatedProperties = None,
+    )
 
   /** Checks if schema is for a _primitive_ value, i.e. a string, boolean, number or null */
   private def isPrimitiveSchema(s: Schema): Boolean =

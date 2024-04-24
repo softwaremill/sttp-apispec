@@ -171,6 +171,20 @@ class SchemaComparatorTest extends AnyFunSuite {
     assert(compare(ref("Something"), ref("String")) == Nil)
   }
 
+  test("opaque schemas with identical reference to different schemas") {
+    val schema = Schema(allOf = List(ref("Something"), ref("String")))
+    assert(compare(schema, schema) == List(
+      GeneralSchemaMismatch(schema, schema)
+    ))
+  }
+
+  test("opaque schemas with different references to identical schemas") {
+    assert(compare(
+      Schema(allOf = List(ref("Something"), ref("Integer"))),
+      Schema(allOf = List(ref("String"), ref("Integer")))
+    ) == Nil)
+  }
+
   test("comparing recursive schemas") {
     assert(compare(writerTreeSchema, readerTreeSchema) == Nil)
     assert(compare(writerTreeSchema, strictReaderTreeSchema) == List(
