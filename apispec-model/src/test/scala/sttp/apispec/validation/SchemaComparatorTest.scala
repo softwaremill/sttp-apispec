@@ -172,6 +172,8 @@ class SchemaComparatorTest extends AnyFunSuite {
   }
 
   test("opaque schemas with identical reference to different schemas") {
+    // `allOf` is currently not understood by SchemaComparator,
+    // so the schemas are opaque and are compared for pure structural equality
     val schema = Schema(allOf = List(ref("Something"), ref("String")))
     assert(compare(schema, schema) == List(
       GeneralSchemaMismatch(schema, schema)
@@ -179,6 +181,8 @@ class SchemaComparatorTest extends AnyFunSuite {
   }
 
   test("opaque schemas with different references to identical schemas") {
+    // `allOf` is currently not understood by SchemaComparator,
+    // so the schemas are opaque and are compared for pure structural equality
     assert(compare(
       Schema(allOf = List(ref("Something"), ref("Integer"))),
       Schema(allOf = List(ref("String"), ref("Integer")))
