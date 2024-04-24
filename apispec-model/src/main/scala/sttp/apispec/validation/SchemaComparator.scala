@@ -242,24 +242,24 @@ class SchemaComparator(
         }
 
       removeSubschemas(writerSchema) == removeSubschemas(readerSchema) &&
-        writerSchema.$defs.corresponds(readerSchema.$defs)(identicalSubschemaMap) &&
+        writerSchema.$defs.toList.corresponds(readerSchema.$defs.toList)(identicalSubschemaMap) &&
         writerSchema.allOf.corresponds(readerSchema.allOf)(identicalSubschema) &&
         writerSchema.anyOf.corresponds(readerSchema.anyOf)(identicalSubschema) &&
         writerSchema.oneOf.corresponds(readerSchema.oneOf)(identicalSubschema) &&
-        writerSchema.not.corresponds(readerSchema.not)(identicalSubschema) &&
-        writerSchema.`if`.corresponds(readerSchema.`if`)(identicalSubschema) &&
-        writerSchema.`then`.corresponds(readerSchema.`then`)(identicalSubschema) &&
-        writerSchema.`else`.corresponds(readerSchema.`else`)(identicalSubschema) &&
+        writerSchema.not.toList.corresponds(readerSchema.not.toList)(identicalSubschema) &&
+        writerSchema.`if`.toList.corresponds(readerSchema.`if`.toList)(identicalSubschema) &&
+        writerSchema.`then`.toList.corresponds(readerSchema.`then`.toList)(identicalSubschema) &&
+        writerSchema.`else`.toList.corresponds(readerSchema.`else`.toList)(identicalSubschema) &&
         identicalSubschemaMap(writerSchema.dependentSchemas, readerSchema.dependentSchemas) &&
-        writerSchema.items.corresponds(readerSchema.items)(identicalSubschema) &&
-        writerSchema.prefixItems.corresponds(readerSchema.prefixItems)((w, r) => w.corresponds(r)(identicalSubschema)) &&
-        writerSchema.contains.corresponds(readerSchema.contains)(identicalSubschema) &&
-        writerSchema.unevaluatedItems.corresponds(readerSchema.unevaluatedItems)(identicalSubschema) &&
+        writerSchema.items.toList.corresponds(readerSchema.items.toList)(identicalSubschema) &&
+        writerSchema.prefixItems.toList.corresponds(readerSchema.prefixItems.toList)((w, r) => w.corresponds(r)(identicalSubschema)) &&
+        writerSchema.contains.toList.corresponds(readerSchema.contains.toList)(identicalSubschema) &&
+        writerSchema.unevaluatedItems.toList.corresponds(readerSchema.unevaluatedItems.toList)(identicalSubschema) &&
         identicalSubschemaMap(writerSchema.properties, readerSchema.properties) &&
         identicalSubschemaMap(writerSchema.patternProperties, readerSchema.patternProperties) &&
-        writerSchema.additionalProperties.corresponds(readerSchema.additionalProperties)(identicalSubschema) &&
-        writerSchema.propertyNames.corresponds(readerSchema.propertyNames)(identicalSubschema) &&
-        writerSchema.unevaluatedProperties.corresponds(readerSchema.unevaluatedProperties)(identicalSubschema)
+        writerSchema.additionalProperties.toList.corresponds(readerSchema.additionalProperties.toList)(identicalSubschema) &&
+        writerSchema.propertyNames.toList.corresponds(readerSchema.propertyNames.toList)(identicalSubschema) &&
+        writerSchema.unevaluatedProperties.toList.corresponds(readerSchema.unevaluatedProperties.toList)(identicalSubschema)
     }
 
   private def removeSubschemas(schema: Schema): Schema =
