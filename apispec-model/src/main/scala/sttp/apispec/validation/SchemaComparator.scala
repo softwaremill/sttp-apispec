@@ -238,7 +238,7 @@ class SchemaComparator(
 
       def identicalSubschemaMap[K](writerSubschemas: ListMap[K, SchemaLike], readerSubschemas: ListMap[K, SchemaLike]): Boolean =
         (writerSubschemas.keySet ++ readerSubschemas.keySet).forall { key =>
-          writerSubschemas.get(key).corresponds(readerSubschemas.get(key))(identicalSubschema)
+          writerSubschemas.get(key).toList.corresponds(readerSubschemas.get(key).toList)(identicalSubschema)
         }
 
       removeSubschemas(writerSchema) == removeSubschemas(readerSchema) &&
