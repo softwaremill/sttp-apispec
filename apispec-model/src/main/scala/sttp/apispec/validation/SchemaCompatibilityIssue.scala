@@ -1,11 +1,11 @@
 package sttp.apispec.validation
 
-import sttp.apispec.{ExampleSingleValue, ExampleValue, Pattern, Schema, SchemaType}
+import sttp.apispec.{ExampleValue, Pattern, Schema, SchemaType}
 
-sealed abstract class SchemaCompatibilityIssue extends Product {
+sealed abstract class SchemaCompatibilityIssue {
   def description: String
 
-  override def toString: String = s"$productPrefix($description)"
+  override def toString: String = description
 
   protected def pluralize(what: String, coll: Seq[Any]): String =
     if (coll.lengthCompare(1) == 0) s"$what ${coll.head}"
@@ -13,6 +13,11 @@ sealed abstract class SchemaCompatibilityIssue extends Product {
 
   protected def form(coll: Seq[Any], singular: String, plural: String): String =
     if (coll.size == 1) singular else plural
+
+  protected def issuesRepr(issues: List[SchemaCompatibilityIssue]): String =
+    issues.iterator
+      .map(i => s"- ${i.description.replace("\n", "\n  ")}") // indent
+      .mkString("\n")
 }
 
 /**
@@ -140,13 +145,11 @@ case class MissingDependentRequiredProperties(
 }
 
 case class DiscriminatorPropertyMismatch(
-  writerDiscriminator: Option[String],
+  writerDiscriminator: String,
   readerDiscriminator: String
 ) extends SchemaCompatibilityIssue {
-  def description: String = {
-    val writerDiscriminatorRepr = writerDiscriminator.fold("")(wd => s", as opposed to $wd")
-    s"target schema requires discriminator property $readerDiscriminator$writerDiscriminatorRepr"
-  }
+  def description: String =
+    s"target schema discriminator property $readerDiscriminator, as opposed to $writerDiscriminator"
 }
 
 case class UnsupportedDiscriminatorValues(
@@ -161,11 +164,6 @@ case class UnsupportedDiscriminatorValues(
  */
 sealed abstract class SubschemaCompatibilityIssue extends SchemaCompatibilityIssue {
   def subschemaIssues: List[SchemaCompatibilityIssue]
-
-  protected def issuesRepr: String =
-    subschemaIssues.iterator
-      .map(i => s"- ${i.description.replace("\n", "\n  ")}")
-      .mkString("\n")
 }
 
 case class IncompatibleProperty(
@@ -173,7 +171,7 @@ case class IncompatibleProperty(
   subschemaIssues: List[SchemaCompatibilityIssue]
 ) extends SubschemaCompatibilityIssue {
   def description: String =
-    s"incompatible schema for property $property:\n$issuesRepr"
+    s"incompatible schema for property $property:\n${issuesRepr(subschemaIssues)}"
 }
 
 case class IncompatibleDiscriminatorCase(
@@ -181,28 +179,28 @@ case class IncompatibleDiscriminatorCase(
   subschemaIssues: List[SchemaCompatibilityIssue]
 ) extends SubschemaCompatibilityIssue {
   def description: String =
-    s"incompatible schema for discriminator value $discriminatorValue:\n$issuesRepr"
+    s"incompatible schema for discriminator value $discriminatorValue:\n${issuesRepr(subschemaIssues)}"
 }
 
 case class IncompatibleAdditionalProperties(
   subschemaIssues: List[SchemaCompatibilityIssue]
 ) extends SubschemaCompatibilityIssue {
   def description: String =
-    s"incompatible schema for additional properties:\n$issuesRepr"
+    s"incompatible schema for additional properties:\n${issuesRepr(subschemaIssues)}"
 }
 
 case class IncompatiblePropertyNames(
   subschemaIssues: List[SchemaCompatibilityIssue]
 ) extends SubschemaCompatibilityIssue {
   override def description: String =
-    s"incompatible schema for property names:\n$issuesRepr"
+    s"incompatible schema for property names:\n${issuesRepr(subschemaIssues)}"
 }
 
 case class IncompatibleItems(
   subschemaIssues: List[SchemaCompatibilityIssue]
 ) extends SubschemaCompatibilityIssue {
   def description: String =
-    s"incompatible schema for items:\n$issuesRepr"
+    s"incompatible schema for items:\n${issuesRepr(subschemaIssues)}"
 }
 
 case class IncompatiblePrefixItem(
@@ -210,5 +208,30 @@ case class IncompatiblePrefixItem(
   subschemaIssues: List[SchemaCompatibilityIssue]
 ) extends SubschemaCompatibilityIssue {
   def description: String =
-    s"incompatible schema for prefix item at index $index:\n$issuesRepr"
+    s"incompatible schema for prefix item at index $index:\n${issuesRepr(subschemaIssues)}"
+}
+
+case class IncompatibleUnionVariant(
+  index: Int,
+  subschemaIssues: List[SchemaCompatibilityIssue]
+) extends SubschemaCompatibilityIssue {
+  def description: String =
+    s"incompatible anyOf/oneOf variant at index $index:\n${issuesRepr(subschemaIssues)}"
+}
+
+/**
+ * An issue raised when a schema is not compatible with any of the alternatives in a target union schema.
+ *
+ * @param alternatives a list of non-empty lists of issues, where each list corresponds to one of the alternatives
+ */
+case class AlternativeIssues(
+  alternatives: List[List[SchemaCompatibilityIssue]]
+) extends SchemaCompatibilityIssue {
+  override def description: String = {
+    val alternativesReprs = alternatives.zipWithIndex.map {
+      case (issues, idx) =>
+        s"for alternative $idx:\n${issuesRepr(issues)}"
+    }
+    s"schema is not compatible with any of the alternatives in oneOf/anyOf:\n${alternativesReprs.mkString("\n")}"
+  }
 }

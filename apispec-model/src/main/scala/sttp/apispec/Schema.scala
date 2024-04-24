@@ -162,7 +162,9 @@ object Schema {
     Schema($ref = Some(s"$prefix${$ref}"))
 }
 
-sealed abstract class SchemaType(val value: String)
+sealed abstract class SchemaType(val value: String) {
+  override def toString: String = value
+}
 object SchemaType {
   case object Boolean extends SchemaType("boolean")
   case object Object extends SchemaType("object")

@@ -190,10 +190,10 @@ class SchemaComparatorTest extends AnyFunSuite {
       TypeMismatch(List(SchemaType.Null), List(SchemaType.String))
     ))
     assert(compare(opaqueSchema.nullable, opaqueSchema) == List(
-      GeneralSchemaMismatch(opaqueSchema.nullable, opaqueSchema) //TODO better issue?
+      IncompatibleUnionVariant(1, List(GeneralSchemaMismatch(Schema.Null, opaqueSchema)))
     ))
     assert(compare(ref("String").nullable, ref("String")) == List(
-      GeneralSchemaMismatch(ref("String").nullable, stringSchema) //TODO better issue?
+      IncompatibleUnionVariant(1, List(TypeMismatch(List(SchemaType.Null), List(SchemaType.String))))
     ))
   }
 
@@ -455,7 +455,7 @@ class SchemaComparatorTest extends AnyFunSuite {
         discriminator = Some(Discriminator("type", None))
       ),
     ) == List(
-      DiscriminatorPropertyMismatch(Some("kind"), "type")
+      DiscriminatorPropertyMismatch("kind", "type")
     ))
   }
 
@@ -627,5 +627,28 @@ class SchemaComparatorTest extends AnyFunSuite {
         Bounds(Some(Bound.inclusive(1)), Some(Bound.inclusive(12)))
       ))
     )
+  }
+
+  test("compatible untagged union schemas") {
+    assert(compare(
+      Schema(anyOf = List(stringSchema, integerSchema)),
+      Schema(anyOf = List(stringSchema, numberSchema, booleanSchema)),
+    ) == Nil)
+  }
+
+  test("incompatible untagged union schemas") {
+    assert(compare(
+      Schema(anyOf = List(stringSchema, numberSchema, booleanSchema)),
+      Schema(anyOf = List(stringSchema, integerSchema)),
+    ) == List(
+      IncompatibleUnionVariant(1, List(AlternativeIssues(List(
+        List(TypeMismatch(List(SchemaType.Number), List(SchemaType.String))),
+        List(TypeMismatch(List(SchemaType.Number), List(SchemaType.Integer)))
+      )))),
+      IncompatibleUnionVariant(2, List(AlternativeIssues(List(
+        List(TypeMismatch(List(SchemaType.Boolean), List(SchemaType.String))),
+        List(TypeMismatch(List(SchemaType.Boolean), List(SchemaType.Integer)))
+      ))))
+    ))
   }
 }
