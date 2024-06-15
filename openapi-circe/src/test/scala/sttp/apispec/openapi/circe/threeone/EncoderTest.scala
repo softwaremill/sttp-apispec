@@ -51,25 +51,33 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
           Operation(
             operationId = Some("getPets"),
             description = Some("Gets all pets")
-          ).addResponse(200, Response(
-            description = "Success",
-            content = ListMap("application/json" ->
-              MediaType(schema = Some(arrayOf(ref("#/components/schemas/Pet"))))
+          ).addResponse(
+            200,
+            Response(
+              description = "Success",
+              content = ListMap(
+                "application/json" ->
+                  MediaType(schema = Some(arrayOf(ref("#/components/schemas/Pet"))))
+              )
             )
-          ))
+          )
         )
       )
     )
     val petSchema = Schema(
       `type` = Some(List(SchemaType.Object)),
-      properties =
-        ListMap("id" -> Schema(`type` = Some(List(SchemaType.Integer)), format = Some("int32")),
-          "name" -> Schema(`type` = Some(List(SchemaType.String)))
-        )
+      properties = ListMap(
+        "id" -> Schema(`type` = Some(List(SchemaType.Integer)), format = Some("int32")),
+        "name" -> Schema(`type` = Some(List(SchemaType.String)))
+      )
     )
-    val withComponents = withPathItem.components(Components(schemas = ListMap(
-      "Pet" -> petSchema
-    )))
+    val withComponents = withPathItem.components(
+      Components(schemas =
+        ListMap(
+          "Pet" -> petSchema
+        )
+      )
+    )
     val server = Server(url = "http://petstore.swagger.io/v1")
     val withServer = withComponents.servers(List(server))
     val serialized = withServer.asJson
@@ -87,21 +95,29 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
         schemaComponent("type 'null'")(Schema(SchemaType.Null)),
         schemaComponent("nullable string")(Schema(SchemaType.String, SchemaType.Null)),
         schemaComponent("nullable reference")(Schema.referenceTo("#/components/schemas/", "Foo").nullable),
-        schemaComponent("single example")(Schema(SchemaType.String)
-          .copy(examples = Some(List(ExampleSingleValue("exampleValue"))))),
-        schemaComponent("multi valued example")(Schema(SchemaType.Array)
-          .copy(examples = Some(List(ExampleMultipleValue(List("ex1", "ex1")))))),
-        schemaComponent("min/max")(Schema(
-          minimum = Some(BigDecimal(10)),
-          maximum = Some(BigDecimal(20)),
-        )),
-        schemaComponent("exclusive min/max")(Schema(
-          exclusiveMinimum = Some(BigDecimal(10)),
-          exclusiveMaximum = Some(BigDecimal(20)),
-        )),
+        schemaComponent("single example")(
+          Schema(SchemaType.String)
+            .copy(examples = Some(List(ExampleSingleValue("exampleValue"))))
+        ),
+        schemaComponent("multi valued example")(
+          Schema(SchemaType.Array)
+            .copy(examples = Some(List(ExampleMultipleValue(List("ex1", "ex1")))))
+        ),
+        schemaComponent("min/max")(
+          Schema(
+            minimum = Some(BigDecimal(10)),
+            maximum = Some(BigDecimal(20))
+          )
+        ),
+        schemaComponent("exclusive min/max")(
+          Schema(
+            exclusiveMinimum = Some(BigDecimal(10)),
+            exclusiveMaximum = Some(BigDecimal(20))
+          )
+        ),
         schemaComponent("exclusiveMinimum false")(Schema(minimum = Some(BigDecimal(10)))),
         schemaComponent("array")(Schema(SchemaType.Array).copy(items = Some(Schema(SchemaType.String)))),
-        schemaComponent("array with unique items")(Schema(SchemaType.Array).copy(uniqueItems = Some(true))),
+        schemaComponent("array with unique items")(Schema(SchemaType.Array).copy(uniqueItems = Some(true)))
       )
     )
 
@@ -115,13 +131,17 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     import sttp.apispec.openapi.circe._
 
     val schemas31 = ListMap(
-      schemaComponent("multiple examples")(Schema(SchemaType.String)
-        .copy(examples = Some(List("ex1", "ex2").map(ExampleSingleValue)))),
+      schemaComponent("multiple examples")(
+        Schema(SchemaType.String)
+          .copy(examples = Some(List("ex1", "ex2").map(ExampleSingleValue)))
+      )
     )
 
-    val openApiJson = fullSchemaOpenApi.copy(
-      components = fullSchemaOpenApi.components.map(c => c.copy(schemas = c.schemas ++ schemas31))
-    ).asJson
+    val openApiJson = fullSchemaOpenApi
+      .copy(
+        components = fullSchemaOpenApi.components.map(c => c.copy(schemas = c.schemas ++ schemas31))
+      )
+      .asJson
     val Right(json) = readJson("/spec/3.1/schema.json"): @unchecked
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
@@ -148,9 +168,8 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
             )
           )
         )
-      ),
+      )
     )
-
 
   test("encode security schema with empty scopes") {
     import sttp.apispec.openapi.circe._
