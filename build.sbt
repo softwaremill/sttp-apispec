@@ -87,9 +87,9 @@ lazy val projectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STT
 val compileAndTest = "compile->compile;test->test"
 
 lazy val rootProject = (project in file("."))
-  .settings(commonSettings*)
+  .settings(commonSettings *)
   .settings(publish / skip := true, name := "sttp-apispec", scalaVersion := scala2_13)
-  .aggregate(projectAggregates*)
+  .aggregate(projectAggregates *)
 
 lazy val circeTestUtils: ProjectMatrix = (projectMatrix in file("circe-testutils"))
   .settings(commonSettings)

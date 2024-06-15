@@ -139,7 +139,7 @@ case class Schema(
       // Representing nullable schemas (without explicit `type`) using `anyOf` is safer than `oneOf`.
       // If `oneOf` was used, and the original schema was already nullable, `null` would not be a valid
       // value for the resulting schema.
-      if(anyOf.contains(Schema.Null)) this // ensure idempotency
+      if (anyOf.contains(Schema.Null)) this // ensure idempotency
       else if (anyOf.nonEmpty) copy(anyOf = anyOf :+ Schema.Null)
       else Schema(anyOf = List(this, Schema.Null))
   }
