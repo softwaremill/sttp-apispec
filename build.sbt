@@ -12,7 +12,7 @@ val scalaJSVersions = List(scala2_12, scala2_13, scala3)
 val scalaNativeVersions = List(scala2_12, scala2_13, scala3)
 
 val circeVersion = "0.14.6"
-val circeYamlVersion = "0.15.1"
+val circeYamlVersion = "0.15.2"
 
 val scalaTestVersion = "3.2.18"
 val scalaCollectionCompatVersion = "2.11.0"
