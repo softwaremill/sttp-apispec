@@ -198,10 +198,11 @@ case class MessageTrait(
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 )
 
-// TODO: headers, extensions
-case class MessageExample(payload: ExampleValue,
+case class MessageExample(headers: Option[ExampleValue],
+                          payload: Option[ExampleValue],
                           name: Option[String],
-                          summary: Option[String])
+                          summary: Option[String],
+                          extensions: ListMap[String, ExtensionValue] = ListMap.empty)
 
 // TODO: serverBindings, channelBindings, operationBindings, messageBindings
 case class Components(

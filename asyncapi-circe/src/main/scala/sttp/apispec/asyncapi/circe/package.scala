@@ -126,7 +126,7 @@ package circe {
       case Some(Right(s)) => encoderSchema.apply(s)
     }
     implicit val encoderMessageExample: Encoder[MessageExample] =
-      deriveEncoder[MessageExample] // TODO: .mapJsonObject(expandExtensions)
+      deriveEncoder[MessageExample].mapJsonObject(expandExtensions)
     implicit val encoderMessageTrait: Encoder[MessageTrait] =
       deriveEncoder[MessageTrait].mapJsonObject(expandExtensions)
     implicit val encoderSingleMessage: Encoder[SingleMessage] =
