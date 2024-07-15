@@ -177,7 +177,7 @@ case class SingleMessage(
     tags: List[Tag] = Nil,
     externalDocs: Option[ExternalDocumentation] = None,
     bindings: List[MessageBinding] = Nil,
-    examples: List[Map[String, List[ExampleValue]]] = Nil,
+    examples: List[MessageExample] = Nil,
     traits: List[ReferenceOr[MessageTrait]] = Nil,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 ) extends Message
@@ -194,9 +194,15 @@ case class MessageTrait(
     tags: List[Tag] = Nil,
     externalDocs: Option[ExternalDocumentation] = None,
     bindings: List[MessageBinding] = Nil,
-    examples: ListMap[String, ExampleValue] = ListMap.empty,
+    examples: List[MessageExample] = Nil,
     extensions: ListMap[String, ExtensionValue] = ListMap.empty
 )
+
+case class MessageExample(headers: Option[ExampleValue],
+                          payload: Option[ExampleValue],
+                          name: Option[String],
+                          summary: Option[String],
+                          extensions: ListMap[String, ExtensionValue] = ListMap.empty)
 
 // TODO: serverBindings, channelBindings, operationBindings, messageBindings
 case class Components(

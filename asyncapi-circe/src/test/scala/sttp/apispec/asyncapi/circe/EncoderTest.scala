@@ -146,6 +146,43 @@ class EncoderTest extends AnyFunSuite {
     assert(expectedSecuritySchema === clientCredentialsSecurityScheme.asJson)
   }
 
-  def parse(s: String): Json = io.circe.parser.parse(s).fold(throw _, identity)
+  test("encode message with examples") {
+    val expected =
+      parse("""{
+              |  "messages" : {
+              |    "string" : {
+              |      "payload" : {
+              |        "type" : "string"
+              |      },
+              |      "contentType" : "text/plain",
+              |      "examples": [
+              |        {
+              |          "payload": "abc",
+              |          "name": "lowercase",
+              |          "summary" : "Lowercase letters example"
+              |        },
+              |        {
+              |          "payload": "ABC",
+              |          "name": "uppercase",
+              |          "summary" : "Uppercase letters example"
+              |        }
+              |      ]
+              |    }
+              |  }
+              |}""".stripMargin)
 
+    val message = SingleMessage(
+      payload = Some(Right(Schema(SchemaType.String))),
+      contentType = Some("text/plain"),
+      examples = List(
+        MessageExample(None, Some(ExampleSingleValue("abc")), Some("lowercase"), Some("Lowercase letters example")),
+        MessageExample(None, Some(ExampleSingleValue("ABC")), Some("uppercase"), Some("Uppercase letters example")))
+    )
+    val comp = Components(messages = ListMap("string" -> Right(message)))
+
+    assert(expected === comp.asJson.deepDropNullValues)
+  }
+
+
+  def parse(s: String): Json = io.circe.parser.parse(s).fold(throw _, identity)
 }
