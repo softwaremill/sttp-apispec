@@ -17,21 +17,21 @@ Add one of the following dependencies:
 
 ```scala
 // common model classes, including Schema
-"com.softwaremill.sttp.apispec" %% "apispec-model" % "0.11.1"
+"com.softwaremill.sttp.apispec" %% "apispec-model" % "0.11.2"
 
 // only model classes, root: OpenAPI
-"com.softwaremill.sttp.apispec" %% "openapi-model" % "0.11.1"
+"com.softwaremill.sttp.apispec" %% "openapi-model" % "0.11.2"
 // circe encoders for the model classes
-"com.softwaremill.sttp.apispec" %% "openapi-circe" % "0.11.1"
+"com.softwaremill.sttp.apispec" %% "openapi-circe" % "0.11.2"
 // extension method for OpenAPI to convert to yaml
-"com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.11.1"
+"com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.11.2"
 
 // only model classes, root: AsyncAPI
-"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.11.1"
+"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.11.2"
 // circe encoders for the model classes
-"com.softwaremill.sttp.apispec" %% "asyncapi-circe" % "0.11.1"
+"com.softwaremill.sttp.apispec" %% "asyncapi-circe" % "0.11.2"
 // extension method for AsyncAPI to convert to yaml
-"com.softwaremill.sttp.apispec" %% "asyncapi-circe-yaml" % "0.11.1"
+"com.softwaremill.sttp.apispec" %% "asyncapi-circe-yaml" % "0.11.2"
 ```
 
 sttp apispec is available for Scala 2.12, 2.13, 3, Scala.JS and Scala Native.
@@ -53,8 +53,8 @@ and choosing one version over the other is a matter of selecting the proper enco
 
 Add dependencies:
 ```scala
-"com.softwaremill.sttp.apispec" %% "openapi-model" % "0.11.1"
-"com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.11.1"
+"com.softwaremill.sttp.apispec" %% "openapi-model" % "0.11.2"
+"com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.11.2"
 ```
 
 Create example OpenAPI models:
@@ -89,8 +89,8 @@ Usage is the following:
 
 Add dependencies
 ```scala
-"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.11.1"
-"com.softwaremill.sttp.apispec" %% "asyncapi-circe-yaml" % "0.11.1"
+"com.softwaremill.sttp.apispec" %% "asyncapi-model" % "0.11.2"
+"com.softwaremill.sttp.apispec" %% "asyncapi-circe-yaml" % "0.11.2"
 ```
 
 Create an example AsyncAPI model:
