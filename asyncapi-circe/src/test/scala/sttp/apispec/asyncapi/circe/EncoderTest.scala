@@ -195,9 +195,7 @@ class EncoderTest extends AnyFunSuite {
               |        "$ref" : "Cat"
               |      }
               |    ],
-              |    "discriminator" : {
-              |      "discriminator" : "pet"
-              |    }
+              |    "discriminator" :  "pet"
               |  }
               |}""".stripMargin)
 

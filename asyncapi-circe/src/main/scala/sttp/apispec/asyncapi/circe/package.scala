@@ -17,7 +17,7 @@ package circe {
   trait SttpAsyncAPICirceEncoders extends JsonSchemaCirceEncoders {
     // note: avoids rendering of (unsupported) discriminator mapping
     override implicit val encoderDiscriminator: Encoder[Discriminator] = {
-      case Discriminator(propertyName, _) => Json.obj("discriminator" := propertyName)
+      case Discriminator(propertyName, _) => Json.fromString(propertyName)
     }
 
     // note: these are strict val-s, order matters!
