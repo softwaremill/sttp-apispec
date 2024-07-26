@@ -183,6 +183,33 @@ class EncoderTest extends AnyFunSuite {
     assert(expected === comp.asJson.deepDropNullValues)
   }
 
+  test("encode discriminator") {
+    val expected =
+      parse("""{
+              |  "payload" : {
+              |    "oneOf" : [
+              |      {
+              |        "$ref" : "Dog"
+              |      },
+              |      {
+              |        "$ref" : "Cat"
+              |      }
+              |    ],
+              |    "discriminator" : {
+              |      "discriminator" : "pet"
+              |    }
+              |  }
+              |}""".stripMargin)
+
+    val schema = Schema.oneOf(
+      List(Schema.referenceTo("", "Dog"), Schema.referenceTo("", "Cat")),
+      Some(Discriminator("pet", Some(ListMap("Dog" -> "Dog", "Cat" -> "Cat")))))
+    val message = SingleMessage(payload = Some(Right(schema)))
+
+    assert(expected === message.asJson.deepDropNullValues)
+  }
+
+
 
   def parse(s: String): Json = io.circe.parser.parse(s).fold(throw _, identity)
 }
