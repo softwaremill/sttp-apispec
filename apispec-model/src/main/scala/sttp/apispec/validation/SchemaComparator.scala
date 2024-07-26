@@ -6,10 +6,6 @@ import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
-object SchemaComparator {
-  final val RefPrefix = "#/components/schemas/"
-}
-
 /**
  * Utility for comparing schemas for compatibility.
  * See [[compare]] for more details.
@@ -17,15 +13,13 @@ object SchemaComparator {
  * Since this class contains a cache of comparison results,
  * it is meant to be reused between multiple schema comparisons.
  *
- * @param writerNamedSchemas named schemas which may be referred to by the writer schema
- * @param readerNamedSchemas named schemas which may be referred to by the reader schema
+ * @param writerSchemaResolver can resolve named schemas which may be referred to by the writer schema
+ * @param readerSchemaResolver can resolve named schemas which may be referred to by the reader schema
  */
 class SchemaComparator(
-  writerNamedSchemas: Map[String, Schema],
-  readerNamedSchemas: Map[String, Schema]
+  writerSchemaResolver: SchemaResolver,
+  readerSchemaResolver: SchemaResolver
 ) {
-
-  import SchemaComparator._
 
   private val issuesCache = new mutable.HashMap[(Schema, Schema), List[SchemaCompatibilityIssue]]
   private val identicalityCache = new mutable.HashMap[(Schema, Schema), Boolean]
@@ -65,53 +59,12 @@ class SchemaComparator(
    * @return a list of incompatibilities between the schemas
    */
   def compare(writerSchema: SchemaLike, readerSchema: SchemaLike): List[SchemaCompatibilityIssue] = {
-    val normalizedWriterSchema = normalize(writerSchema, writerNamedSchemas)
-    val normalizedReaderSchema = normalize(readerSchema, readerNamedSchemas)
+    val normalizedWriterSchema = writerSchemaResolver.resolveAndNormalize(writerSchema)
+    val normalizedReaderSchema = readerSchemaResolver.resolveAndNormalize(readerSchema)
     computeCached(issuesCache, (normalizedWriterSchema, normalizedReaderSchema), Nil) {
       compareNormalized(normalizedWriterSchema, normalizedReaderSchema)
     }
   }
-
-  // translate AnySchema to Schema, remove annotations and resolve references
-  @tailrec private def normalize(schema: SchemaLike, named: Map[String, Schema]): Schema = schema match {
-    case AnySchema.Anything => Schema.Empty
-    case AnySchema.Nothing => Schema.Nothing
-    case s: Schema => deannotate(s) match {
-      case s@ReferenceSchema(LocalRef(name)) =>
-        def noSchema: Nothing =
-          throw new NoSuchElementException(s"could not resolve schema reference ${s.$ref.get}")
-
-        normalize(named.getOrElse(name, noSchema), named)
-      case s => s
-    }
-  }
-
-  private object LocalRef {
-    def unapply(ref: String): Option[String] =
-      if (ref.startsWith(RefPrefix)) Some(ref.stripPrefix(RefPrefix))
-      else None
-  }
-
-  /** Matches a schema that is a pure reference to one of the component schemas */
-  private object ReferenceSchema {
-    def unapply(schema: Schema): Option[String] =
-      schema.$ref.filter(ref => schema == Schema($ref = Some(ref)))
-  }
-
-  // strip fields which do not affect schema comparison
-  private def deannotate(schema: Schema): Schema =
-    schema.copy(
-      $comment = None,
-      title = None,
-      description = None,
-      default = None,
-      deprecated = None,
-      readOnly = None,
-      writeOnly = None,
-      examples = None,
-      externalDocs = None,
-      extensions = ListMap.empty
-    )
 
   private def compareNormalized(writerSchema: Schema, readerSchema: Schema): List[SchemaCompatibilityIssue] =
     if (writerSchema == Schema.Nothing || readerSchema == Schema.Empty) {
@@ -145,8 +98,8 @@ class SchemaComparator(
         propIssues
 
     } else if (isDiscriminatedUnionSchema(writerSchema) && isDiscriminatedUnionSchema(readerSchema)) {
-      val writerMapping = discriminatorMapping(writerSchema)
-      val readerMapping = discriminatorMapping(readerSchema)
+      val writerMapping = writerSchemaResolver.discriminatorMapping(writerSchema)
+      val readerMapping = readerSchemaResolver.discriminatorMapping(readerSchema)
 
       val variantIssues: List[SchemaCompatibilityIssue] =
         (writerMapping.keySet intersect readerMapping.keySet).toList.flatMap { tag =>
@@ -234,7 +187,7 @@ class SchemaComparator(
   private def identical(writerSchema: Schema, readerSchema: Schema): Boolean =
     (writerSchema eq readerSchema) || computeCached(identicalityCache, (writerSchema, readerSchema), true) {
       def identicalSubschema(writerSubschema: SchemaLike, readerSubschema: SchemaLike): Boolean =
-        identical(normalize(writerSubschema, writerNamedSchemas), normalize(readerSubschema, readerNamedSchemas))
+        identical(writerSchemaResolver.resolveAndNormalize(writerSubschema), readerSchemaResolver.resolveAndNormalize(readerSubschema))
 
       def identicalSubschemaMap[K](writerSubschemas: ListMap[K, SchemaLike], readerSubschemas: ListMap[K, SchemaLike]): Boolean =
         (writerSubschemas.keySet ++ readerSubschemas.keySet).forall { key =>
@@ -357,24 +310,6 @@ class SchemaComparator(
 
   private def isDiscriminatedUnionSchema(s: Schema): Boolean =
     s.discriminator.nonEmpty && isUnionSchema(s)
-
-  /**
-   * Returns a mapping from discriminator values to schemas associated with them.
-   * All the schemas in the result are references (local or non-local).
-   */
-  private def discriminatorMapping(schema: Schema): ListMap[String, Schema] = {
-    // schema reference -> overridden discriminator value
-    val explicitDiscValueByRef = schema.discriminator.flatMap(_.mapping).getOrElse(ListMap.empty).map(_.swap)
-    // assuming that schema is valid and every reference in disc.mapping is also an element of oneOf/anyOf
-    ListMap.empty ++ (schema.oneOf ++ schema.anyOf).collect {
-      case s@ReferenceSchema(ref) =>
-        val discValue = explicitDiscValueByRef.getOrElse(ref, ref match {
-          case LocalRef(name) => name
-          case _ => throw new NoSuchElementException(s"no discriminator value specified for non-local reference $ref")
-        })
-        discValue -> s
-    }
-  }
 
   private def getTypes(schema: Schema): Option[List[SchemaType]] = schema match {
     case Schema.Empty => Some(SchemaType.Values)
