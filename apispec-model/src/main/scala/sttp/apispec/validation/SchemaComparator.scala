@@ -21,6 +21,11 @@ class SchemaComparator(
   readerSchemaResolver: SchemaResolver
 ) {
 
+  def this(
+    writerNamedSchemas: Map[String, Schema],
+    readerNamedSchemas: Map[String, Schema]
+  ) = this(SchemaResolver.components(writerNamedSchemas), SchemaResolver.components(readerNamedSchemas))
+
   private val issuesCache = new mutable.HashMap[(Schema, Schema), List[SchemaCompatibilityIssue]]
   private val identicalityCache = new mutable.HashMap[(Schema, Schema), Boolean]
 
