@@ -5,7 +5,7 @@ import sttp.apispec.{AnySchema, Schema, SchemaLike}
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
 
-class SchemaResolver(schemas: Map[String, Schema], referencePrefix: String) {
+class SchemaResolver(schemas: Map[String, Schema]) {
 
   def discriminatorMapping(schema: Schema): ListMap[String, Schema] = {
     // schema reference -> overridden discriminator value
@@ -15,7 +15,7 @@ class SchemaResolver(schemas: Map[String, Schema], referencePrefix: String) {
       val discValue = explicitDiscValueByRef.getOrElse(
         ref,
         ref match {
-          case Reference(name) => name
+          case SchemaResolver.Reference(name) => name
           case _ => throw new NoSuchElementException(s"no discriminator value specified for non-local reference $ref")
         }
       )
@@ -26,7 +26,7 @@ class SchemaResolver(schemas: Map[String, Schema], referencePrefix: String) {
   @tailrec final def resolveAndNormalize(schema: SchemaLike): Schema = schema match {
     case AnySchema.Anything => Schema.Empty
     case AnySchema.Nothing  => Schema.Nothing
-    case s @ ReferenceSchema(Reference(name)) =>
+    case s @ ReferenceSchema(SchemaResolver.Reference(name)) =>
       resolveAndNormalize(
         schemas.getOrElse(name, throw new NoSuchElementException(s"could not resolve schema reference ${s.$ref.get}"))
       )
@@ -36,12 +36,6 @@ class SchemaResolver(schemas: Map[String, Schema], referencePrefix: String) {
   private object ReferenceSchema {
     def unapply(schema: Schema): Option[String] =
       schema.$ref.filter(ref => schema == Schema($ref = Some(ref)))
-  }
-
-  private object Reference {
-    def unapply(ref: String): Option[String] = Option(ref)
-      .filter(_.startsWith(referencePrefix))
-      .map(_.stripPrefix(referencePrefix))
   }
 
   private def normalize(schema: Schema): Schema =
@@ -66,10 +60,17 @@ object SchemaResolver {
 
   val DefsRefPrefix = "#/$defs/"
 
-  def components(schemas: Map[String, Schema]): SchemaResolver = new SchemaResolver(schemas, ComponentsRefPrefix)
+  private val Reference = new References(ComponentsRefPrefix, DefsRefPrefix)
 
-  def defsSchemas(schema: Schema): SchemaResolver = new SchemaResolver(
-    schema.$defs.getOrElse(Map.empty).collect { case (name, s: Schema) => name -> s },
-    DefsRefPrefix
+  private class References(prefix: String*) {
+    def unapply(ref: String): Option[String] = prefix.flatMap { p =>
+      Option(ref).filter(_.startsWith(p)).map(_.stripPrefix(p))
+    }.headOption
+  }
+
+  def components(schemas: Map[String, Schema]): SchemaResolver = new SchemaResolver(schemas)
+
+  def defs(schema: Schema): SchemaResolver = new SchemaResolver(
+    schema.$defs.getOrElse(Map.empty).collect { case (name, s: Schema) => name -> s }
   )
 }
