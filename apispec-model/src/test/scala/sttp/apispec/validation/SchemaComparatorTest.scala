@@ -5,7 +5,8 @@ import sttp.apispec._
 
 import scala.collection.immutable.ListMap
 
-class SchemaComparatorTest extends AnyFunSuite {
+abstract class SchemaComparatorTest(referencePrefix: String) extends AnyFunSuite {
+
   private val stringSchema = Schema(SchemaType.String)
   private val integerSchema = Schema(SchemaType.Integer)
   private val numberSchema = Schema(SchemaType.Number)
@@ -107,7 +108,7 @@ class SchemaComparatorTest extends AnyFunSuite {
   )
 
   private def ref(name: String): Schema =
-    Schema.referenceTo(SchemaResolver.ComponentsRefPrefix, name)
+    Schema.referenceTo(referencePrefix, name)
 
   private def compare(writerSchema: Schema, readerSchema: Schema): List[SchemaCompatibilityIssue] =
     new SchemaComparator(writerSchemas, readerSchemas)
@@ -481,11 +482,11 @@ class SchemaComparatorTest extends AnyFunSuite {
     assert(compare(
       Schema(
         oneOf = List(ref("Foo"), ref("Bar")),
-        discriminator = Some(Discriminator("type", Some(ListMap("WFoo" -> s"${SchemaResolver.ComponentsRefPrefix}Foo"))))
+        discriminator = Some(Discriminator("type", Some(ListMap("WFoo" -> s"${referencePrefix}Foo"))))
       ),
       Schema(
         oneOf = List(ref("Foo"), ref("Bar"), ref("Baz")),
-        discriminator = Some(Discriminator("type", Some(ListMap("RBar" -> s"${SchemaResolver.ComponentsRefPrefix}Bar"))))
+        discriminator = Some(Discriminator("type", Some(ListMap("RBar" -> s"${referencePrefix}Bar"))))
       ),
     ) == List(
       UnsupportedDiscriminatorValues(List("WFoo", "Bar"))
@@ -496,7 +497,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     assert(compare(
       Schema(
         oneOf = List(ref("Foo"), ref("Bar")),
-        discriminator = Some(Discriminator("type", Some(ListMap("Baz" -> s"${SchemaResolver.ComponentsRefPrefix}Bar"))))
+        discriminator = Some(Discriminator("type", Some(ListMap("Baz" -> s"${referencePrefix}Bar"))))
       ),
       Schema(
         oneOf = List(ref("Foo"), ref("Baz")),

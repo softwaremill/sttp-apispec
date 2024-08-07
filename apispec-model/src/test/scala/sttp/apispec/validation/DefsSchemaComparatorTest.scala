@@ -1,0 +1,3 @@
+package sttp.apispec.validation
+
+class DefsSchemaComparatorTest extends SchemaComparatorTest(SchemaResolver.DefsRefPrefix)
