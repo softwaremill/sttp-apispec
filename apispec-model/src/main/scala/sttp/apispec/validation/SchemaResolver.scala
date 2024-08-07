@@ -68,9 +68,9 @@ object SchemaResolver {
     }.headOption
   }
 
-  def components(schemas: Map[String, Schema]): SchemaResolver = new SchemaResolver(schemas)
+  def apply(schemas: Map[String, Schema]): SchemaResolver = new SchemaResolver(schemas)
 
-  def defs(schema: Schema): SchemaResolver = new SchemaResolver(
+  def apply(schema: Schema): SchemaResolver = new SchemaResolver(
     schema.$defs.getOrElse(Map.empty).collect { case (name, s: Schema) => name -> s }
   )
 }
