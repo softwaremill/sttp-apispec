@@ -110,7 +110,7 @@ class SchemaComparatorTest extends AnyFunSuite {
     Schema.referenceTo(SchemaResolver.ComponentsRefPrefix, name)
 
   private def compare(writerSchema: Schema, readerSchema: Schema): List[SchemaCompatibilityIssue] =
-    new SchemaComparator(SchemaResolver.components(writerSchemas), SchemaResolver.components(readerSchemas))
+    new SchemaComparator(writerSchemas, readerSchemas)
       .compare(writerSchema, readerSchema)
 
   test("ignoring annotations") {
