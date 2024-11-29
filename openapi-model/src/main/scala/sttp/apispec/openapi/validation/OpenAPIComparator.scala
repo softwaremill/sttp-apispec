@@ -41,7 +41,7 @@ class OpenAPIComparator(
 
       (readerOperation, writerOperation) match {
         case (None, Some(_))                  => Some(MissingOperation(httpMethod))
-        case (Some(readerOp), Some(writerOp)) => checkOperation(httpMethod, readerOp, writerOp)
+        case (Some(readerOp), Some(writerOp)) => checkOperation(httpMethod, writerOp, readerOp)
         case _                                => None
       }
     }
@@ -64,8 +64,8 @@ class OpenAPIComparator(
 
   private def checkOperation(
       httpMethod: String,
-      readerOperation: Operation,
-      writerOperation: Operation
+      writerOperation: Operation,
+      readerOperation: Operation
   ): Option[IncompatibleOperation] = {
     val readerParameters = getOperationParameters(readerOperation)
     val writerParameters = getOperationParameters(writerOperation)
@@ -74,7 +74,7 @@ class OpenAPIComparator(
       val readerParameter = readerParameters.find(_.name == writerParameter.name)
       readerParameter match {
         case None                  => Some(MissingParameter(writerParameter.name))
-        case Some(readerParameter) => checkParameter(readerParameter, writerParameter)
+        case Some(readerParameter) => checkParameter(writerParameter, readerParameter)
       }
     }
 
@@ -104,15 +104,15 @@ class OpenAPIComparator(
       Some(IncompatibleOperation(httpMethod, issues))
   }
 
-  private def checkParameter(readerParameter: Parameter, writerParameter: Parameter): Option[IncompatibleParameter] = {
+  private def checkParameter(writerParameter: Parameter, readerParameter: Parameter): Option[IncompatibleParameter] = {
     val isCompatibleStyle = readerParameter.style == writerParameter.style
     val isCompatibleExplode = readerParameter.explode == writerParameter.explode
     val isCompatibleAllowEmptyValue = readerParameter.allowEmptyValue == writerParameter.allowEmptyValue
     val isCompatibleAllowReserved = readerParameter.allowReserved == writerParameter.allowReserved
 
     val issues =
-      checkSchema(readerParameter.schema, writerParameter.schema).toList ++
-        checkContent(readerParameter.content, writerParameter.content).toList ++
+      checkSchema(writerParameter.schema, readerParameter.schema).toList ++
+        checkContent(writerParameter.content, readerParameter.content).toList ++
         (if (!isCompatibleStyle) Some(MissMatch("style")) else None).toList ++
         (if (!isCompatibleExplode) Some(MissMatch("explode")) else None).toList ++
         (if (!isCompatibleAllowEmptyValue) Some(MissMatch("allowEmptyValue")) else None).toList ++
@@ -125,8 +125,8 @@ class OpenAPIComparator(
   }
 
   private def checkContent(
-      readerContent: ListMap[String, MediaType],
-      writerContent: ListMap[String, MediaType]
+      writerContent: ListMap[String, MediaType],
+      readerContent: ListMap[String, MediaType]
   ): Option[IncompatibleContent] = {
     val issues = writerContent.flatMap { case (writerMediaType, writerMediaTypeDescription) =>
       val readerMediaTypeDescription = readerContent.get(writerMediaType)
@@ -157,8 +157,8 @@ class OpenAPIComparator(
   }
 
   private def checkSchema(
-      readerSchema: Option[SchemaLike],
-      writerSchema: Option[SchemaLike]
+      writerSchema: Option[SchemaLike],
+      readerSchema: Option[SchemaLike]
   ): Option[OpenAPICompatibilityIssue] = {
     (readerSchema, writerSchema) match {
       case (Some(readerSchema: Schema), Some(writerSchema: Schema)) =>
@@ -226,7 +226,7 @@ class OpenAPIComparator(
       writerHeader: Header,
       readerHeader: Header
   ): Option[IncompatibleHeader] = {
-    val schemaIssues = checkSchema(readerHeader.schema, writerHeader.schema)
+    val schemaIssues = checkSchema(writerHeader.schema, readerHeader.schema)
     val contentIssue = checkContent(readerHeader.content, writerHeader.content)
     val isCompatibleStyle = readerHeader.style == writerHeader.style
     val isCompatibleExplode = readerHeader.explode == writerHeader.explode

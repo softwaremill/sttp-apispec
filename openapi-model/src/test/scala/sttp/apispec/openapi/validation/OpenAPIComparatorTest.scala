@@ -147,7 +147,7 @@ class OpenAPIComparatorTest extends AnyFunSuite {
 
     val openAPIComparator = new OpenAPIComparator(writerOpenAPI, readerOpenAPI)
 
-    val schemaMismatch = IncompatibleSchema(List(TypeMismatch(List(SchemaType.String), List(SchemaType.Integer))))
+    val schemaMismatch = IncompatibleSchema(List(TypeMismatch(List(SchemaType.Integer), List(SchemaType.String))))
     val mediaTypeIssue = IncompatibleMediaType("test", List(schemaMismatch))
     val parameterContentIssue = IncompatibleContent(List(mediaTypeIssue))
     val parameterIssue = IncompatibleParameter("test", List(parameterContentIssue))
