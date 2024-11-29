@@ -1,8 +1,10 @@
 package sttp.apispec.openapi.validation
 
 import sttp.apispec.{Schema, SchemaLike}
-import sttp.apispec.openapi.{MediaType, OpenAPI, Operation, Parameter, PathItem}
+import sttp.apispec.openapi.{Header, MediaType, OpenAPI, Operation, Parameter, PathItem, RequestBody, Response}
 import sttp.apispec.validation.SchemaComparator
+
+import scala.collection.immutable.ListMap
 
 class OpenAPIComparator(
     writerOpenAPI: OpenAPI,
@@ -68,7 +70,7 @@ class OpenAPIComparator(
     val readerParameters = getOperationParameters(readerOperation)
     val writerParameters = getOperationParameters(writerOperation)
 
-    val issues = writerParameters.flatMap { writerParameter =>
+    val parametersIssue = writerParameters.flatMap { writerParameter =>
       val readerParameter = readerParameters.find(_.name == writerParameter.name)
       readerParameter match {
         case None                  => Some(MissingParameter(writerParameter.name))
@@ -76,6 +78,26 @@ class OpenAPIComparator(
       }
     }
 
+    val requestBodyIssue = (writerOperation.requestBody, readerOperation.requestBody) match {
+      case (Some(Right(writerRequestBody)), Some(Right(readerRequestBody))) =>
+        checkRequestBody(writerRequestBody, readerRequestBody)
+      case (Some(Right(_)), None) => Some(MissingRequestBody())
+      case _                      => None
+    }
+
+    val responsesIssues = writerOperation.responses.responses.flatMap {
+      case (writerResponseKey, Right(writerResponse)) =>
+        val readerResponse = readerOperation.responses.responses.get(writerResponseKey)
+        readerResponse match {
+          case Some(Right(readerResponse)) => checkResponse(writerResponse, readerResponse)
+          case None                        => Some(MissingResponse(writerResponseKey))
+          case _                           => None
+        }
+      case _ => None
+    }
+
+    // TODO: callbacks, security?
+    val issues = parametersIssue ++ requestBodyIssue ++ responsesIssues
     if (issues.isEmpty)
       None
     else
@@ -90,7 +112,7 @@ class OpenAPIComparator(
 
     val issues =
       checkSchema(readerParameter.schema, writerParameter.schema).toList ++
-        checkParameterContent(readerParameter, writerParameter).toList ++
+        checkContent(readerParameter.content, writerParameter.content).toList ++
         (if (!isCompatibleStyle) Some(MissMatch("style")) else None).toList ++
         (if (!isCompatibleExplode) Some(MissMatch("explode")) else None).toList ++
         (if (!isCompatibleAllowEmptyValue) Some(MissMatch("allowEmptyValue")) else None).toList ++
@@ -102,12 +124,12 @@ class OpenAPIComparator(
       Some(IncompatibleParameter(writerParameter.name, issues))
   }
 
-  private def checkParameterContent(
-      readerParameter: Parameter,
-      writerParameter: Parameter
-  ): Option[IncompatibleParameterContent] = {
-    val issues = writerParameter.content.flatMap { case (writerMediaType, writerMediaTypeDescription) =>
-      val readerMediaTypeDescription = readerParameter.content.get(writerMediaType)
+  private def checkContent(
+      readerContent: ListMap[String, MediaType],
+      writerContent: ListMap[String, MediaType]
+  ): Option[IncompatibleContent] = {
+    val issues = writerContent.flatMap { case (writerMediaType, writerMediaTypeDescription) =>
+      val readerMediaTypeDescription = readerContent.get(writerMediaType)
       readerMediaTypeDescription match {
         case None => Some(MissingMediaType(writerMediaType))
         case Some(readerMediaTypeDescription) =>
@@ -118,7 +140,7 @@ class OpenAPIComparator(
     if (issues.isEmpty)
       None
     else
-      Some(IncompatibleParameterContent(issues.toList))
+      Some(IncompatibleContent(issues.toList))
   }
 
   private def checkMediaType(
@@ -166,5 +188,62 @@ class OpenAPIComparator(
       case Some(component) => component.getLocalParameter(ref)
       case None            => None
     }
+  }
+
+  private def checkRequestBody(
+      writerRequestBody: RequestBody,
+      readerRequestBody: RequestBody
+  ): Option[IncompatibleRequestBody] = {
+    val contentIssues = checkContent(readerRequestBody.content, writerRequestBody.content).toList
+    if (contentIssues.nonEmpty)
+      Some(IncompatibleRequestBody(contentIssues))
+    else
+      None
+  }
+
+  private def checkResponse(writerResponse: Response, readerResponse: Response): Option[IncompatibleResponse] = {
+    val contentIssue = checkContent(readerResponse.content, writerResponse.content)
+    val headerIssues = writerResponse.headers.flatMap {
+      case (writerHeaderName, Right(writerHeader)) =>
+        val readerHeader = readerResponse.headers.get(writerHeaderName)
+        readerHeader match {
+          case Some(Right(readerHeader)) => checkHeader(writerHeaderName, writerHeader, readerHeader)
+          case None                      => Some(MissingHeader(writerHeaderName))
+          case _                         => None
+        }
+      case _ => None
+    }
+
+    val issues = contentIssue.toList ++ headerIssues
+    if (issues.nonEmpty)
+      Some(IncompatibleResponse(issues))
+    else
+      None
+  }
+
+  private def checkHeader(
+      headerName: String,
+      writerHeader: Header,
+      readerHeader: Header
+  ): Option[IncompatibleHeader] = {
+    val schemaIssues = checkSchema(readerHeader.schema, writerHeader.schema)
+    val contentIssue = checkContent(readerHeader.content, writerHeader.content)
+    val isCompatibleStyle = readerHeader.style == writerHeader.style
+    val isCompatibleExplode = readerHeader.explode == writerHeader.explode
+    val isCompatibleAllowEmptyValue = readerHeader.allowEmptyValue == writerHeader.allowEmptyValue
+    val isCompatibleAllowReserved = readerHeader.allowReserved == writerHeader.allowReserved
+
+    val issues =
+      schemaIssues.toList ++
+        contentIssue.toList ++
+        (if (!isCompatibleStyle) Some(MissMatch("style")) else None).toList ++
+        (if (!isCompatibleExplode) Some(MissMatch("explode")) else None).toList ++
+        (if (!isCompatibleAllowEmptyValue) Some(MissMatch("allowEmptyValue")) else None).toList ++
+        (if (!isCompatibleAllowReserved) Some(MissMatch("allowReserved")) else None).toList
+
+    if (issues.nonEmpty)
+      Some(IncompatibleHeader(headerName, issues))
+    else
+      None
   }
 }

@@ -1,5 +1,6 @@
 package sttp.apispec.openapi.validation
 
+import sttp.apispec.openapi.ResponsesKey
 import sttp.apispec.validation.SchemaCompatibilityIssue
 
 sealed abstract class OpenAPICompatibilityIssue {
@@ -64,11 +65,11 @@ case class IncompatibleSchema(
     s"incompatible schema:\n${schemaIssues}"
 }
 
-case class IncompatibleParameterContent(
+case class IncompatibleContent(
     subIssues: List[OpenAPICompatibilityIssue]
 ) extends SubOpenAPICompatibilityIssue {
   def description: String =
-    s"incompatible parameter content:\n${issuesRepr(subIssues)}"
+    s"incompatible content:\n${issuesRepr(subIssues)}"
 }
 
 case class MissingMediaType(mediaType: String) extends OpenAPICompatibilityIssue {
@@ -85,4 +86,35 @@ case class IncompatibleMediaType(mediaType: String, subIssues: List[OpenAPICompa
 case class MissMatch(name: String) extends OpenAPICompatibilityIssue {
   def description: String =
     s"miss match $name"
+}
+
+case class MissingRequestBody() extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"missing request body"
+}
+
+case class IncompatibleRequestBody(subIssues: List[OpenAPICompatibilityIssue]) extends SubOpenAPICompatibilityIssue {
+  def description: String =
+    s"incompatible request body:\n${issuesRepr(subIssues)}"
+}
+
+case class MissingResponse(responsesKey: ResponsesKey) extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"missing response for $responsesKey"
+}
+
+case class IncompatibleResponse(subIssues: List[OpenAPICompatibilityIssue]) extends SubOpenAPICompatibilityIssue {
+  def description: String =
+    s"incompatible response:\n${issuesRepr(subIssues)}"
+}
+
+case class MissingHeader(headerName: String) extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"missing header $headerName"
+}
+
+case class IncompatibleHeader(headerName: String, subIssues: List[OpenAPICompatibilityIssue])
+    extends SubOpenAPICompatibilityIssue {
+  def description: String =
+    s"incompatible header $headerName:\n${issuesRepr(subIssues)}"
 }

@@ -3,6 +3,7 @@ package sttp.apispec.openapi.validation
 import org.scalatest.funsuite.AnyFunSuite
 import sttp.apispec.{Schema, SchemaType}
 import sttp.apispec.openapi.{
+  Header,
   Info,
   MediaType,
   OpenAPI,
@@ -11,7 +12,10 @@ import sttp.apispec.openapi.{
   ParameterIn,
   ParameterStyle,
   PathItem,
-  Paths
+  Paths,
+  RequestBody,
+  Response,
+  ResponsesCodeKey
 }
 import sttp.apispec.validation.TypeMismatch
 
@@ -23,6 +27,9 @@ class OpenAPIComparatorTest extends AnyFunSuite {
   private val operation = Operation()
   private val parameter = Parameter("test", ParameterIn.Path, schema = None)
   private val mediaType = MediaType()
+  private val requestBody = RequestBody()
+  private val response = Response()
+  private val header = Header()
 
   test("missing path") {
     val readerOpenAPI = OpenAPI(info = Info("", ""))
@@ -104,7 +111,7 @@ class OpenAPIComparatorTest extends AnyFunSuite {
     val openAPIComparator = new OpenAPIComparator(writerOpenAPI, readerOpenAPI)
 
     val mediaTypeIssue = MissingMediaType("test")
-    val parameterContentIssue = IncompatibleParameterContent(List(mediaTypeIssue))
+    val parameterContentIssue = IncompatibleContent(List(mediaTypeIssue))
     val parameterIssue = IncompatibleParameter("test", List(parameterContentIssue))
     val operationIssue = IncompatibleOperation("get", List(parameterIssue))
     val pathIssue = IncompatiblePath("/test", List(operationIssue))
@@ -142,7 +149,7 @@ class OpenAPIComparatorTest extends AnyFunSuite {
 
     val schemaMismatch = IncompatibleSchema(List(TypeMismatch(List(SchemaType.String), List(SchemaType.Integer))))
     val mediaTypeIssue = IncompatibleMediaType("test", List(schemaMismatch))
-    val parameterContentIssue = IncompatibleParameterContent(List(mediaTypeIssue))
+    val parameterContentIssue = IncompatibleContent(List(mediaTypeIssue))
     val parameterIssue = IncompatibleParameter("test", List(parameterContentIssue))
     val operationIssue = IncompatibleOperation("get", List(parameterIssue))
     val pathIssue = IncompatiblePath("/test", List(operationIssue))
@@ -241,6 +248,78 @@ class OpenAPIComparatorTest extends AnyFunSuite {
     val missMatchIssue = MissMatch("allowReserved")
     val parameterIssue = IncompatibleParameter("test", List(missMatchIssue))
     val operationIssue = IncompatibleOperation("get", List(parameterIssue))
+    val pathIssue = IncompatiblePath("/test", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(openAPIComparator.compare() == expected)
+  }
+
+  test("incompatible path -> incompatible operation -> missing request body") {
+    val readerOpenAPI =
+      OpenAPI(
+        info = Info("", ""),
+        paths = paths.addPathItem("/test", pathItem.get(operation))
+      )
+
+    val writerOpenAPI =
+      OpenAPI(
+        info = Info("", ""),
+        paths = paths.addPathItem("/test", pathItem.get(operation.requestBody(requestBody)))
+      )
+
+    val openAPIComparator = new OpenAPIComparator(writerOpenAPI, readerOpenAPI)
+
+    val requestBodyIssue = MissingRequestBody()
+    val operationIssue = IncompatibleOperation("get", List(requestBodyIssue))
+    val pathIssue = IncompatiblePath("/test", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(openAPIComparator.compare() == expected)
+  }
+
+  test("incompatible path -> incompatible operation -> incompatible responses -> missing response") {
+    val readerOpenAPI =
+      OpenAPI(
+        info = Info("", ""),
+        paths = paths.addPathItem("/test", pathItem.get(operation))
+      )
+
+    val writerOpenAPI =
+      OpenAPI(
+        info = Info("", ""),
+        paths = paths.addPathItem("/test", pathItem.get(operation.addResponse(200, response)))
+      )
+
+    val openAPIComparator = new OpenAPIComparator(writerOpenAPI, readerOpenAPI)
+
+    val reponsesIssue = MissingResponse(ResponsesCodeKey(200))
+    val operationIssue = IncompatibleOperation("get", List(reponsesIssue))
+    val pathIssue = IncompatiblePath("/test", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(openAPIComparator.compare() == expected)
+  }
+
+  test(
+    "incompatible path -> incompatible operation -> incompatible responses -> incompatible response -> missing header"
+  ) {
+    val readerOpenAPI =
+      OpenAPI(
+        info = Info("", ""),
+        paths = paths.addPathItem("/test", pathItem.get(operation.addResponse(200, response)))
+      )
+
+    val writerOpenAPI =
+      OpenAPI(
+        info = Info("", ""),
+        paths = paths.addPathItem("/test", pathItem.get(operation.addResponse(200, response.addHeader("test", header))))
+      )
+
+    val openAPIComparator = new OpenAPIComparator(writerOpenAPI, readerOpenAPI)
+
+    val headerIssue = MissingHeader("test")
+    val reponsesIssue = IncompatibleResponse(List(headerIssue))
+    val operationIssue = IncompatibleOperation("get", List(reponsesIssue))
     val pathIssue = IncompatiblePath("/test", List(operationIssue))
     val expected = List(pathIssue)
 
