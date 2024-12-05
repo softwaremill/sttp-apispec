@@ -262,3 +262,23 @@ lazy val asyncapiCirceYaml: ProjectMatrix = (projectMatrix in file("asyncapi-cir
     settings = commonJvmSettings
   )
   .dependsOn(asyncapiCirce)
+
+lazy val openapiComparatorTests: ProjectMatrix = (projectMatrix in file("openapi-comparator-tests"))
+  .settings(commonSettings)
+  .settings(
+    name := "openapi-comparator-tests",
+    publish / skip := true
+  )
+  .jvmPlatform(
+    scalaVersions = scalaJVMVersions,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(
+    scalaVersions = scalaJSVersions,
+    settings = commonJsSettings
+  )
+  .nativePlatform(
+    scalaVersions = scalaNativeVersions,
+    settings = commonNativeSettings
+  )
+  .dependsOn(openapiModel, openapiCirce, circeTestUtils % Test)

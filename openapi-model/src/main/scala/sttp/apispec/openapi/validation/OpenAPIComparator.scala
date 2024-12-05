@@ -7,19 +7,23 @@ import sttp.apispec.validation.SchemaComparator
 import scala.collection.immutable.ListMap
 
 class OpenAPIComparator(
-    writerOpenAPI: OpenAPI,
-    readerOpenAPI: OpenAPI
+    clientOpenAPI: OpenAPI,
+    serverOpenAPI: OpenAPI
 ) {
   private val httpMethods = List("get", "post", "patch", "delete", "options", "trace", "head", "put")
+  private var serverSchemas: Map[String, Schema] = Map.empty[String, Schema]
+  private var clientSchemas: Map[String, Schema] = Map.empty[String, Schema]
 
   def compare(): List[OpenAPICompatibilityIssue] = {
-    writerOpenAPI.paths.pathItems.toList.flatMap {
-      case (pathName, writerPathItem) =>
-        val readerPathItem = readerOpenAPI.paths.pathItems.get(pathName)
-        readerPathItem match {
+    initSchemas()
+
+    clientOpenAPI.paths.pathItems.toList.flatMap {
+      case (pathName, clientPathItem) =>
+        val serverPathItem = serverOpenAPI.paths.pathItems.get(pathName)
+        serverPathItem match {
           case None => Some(MissingPath(pathName))
-          case Some(readerPathItem) =>
-            val pathIssues = checkPath(pathName, writerPathItem, readerPathItem)
+          case Some(serverPathItem) =>
+            val pathIssues = checkPath(pathName, clientPathItem, serverPathItem)
             if (pathIssues.isEmpty)
               None
             else
@@ -30,18 +34,38 @@ class OpenAPIComparator(
     }
   }
 
+  private def initSchemas(): Unit = {
+    clientSchemas = clientOpenAPI.components match {
+      case Some(components) =>
+        components.schemas.flatMap {
+          case (key, schema: Schema) => Some(key, schema)
+          case _                     => None
+        }
+      case _ => Map.empty[String, Schema]
+    }
+
+    serverSchemas = serverOpenAPI.components match {
+      case Some(components) =>
+        components.schemas.flatMap {
+          case (key, schema: Schema) => Some(key, schema)
+          case _                     => None
+        }
+      case _ => Map.empty[String, Schema]
+    }
+  }
+
   private def checkPath(
       pathName: String,
-      writerPathItem: PathItem,
-      readerPathItem: PathItem
+      clientPathItem: PathItem,
+      serverPathItem: PathItem
   ): Option[IncompatiblePath] = {
     val issues = httpMethods.flatMap { httpMethod =>
-      val writerOperation = getOperation(writerPathItem, httpMethod)
-      val readerOperation = getOperation(readerPathItem, httpMethod)
+      val clientOperation = getOperation(clientPathItem, httpMethod)
+      val serverOperation = getOperation(serverPathItem, httpMethod)
 
-      (readerOperation, writerOperation) match {
-        case (None, Some(_))                  => Some(MissingOperation(httpMethod))
-        case (Some(readerOp), Some(writerOp)) => checkOperation(httpMethod, writerOp, readerOp)
+      (clientOperation, serverOperation) match {
+        case (Some(_), None)                  => Some(MissingOperation(httpMethod))
+        case (Some(clientOp), Some(serverOp)) => checkOperation(httpMethod, clientOp, serverOp)
         case _                                => None
       }
     }
@@ -64,33 +88,42 @@ class OpenAPIComparator(
 
   private def checkOperation(
       httpMethod: String,
-      writerOperation: Operation,
-      readerOperation: Operation
+      clientOperation: Operation,
+      serverOperation: Operation
   ): Option[IncompatibleOperation] = {
-    val readerParameters = getOperationParameters(readerOperation)
-    val writerParameters = getOperationParameters(writerOperation)
+    val serverParameters = getOperationParameters(serverOperation)
+    val clientParameters = getOperationParameters(clientOperation)
 
-    val parametersIssue = writerParameters.flatMap { writerParameter =>
-      val readerParameter = readerParameters.find(_.name == writerParameter.name)
-      readerParameter match {
-        case None                  => Some(MissingParameter(writerParameter.name))
-        case Some(readerParameter) => checkParameter(writerParameter, readerParameter)
+    val parametersIssue = clientParameters.flatMap { clientParameter =>
+      val serverParameter = serverParameters.find(_.name == clientParameter.name)
+      serverParameter match {
+        case None => Some(MissingParameter(clientParameter.name))
+        case Some(serverParameter) =>
+          if (clientParameter.required.getOrElse(false) && !serverParameter.required.getOrElse(false)) {
+            Some(IncompatibleRequiredParameter(clientParameter.name))
+          } else {
+            checkParameter(clientParameter, serverParameter)
+          }
       }
     }
 
-    val requestBodyIssue = (writerOperation.requestBody, readerOperation.requestBody) match {
-      case (Some(Right(writerRequestBody)), Some(Right(readerRequestBody))) =>
-        checkRequestBody(writerRequestBody, readerRequestBody)
+    val requestBodyIssue = (clientOperation.requestBody, serverOperation.requestBody) match {
+      case (Some(Right(clientRequestBody)), Some(Right(serverRequestBody))) =>
+        if (clientRequestBody.required.getOrElse(false) && !serverRequestBody.required.getOrElse(false)) {
+          Some(IncompatibleRequiredRequestBody())
+        } else {
+          checkRequestBody(clientRequestBody, serverRequestBody)
+        }
       case (Some(Right(_)), None) => Some(MissingRequestBody())
       case _                      => None
     }
 
-    val responsesIssues = writerOperation.responses.responses.flatMap {
-      case (writerResponseKey, Right(writerResponse)) =>
-        val readerResponse = readerOperation.responses.responses.get(writerResponseKey)
-        readerResponse match {
-          case Some(Right(readerResponse)) => checkResponse(writerResponse, readerResponse)
-          case None                        => Some(MissingResponse(writerResponseKey))
+    val responsesIssues = clientOperation.responses.responses.flatMap {
+      case (clientResponseKey, Right(clientResponse)) =>
+        val serverResponse = serverOperation.responses.responses.get(clientResponseKey)
+        serverResponse match {
+          case Some(Right(serverResponse)) => checkResponse(clientResponse, serverResponse)
+          case None                        => Some(MissingResponse(clientResponseKey))
           case _                           => None
         }
       case _ => None
@@ -104,15 +137,15 @@ class OpenAPIComparator(
       Some(IncompatibleOperation(httpMethod, issues))
   }
 
-  private def checkParameter(writerParameter: Parameter, readerParameter: Parameter): Option[IncompatibleParameter] = {
-    val isCompatibleStyle = readerParameter.style == writerParameter.style
-    val isCompatibleExplode = readerParameter.explode == writerParameter.explode
-    val isCompatibleAllowEmptyValue = readerParameter.allowEmptyValue == writerParameter.allowEmptyValue
-    val isCompatibleAllowReserved = readerParameter.allowReserved == writerParameter.allowReserved
+  private def checkParameter(clientParameter: Parameter, serverParameter: Parameter): Option[IncompatibleParameter] = {
+    val isCompatibleStyle = serverParameter.style == clientParameter.style
+    val isCompatibleExplode = serverParameter.explode == clientParameter.explode
+    val isCompatibleAllowEmptyValue = serverParameter.allowEmptyValue == clientParameter.allowEmptyValue
+    val isCompatibleAllowReserved = serverParameter.allowReserved == clientParameter.allowReserved
 
     val issues =
-      checkSchema(writerParameter.schema, readerParameter.schema).toList ++
-        checkContent(writerParameter.content, readerParameter.content).toList ++
+      checkSchema(clientParameter.schema, serverParameter.schema).toList ++
+        checkContent(clientParameter.content, serverParameter.content).toList ++
         (if (!isCompatibleStyle) Some(MissMatch("style")) else None).toList ++
         (if (!isCompatibleExplode) Some(MissMatch("explode")) else None).toList ++
         (if (!isCompatibleAllowEmptyValue) Some(MissMatch("allowEmptyValue")) else None).toList ++
@@ -121,19 +154,19 @@ class OpenAPIComparator(
     if (issues.isEmpty)
       None
     else
-      Some(IncompatibleParameter(writerParameter.name, issues))
+      Some(IncompatibleParameter(clientParameter.name, issues))
   }
 
   private def checkContent(
-      writerContent: ListMap[String, MediaType],
-      readerContent: ListMap[String, MediaType]
+      clientContent: ListMap[String, MediaType],
+      serverContent: ListMap[String, MediaType]
   ): Option[IncompatibleContent] = {
-    val issues = writerContent.flatMap { case (writerMediaType, writerMediaTypeDescription) =>
-      val readerMediaTypeDescription = readerContent.get(writerMediaType)
-      readerMediaTypeDescription match {
-        case None => Some(MissingMediaType(writerMediaType))
-        case Some(readerMediaTypeDescription) =>
-          checkMediaType(writerMediaType, writerMediaTypeDescription, readerMediaTypeDescription)
+    val issues = clientContent.flatMap { case (clientMediaType, clientMediaTypeDescription) =>
+      val serverMediaTypeDescription = serverContent.get(clientMediaType)
+      serverMediaTypeDescription match {
+        case None => Some(MissingMediaType(clientMediaType))
+        case Some(serverMediaTypeDescription) =>
+          checkMediaType(clientMediaType, clientMediaTypeDescription, serverMediaTypeDescription)
       }
     }
 
@@ -145,10 +178,10 @@ class OpenAPIComparator(
 
   private def checkMediaType(
       mediaType: String,
-      writerMediaTypeDescription: MediaType,
-      readerMediaTypeDescription: MediaType
+      clientMediaTypeDescription: MediaType,
+      serverMediaTypeDescription: MediaType
   ): Option[IncompatibleMediaType] = {
-    val issues = checkSchema(writerMediaTypeDescription.schema, readerMediaTypeDescription.schema)
+    val issues = checkSchema(clientMediaTypeDescription.schema, serverMediaTypeDescription.schema)
     if (issues.nonEmpty)
       Some(IncompatibleMediaType(mediaType, issues.toList))
     else
@@ -157,16 +190,13 @@ class OpenAPIComparator(
   }
 
   private def checkSchema(
-      writerSchema: Option[SchemaLike],
-      readerSchema: Option[SchemaLike]
+      clientSchema: Option[SchemaLike],
+      serverSchema: Option[SchemaLike]
   ): Option[OpenAPICompatibilityIssue] = {
-    (readerSchema, writerSchema) match {
-      case (Some(readerSchema: Schema), Some(writerSchema: Schema)) =>
-        val readerSchemas = Map("readerSchema" -> readerSchema)
-        val writerSchemas = Map("writerSchema" -> writerSchema)
-
-        val schemaComparator = new SchemaComparator(readerSchemas, writerSchemas)
-        val schemaIssues = schemaComparator.compare(readerSchema, writerSchema)
+    (serverSchema, clientSchema) match {
+      case (Some(serverSchema), Some(clientSchema)) =>
+        val schemaComparator = new SchemaComparator(clientSchemas, serverSchemas)
+        val schemaIssues = schemaComparator.compare(clientSchema, serverSchema)
         if (schemaIssues.nonEmpty)
           Some(IncompatibleSchema(schemaIssues))
         else
@@ -179,7 +209,7 @@ class OpenAPIComparator(
   private def getOperationParameters(operation: Operation): List[Parameter] = {
     operation.parameters.flatMap {
       case Right(parameter) => Some(parameter)
-      case Left(reference)  => resolveParameterReference(readerOpenAPI, reference.$ref)
+      case Left(reference)  => resolveParameterReference(serverOpenAPI, reference.$ref)
     }
   }
 
@@ -191,25 +221,30 @@ class OpenAPIComparator(
   }
 
   private def checkRequestBody(
-      writerRequestBody: RequestBody,
-      readerRequestBody: RequestBody
+      clientRequestBody: RequestBody,
+      serverRequestBody: RequestBody
   ): Option[IncompatibleRequestBody] = {
-    val contentIssues = checkContent(readerRequestBody.content, writerRequestBody.content).toList
+    val contentIssues = checkContent(clientRequestBody.content, serverRequestBody.content).toList
     if (contentIssues.nonEmpty)
       Some(IncompatibleRequestBody(contentIssues))
     else
       None
   }
 
-  private def checkResponse(writerResponse: Response, readerResponse: Response): Option[IncompatibleResponse] = {
-    val contentIssue = checkContent(readerResponse.content, writerResponse.content)
-    val headerIssues = writerResponse.headers.flatMap {
-      case (writerHeaderName, Right(writerHeader)) =>
-        val readerHeader = readerResponse.headers.get(writerHeaderName)
-        readerHeader match {
-          case Some(Right(readerHeader)) => checkHeader(writerHeaderName, writerHeader, readerHeader)
-          case None                      => Some(MissingHeader(writerHeaderName))
-          case _                         => None
+  private def checkResponse(clientResponse: Response, serverResponse: Response): Option[IncompatibleResponse] = {
+    val contentIssue = checkContent(clientResponse.content, serverResponse.content)
+    val headerIssues = clientResponse.headers.flatMap {
+      case (clientHeaderName, Right(clientHeader)) =>
+        val serverHeader = serverResponse.headers.get(clientHeaderName)
+        serverHeader match {
+          case Some(Right(serverHeader)) =>
+            if (clientHeader.required.getOrElse(false) && !serverHeader.required.getOrElse(false)) {
+              Some(IncompatibleRequiredHeader(clientHeaderName))
+            } else {
+              checkHeader(clientHeaderName, clientHeader, serverHeader)
+            }
+          case None => Some(MissingHeader(clientHeaderName))
+          case _    => None
         }
       case _ => None
     }
@@ -223,15 +258,15 @@ class OpenAPIComparator(
 
   private def checkHeader(
       headerName: String,
-      writerHeader: Header,
-      readerHeader: Header
+      clientHeader: Header,
+      serverHeader: Header
   ): Option[IncompatibleHeader] = {
-    val schemaIssues = checkSchema(writerHeader.schema, readerHeader.schema)
-    val contentIssue = checkContent(readerHeader.content, writerHeader.content)
-    val isCompatibleStyle = readerHeader.style == writerHeader.style
-    val isCompatibleExplode = readerHeader.explode == writerHeader.explode
-    val isCompatibleAllowEmptyValue = readerHeader.allowEmptyValue == writerHeader.allowEmptyValue
-    val isCompatibleAllowReserved = readerHeader.allowReserved == writerHeader.allowReserved
+    val schemaIssues = checkSchema(clientHeader.schema, serverHeader.schema)
+    val contentIssue = checkContent(clientHeader.content, serverHeader.content)
+    val isCompatibleStyle = serverHeader.style == clientHeader.style
+    val isCompatibleExplode = serverHeader.explode == clientHeader.explode
+    val isCompatibleAllowEmptyValue = serverHeader.allowEmptyValue == clientHeader.allowEmptyValue
+    val isCompatibleAllowReserved = serverHeader.allowReserved == clientHeader.allowReserved
 
     val issues =
       schemaIssues.toList ++

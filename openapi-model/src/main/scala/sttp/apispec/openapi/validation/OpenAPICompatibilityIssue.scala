@@ -50,6 +50,13 @@ case class MissingParameter(
     s"missing parameter $name"
 }
 
+case class IncompatibleRequiredParameter(
+    name: String
+) extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"parameter '$name' is required by the client but optional on the server"
+}
+
 case class IncompatibleParameter(
     name: String,
     subIssues: List[OpenAPICompatibilityIssue]
@@ -93,6 +100,11 @@ case class MissingRequestBody() extends OpenAPICompatibilityIssue {
     s"missing request body"
 }
 
+case class IncompatibleRequiredRequestBody() extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"request body is required by the client but optional on the server"
+}
+
 case class IncompatibleRequestBody(subIssues: List[OpenAPICompatibilityIssue]) extends SubOpenAPICompatibilityIssue {
   def description: String =
     s"incompatible request body:\n${issuesRepr(subIssues)}"
@@ -111,6 +123,11 @@ case class IncompatibleResponse(subIssues: List[OpenAPICompatibilityIssue]) exte
 case class MissingHeader(headerName: String) extends OpenAPICompatibilityIssue {
   def description: String =
     s"missing header $headerName"
+}
+
+case class IncompatibleRequiredHeader(headerName: String) extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"header '$headerName' is required by the client but optional on the server"
 }
 
 case class IncompatibleHeader(headerName: String, subIssues: List[OpenAPICompatibilityIssue])
