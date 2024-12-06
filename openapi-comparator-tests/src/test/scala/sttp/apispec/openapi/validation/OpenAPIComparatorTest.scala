@@ -1,5 +1,6 @@
 package sttp.apispec.openapi.validation
 
+import io.circe
 import org.scalatest.funsuite.AnyFunSuite
 import sttp.apispec.SchemaType
 import sttp.apispec.openapi.{OpenAPI, ResponsesCodeKey}
@@ -10,57 +11,81 @@ import sttp.apispec.validation.TypeMismatch
 class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
   override val basedir = "openapi-comparator-tests"
 
+  def readOpenAPI(path: String): Either[circe.Error, OpenAPI] = readJson(path).flatMap(_.as[OpenAPI]): @unchecked
+  private def compare(clientOpenapi: OpenAPI, serverOpenapi: OpenAPI): List[OpenAPICompatibilityIssue] =
+    new OpenAPIComparator(clientOpenapi, serverOpenapi)
+      .compare()
+
   test("identical") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_2_4.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_2_4.json").flatMap(_.as[OpenAPI]): @unchecked
+    val Right(clientOpenapi) = readOpenAPI("/petstore/identical/petstore-identical.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/identical/petstore.json")
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
-
-    assert(openAPIComparator.compare().isEmpty)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
   }
 
-  test("missing path") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_0_2.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_0_1.json").flatMap(_.as[OpenAPI]): @unchecked
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("no errors when metadata is updated") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/changed-metadata/petstore-changed-metadata.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/changed-metadata/petstore.json")
+
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server missing path when client has an extra one") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-path/petstore-added-path.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-path/petstore.json")
 
     val expected = List(MissingPath("/pets/{petId}"))
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("missing operation") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_0_3.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_0_2.json").flatMap(_.as[OpenAPI]): @unchecked
+  test("no errors when server has an additional path") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-path/petstore.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-path/petstore-added-path.json")
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server missing operation when client has an extra one") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-operation/petstore-added-operation.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-operation/petstore.json")
 
     val operationIssue = MissingOperation("post")
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("missing parameter") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_0_4.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_0_3.json").flatMap(_.as[OpenAPI]): @unchecked
+  test("no errors when server has an additional operation") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-operation/petstore.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-operation/petstore-added-operation.json")
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server missing parameter when client has an extra one") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-parameter/petstore-added-parameter.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-parameter/petstore.json")
 
     val parameterIssue = MissingParameter("status")
     val operationIssue = IncompatibleOperation("get", List(parameterIssue))
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible parameter schema") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_0_5.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_0_4.json").flatMap(_.as[OpenAPI]): @unchecked
+  test("no errors when server has an additional parameter") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-parameter/petstore.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-parameter/petstore-added-parameter.json")
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server parameter schema is incompatible with client schema") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/updated-parameter-schema/petstore-updated-parameter-schema.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-schema/petstore.json")
 
     val schemaTypeMismatch = TypeMismatch(List(SchemaType.Array), List(SchemaType.String))
     val schemaIssue = IncompatibleSchema(List(schemaTypeMismatch))
@@ -69,14 +94,13 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("parameter content is missing media type") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_0_6.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_0_5.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server missing parameter content media-type when client has an extra one") {
+    val Right(clientOpenapi) =
+      readOpenAPI("/petstore/added-parameter-content-mediatype/petstore-added-parameter-content-mediatype.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-parameter-content-mediatype/petstore.json")
 
     val mediaTypeIssue = MissingMediaType("application/json")
     val parameterContentIssue = IncompatibleContent(List(mediaTypeIssue))
@@ -85,14 +109,22 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible media type parameter content schema") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_0_7.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_0_6.json").flatMap(_.as[OpenAPI]): @unchecked
+  test("no errors when server has an additional parameter content media-type") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-parameter-content-mediatype/petstore.json")
+    val Right(serverOpenapi) =
+      readOpenAPI("/petstore/added-parameter-content-mediatype/petstore-added-parameter-content-mediatype.json")
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server parameter content media-type schema is incompatible with client schema") {
+    val Right(clientOpenapi) = readOpenAPI(
+      "/petstore/updated-parameter-content-mediatype-schema/petstore-updated-parameter-content-mediatype-schema.json"
+    )
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-content-mediatype-schema/petstore.json")
 
     val schemaMismatch = IncompatibleSchema(List(TypeMismatch(List(SchemaType.String), List(SchemaType.Array))))
     val mediaTypeIssue = IncompatibleMediaType("application/json", List(schemaMismatch))
@@ -102,14 +134,12 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible parameter style") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_0_8.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_0_7.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server parameter style is incompatible with client parameter style") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/updated-parameter-style/petstore-updated-parameter-style.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-style/petstore.json")
 
     val missMatchIssue = MissMatch("style")
     val parameterIssue = IncompatibleParameter("status", List(missMatchIssue))
@@ -117,14 +147,13 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible parameter explode") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_0_9.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_0_8.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server parameter explode is incompatible with client parameter explode") {
+    val Right(clientOpenapi) =
+      readOpenAPI("/petstore/updated-parameter-explode/petstore-updated-parameter-explode.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-explode/petstore.json")
 
     val missMatchIssue = MissMatch("explode")
     val parameterIssue = IncompatibleParameter("status", List(missMatchIssue))
@@ -132,14 +161,13 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible parameter allowEmptyValue") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_0.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_0_9.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server parameter allowEmptyValue is incompatible with client parameter allowEmptyValue") {
+    val Right(clientOpenapi) =
+      readOpenAPI("/petstore/updated-parameter-allow_empty_value/petstore-updated-parameter-allow_empty_value.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-allow_empty_value/petstore.json")
 
     val missMatchIssue = MissMatch("allowEmptyValue")
     val parameterIssue = IncompatibleParameter("status", List(missMatchIssue))
@@ -147,14 +175,13 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible parameter allowReserved") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_1.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_0.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server parameter allowReserved is incompatible with client parameter allowReserved") {
+    val Right(clientOpenapi) =
+      readOpenAPI("/petstore/updated-parameter-allow_reserved/petstore-updated-parameter-allow_reserved.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-allow_reserved/petstore.json")
 
     val missMatchIssue = MissMatch("allowReserved")
     val parameterIssue = IncompatibleParameter("status", List(missMatchIssue))
@@ -162,28 +189,32 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-//  test("missing request body") {
-//    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_2.json").flatMap(_.as[OpenAPI]): @unchecked
-//    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_1.json").flatMap(_.as[OpenAPI]): @unchecked
-//
-//    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
-//
-//    val requestBodyIssue = MissingRequestBody()
-//    val operationIssue = IncompatibleOperation("get", List(requestBodyIssue))
-//    val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
-//    val expected = List(pathIssue)
-//
-//    assert(openAPIComparator.compare() == expected)
-//  }
+  test("server missing request-body when client has an extra one") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-requestbody/petstore-added-requestbody.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-requestbody/petstore.json")
 
-  test("missing request body content media type") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_2.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_1.json").flatMap(_.as[OpenAPI]): @unchecked
+    val requestBodyIssue = MissingRequestBody()
+    val operationIssue = IncompatibleOperation("post", List(requestBodyIssue))
+    val pathIssue = IncompatiblePath("/pets", List(operationIssue))
+    val expected = List(pathIssue)
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("no errors when server has an additional request-body") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-requestbody/petstore.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-requestbody/petstore-added-requestbody.json")
+
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server missing request-body content media-type when client has an extra one") {
+    val Right(clientOpenapi) =
+      readOpenAPI("/petstore/added-requestbody-content-mediatype/petstore-added-requestbody-content-mediatype.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-requestbody-content-mediatype/petstore.json")
 
     val mediaTypeIssue = MissingMediaType("application/xml")
     val requestBodyContentIssue = IncompatibleContent(List(mediaTypeIssue))
@@ -192,14 +223,22 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible request body content media type schema") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_3.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_2.json").flatMap(_.as[OpenAPI]): @unchecked
+  test("no errors when server has an additional request-body content media-type") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-requestbody-content-mediatype/petstore.json")
+    val Right(serverOpenapi) =
+      readOpenAPI("/petstore/added-requestbody-content-mediatype/petstore-added-requestbody-content-mediatype.json")
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server request-body content media-type schema is incompatible with client schema") {
+    val Right(clientOpenapi) = readOpenAPI(
+      "/petstore/updated-requestbody-content-mediatype-schema/petstore-updated-requestbody-content-mediatype-schema.json"
+    )
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-requestbody-content-mediatype-schema/petstore.json")
 
     val schemaTypeMismatch = TypeMismatch(List(SchemaType.String), List(SchemaType.Object))
     val schemaIssue = IncompatibleSchema(List(schemaTypeMismatch))
@@ -210,28 +249,32 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("missing response") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_4.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_3.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server missing response when client has an extra one") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-response/petstore-added-response.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-response/petstore.json")
 
     val responsesIssue = MissingResponse(ResponsesCodeKey(500))
     val operationIssue = IncompatibleOperation("get", List(responsesIssue))
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("missing response content media type") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_5.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_4.json").flatMap(_.as[OpenAPI]): @unchecked
+  test("no errors when server has an additional response") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-response/petstore.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-response/petstore-added-response.json")
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server missing response content media-type when client has an extra one") {
+    val Right(clientOpenapi) =
+      readOpenAPI("/petstore/added-response-content-mediatype/petstore-added-response-content-mediatype.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-response-content-mediatype/petstore.json")
 
     val mediaTypeIssues = MissingMediaType("application/xml")
     val responseContentIssues = IncompatibleContent(List(mediaTypeIssues))
@@ -240,14 +283,22 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible response content media type schema") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_6.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_5.json").flatMap(_.as[OpenAPI]): @unchecked
+  test("no errors when server has an additional response content media-type") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-response-content-mediatype/petstore.json")
+    val Right(serverOpenapi) =
+      readOpenAPI("/petstore/added-response-content-mediatype/petstore-added-response-content-mediatype.json")
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server response content media-type schema is incompatible with client schema") {
+    val Right(clientOpenapi) = readOpenAPI(
+      "/petstore/updated-response-content-mediatype-schema/petstore-updated-response-content-mediatype-schema.json"
+    )
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-content-mediatype-schema/petstore.json")
 
     val schemaTypeMismatch = TypeMismatch(List(SchemaType.String), List(SchemaType.Object))
     val schemaIssue = IncompatibleSchema(List(schemaTypeMismatch))
@@ -258,14 +309,12 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("missing header") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_7.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_6.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server missing response header when client has an extra one") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-response-header/petstore-added-response-header.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-response-header/petstore.json")
 
     val headerIssue = MissingHeader("X-Rate-Limit")
     val responsesIssue = IncompatibleResponse(List(headerIssue))
@@ -273,14 +322,20 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible header schema") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_8.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_7.json").flatMap(_.as[OpenAPI]): @unchecked
+  test("no errors when server has an additional response header") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-response-header/petstore.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-response-header/petstore-added-response-header.json")
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server response header schema is incompatible with client schema") {
+    val Right(clientOpenapi) =
+      readOpenAPI("/petstore/updated-response-header-schema/petstore-updated-response-header-schema.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-schema/petstore.json")
 
     val schemaTypeMismatch = TypeMismatch(List(SchemaType.String), List(SchemaType.Integer))
     val schemaIssue = IncompatibleSchema(List(schemaTypeMismatch))
@@ -290,14 +345,14 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("missing header content media type") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_1_9.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_8.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server missing response header content media-type when client has an extra one") {
+    val Right(clientOpenapi) = readOpenAPI(
+      "/petstore/added-response-header-content-mediatype/petstore-added-response-header-content-mediatype.json"
+    )
+    val Right(serverOpenapi) = readOpenAPI("/petstore/added-response-header-content-mediatype/petstore.json")
 
     val mediaTypeIssues = MissingMediaType("application/json")
     val contentIssues = IncompatibleContent(List(mediaTypeIssues))
@@ -307,14 +362,23 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible header content media type schema") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_2_0.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_1_9.json").flatMap(_.as[OpenAPI]): @unchecked
+  test("no errors when server has an additional response header content media-type") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/added-response-header-content-mediatype/petstore.json")
+    val Right(serverOpenapi) = readOpenAPI(
+      "/petstore/added-response-header-content-mediatype/petstore-added-response-header-content-mediatype.json"
+    )
 
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test("server response header content media-type schema is incompatible with client schema") {
+    val Right(clientOpenapi) = readOpenAPI(
+      "/petstore/updated-response-header-content-mediatype-schema/petstore-updated-response-header-content-mediatype-schema.json"
+    )
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-content-mediatype-schema/petstore.json")
 
     val schemaTypeMismatch = TypeMismatch(List(SchemaType.Integer), List(SchemaType.String))
     val schemaIssue = IncompatibleSchema(List(schemaTypeMismatch))
@@ -326,14 +390,13 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible header style") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_2_1.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_2_0.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server response header style is incompatible with client response header style") {
+    val Right(clientOpenapi) =
+      readOpenAPI("/petstore/updated-response-header-style/petstore-updated-response-header-style.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-style/petstore.json")
 
     val missMatchIssue = MissMatch("style")
     val headerIssue = IncompatibleHeader("X-Rate-Limit", List(missMatchIssue))
@@ -342,14 +405,13 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible header explode") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_2_2.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_2_1.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server response header explode is incompatible with client response header explode") {
+    val Right(clientOpenapi) =
+      readOpenAPI("/petstore/updated-response-header-explode/petstore-updated-response-header-explode.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-explode/petstore.json")
 
     val missMatchIssue = MissMatch("explode")
     val headerIssue = IncompatibleHeader("X-Rate-Limit", List(missMatchIssue))
@@ -358,14 +420,14 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible header allowEmptyValue") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_2_3.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_2_2.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server response header allowEmptyValue is incompatible with client response header allowEmptyValue") {
+    val Right(clientOpenapi) = readOpenAPI(
+      "/petstore/updated-response-header-allow_empty_value/petstore-updated-response-header-allow_empty_value.json"
+    )
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-allow_empty_value/petstore.json")
 
     val missMatchIssue = MissMatch("allowEmptyValue")
     val headerIssue = IncompatibleHeader("X-Rate-Limit", List(missMatchIssue))
@@ -374,14 +436,14 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
-  test("incompatible header allowReserved") {
-    val Right(clientOpenapi) = readJson("/petstore/basic-petstore-v_1_2_4.json").flatMap(_.as[OpenAPI]): @unchecked
-    val Right(serverOpenapi) = readJson("/petstore/basic-petstore-v_1_2_3.json").flatMap(_.as[OpenAPI]): @unchecked
-
-    val openAPIComparator = new OpenAPIComparator(clientOpenapi, serverOpenapi)
+  test("server response header allowReserved is incompatible with client response header allowReserved") {
+    val Right(clientOpenapi) = readOpenAPI(
+      "/petstore/updated-response-header-allow_reserved/petstore-updated-response-header-allow_reserved.json"
+    )
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-allow_reserved/petstore.json")
 
     val missMatchIssue = MissMatch("allowReserved")
     val headerIssue = IncompatibleHeader("X-Rate-Limit", List(missMatchIssue))
@@ -390,6 +452,15 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
     val expected = List(pathIssue)
 
-    assert(openAPIComparator.compare() == expected)
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("server parameter name is incompatible with client parameter name") {
+    val Right(clientOpenapi) = readOpenAPI("/petstore/updated-parameter-name/petstore-updated-parameter-name.json")
+    val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-name/petstore.json")
+
+    val expected = List(MissingPath("/pets/{Id}"))
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 }

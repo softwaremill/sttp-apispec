@@ -74,7 +74,8 @@ lazy val allProjectAggregates: Seq[ProjectReference] =
     openapiCirceYaml.projectRefs ++
     asyncapiModel.projectRefs ++
     asyncapiCirce.projectRefs ++
-    asyncapiCirceYaml.projectRefs
+    asyncapiCirceYaml.projectRefs ++
+    openapiComparatorTests.projectRefs
 
 lazy val projectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
   println("[info] STTP_NATIVE defined, including native in the aggregate projects")

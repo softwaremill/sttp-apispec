@@ -10,13 +10,37 @@ class OpenAPIComparator(
     clientOpenAPI: OpenAPI,
     serverOpenAPI: OpenAPI
 ) {
-  private val httpMethods = List("get", "post", "patch", "delete", "options", "trace", "head", "put")
-  private var serverSchemas: Map[String, Schema] = Map.empty[String, Schema]
-  private var clientSchemas: Map[String, Schema] = Map.empty[String, Schema]
+
+  private val httpMethods = List(
+    ("get", (_: PathItem).get),
+    ("post", (_: PathItem).post),
+    ("patch", (_: PathItem).patch),
+    ("delete", (_: PathItem).delete),
+    ("options", (_: PathItem).options),
+    ("trace", (_: PathItem).trace),
+    ("head", (_: PathItem).head),
+    ("put", (_: PathItem).put)
+  )
+
+  private val clientSchemas: Map[String, Schema] = clientOpenAPI.components match {
+    case Some(components) =>
+      components.schemas.flatMap {
+        case (key, schema: Schema) => Some(key, schema)
+        case _                     => None
+      }
+    case _ => Map.empty[String, Schema]
+  }
+
+  private val serverSchemas: Map[String, Schema] = serverOpenAPI.components match {
+    case Some(components) =>
+      components.schemas.flatMap {
+        case (key, schema: Schema) => Some(key, schema)
+        case _                     => None
+      }
+    case _ => Map.empty[String, Schema]
+  }
 
   def compare(): List[OpenAPICompatibilityIssue] = {
-    initSchemas()
-
     clientOpenAPI.paths.pathItems.toList.flatMap {
       case (pathName, clientPathItem) =>
         val serverPathItem = serverOpenAPI.paths.pathItems.get(pathName)
@@ -34,34 +58,14 @@ class OpenAPIComparator(
     }
   }
 
-  private def initSchemas(): Unit = {
-    clientSchemas = clientOpenAPI.components match {
-      case Some(components) =>
-        components.schemas.flatMap {
-          case (key, schema: Schema) => Some(key, schema)
-          case _                     => None
-        }
-      case _ => Map.empty[String, Schema]
-    }
-
-    serverSchemas = serverOpenAPI.components match {
-      case Some(components) =>
-        components.schemas.flatMap {
-          case (key, schema: Schema) => Some(key, schema)
-          case _                     => None
-        }
-      case _ => Map.empty[String, Schema]
-    }
-  }
-
   private def checkPath(
       pathName: String,
       clientPathItem: PathItem,
       serverPathItem: PathItem
   ): Option[IncompatiblePath] = {
-    val issues = httpMethods.flatMap { httpMethod =>
-      val clientOperation = getOperation(clientPathItem, httpMethod)
-      val serverOperation = getOperation(serverPathItem, httpMethod)
+    val issues = httpMethods.flatMap { case (httpMethod, getOperation) =>
+      val clientOperation = getOperation(clientPathItem)
+      val serverOperation = getOperation(serverPathItem)
 
       (clientOperation, serverOperation) match {
         case (Some(_), None)                  => Some(MissingOperation(httpMethod))
@@ -73,17 +77,6 @@ class OpenAPIComparator(
       None
     else
       Some(IncompatiblePath(pathName, issues))
-  }
-  private def getOperation(pathItem: PathItem, httpMethod: String): Option[Operation] = httpMethod match {
-    case "get"     => pathItem.get
-    case "patch"   => pathItem.patch
-    case "delete"  => pathItem.delete
-    case "options" => pathItem.options
-    case "trace"   => pathItem.trace
-    case "head"    => pathItem.head
-    case "post"    => pathItem.post
-    case "put"     => pathItem.put
-    case _         => None
   }
 
   private def checkOperation(
