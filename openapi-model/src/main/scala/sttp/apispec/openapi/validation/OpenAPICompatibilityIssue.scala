@@ -13,7 +13,7 @@ sealed abstract class OpenAPICompatibilityIssue {
       .mkString("\n")
 }
 
-sealed abstract class SubOpenAPICompatibilityIssue extends OpenAPICompatibilityIssue {
+sealed abstract class OpenAPICompatibilitySubIssues extends OpenAPICompatibilityIssue {
   def subIssues: List[OpenAPICompatibilityIssue]
 }
 
@@ -25,7 +25,7 @@ case class MissingPath(pathName: String) extends OpenAPICompatibilityIssue {
 case class IncompatiblePath(
     pathName: String,
     subIssues: List[OpenAPICompatibilityIssue]
-) extends SubOpenAPICompatibilityIssue {
+) extends OpenAPICompatibilitySubIssues {
   def description: String =
     s"incompatible path $pathName:\n${issuesRepr(subIssues)}"
 }
@@ -38,7 +38,7 @@ case class MissingOperation(httpMethod: String) extends OpenAPICompatibilityIssu
 case class IncompatibleOperation(
     httpMethod: String,
     subIssues: List[OpenAPICompatibilityIssue]
-) extends SubOpenAPICompatibilityIssue {
+) extends OpenAPICompatibilitySubIssues {
   def description: String =
     s"incompatible operation $httpMethod:\n${issuesRepr(subIssues)}"
 }
@@ -60,7 +60,7 @@ case class IncompatibleRequiredParameter(
 case class IncompatibleParameter(
     name: String,
     subIssues: List[OpenAPICompatibilityIssue]
-) extends SubOpenAPICompatibilityIssue {
+) extends OpenAPICompatibilitySubIssues {
   def description: String =
     s"incompatible parameter $name:\n${issuesRepr(subIssues)}"
 }
@@ -74,7 +74,7 @@ case class IncompatibleSchema(
 
 case class IncompatibleContent(
     subIssues: List[OpenAPICompatibilityIssue]
-) extends SubOpenAPICompatibilityIssue {
+) extends OpenAPICompatibilitySubIssues {
   def description: String =
     s"incompatible content:\n${issuesRepr(subIssues)}"
 }
@@ -85,14 +85,29 @@ case class MissingMediaType(mediaType: String) extends OpenAPICompatibilityIssue
 }
 
 case class IncompatibleMediaType(mediaType: String, subIssues: List[OpenAPICompatibilityIssue])
-    extends SubOpenAPICompatibilityIssue {
+    extends OpenAPICompatibilitySubIssues {
   def description: String =
     s"incompatible media type $mediaType:\n${issuesRepr(subIssues)}"
 }
 
-case class MissMatch(name: String) extends OpenAPICompatibilityIssue {
+case class IncompatibleStyle() extends OpenAPICompatibilityIssue {
   def description: String =
-    s"miss match $name"
+    s"incompatible style"
+}
+
+case class IncompatibleExplode() extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"incompatible explode"
+}
+
+case class IncompatibleAllowEmptyValue() extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"incompatible allowEmptyValue"
+}
+
+case class IncompatibleAllowReserved() extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"incompatible allowReserved"
 }
 
 case class MissingRequestBody() extends OpenAPICompatibilityIssue {
@@ -105,7 +120,7 @@ case class IncompatibleRequiredRequestBody() extends OpenAPICompatibilityIssue {
     s"request body is required by the client but optional on the server"
 }
 
-case class IncompatibleRequestBody(subIssues: List[OpenAPICompatibilityIssue]) extends SubOpenAPICompatibilityIssue {
+case class IncompatibleRequestBody(subIssues: List[OpenAPICompatibilityIssue]) extends OpenAPICompatibilitySubIssues {
   def description: String =
     s"incompatible request body:\n${issuesRepr(subIssues)}"
 }
@@ -115,7 +130,7 @@ case class MissingResponse(responsesKey: ResponsesKey) extends OpenAPICompatibil
     s"missing response for $responsesKey"
 }
 
-case class IncompatibleResponse(subIssues: List[OpenAPICompatibilityIssue]) extends SubOpenAPICompatibilityIssue {
+case class IncompatibleResponse(subIssues: List[OpenAPICompatibilityIssue]) extends OpenAPICompatibilitySubIssues {
   def description: String =
     s"incompatible response:\n${issuesRepr(subIssues)}"
 }
@@ -131,7 +146,7 @@ case class IncompatibleRequiredHeader(headerName: String) extends OpenAPICompati
 }
 
 case class IncompatibleHeader(headerName: String, subIssues: List[OpenAPICompatibilityIssue])
-    extends SubOpenAPICompatibilityIssue {
+    extends OpenAPICompatibilitySubIssues {
   def description: String =
     s"incompatible header $headerName:\n${issuesRepr(subIssues)}"
 }

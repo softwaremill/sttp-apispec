@@ -25,7 +25,7 @@ class OpenAPIComparator(
   private val clientSchemas: Map[String, Schema] = clientOpenAPI.components match {
     case Some(components) =>
       components.schemas.flatMap {
-        case (key, schema: Schema) => Some(key, schema)
+        case (key, schema: Schema) => Some((key, schema))
         case _                     => None
       }
     case _ => Map.empty[String, Schema]
@@ -34,7 +34,7 @@ class OpenAPIComparator(
   private val serverSchemas: Map[String, Schema] = serverOpenAPI.components match {
     case Some(components) =>
       components.schemas.flatMap {
-        case (key, schema: Schema) => Some(key, schema)
+        case (key, schema: Schema) => Some((key, schema))
         case _                     => None
       }
     case _ => Map.empty[String, Schema]
@@ -139,10 +139,10 @@ class OpenAPIComparator(
     val issues =
       checkSchema(clientParameter.schema, serverParameter.schema).toList ++
         checkContent(clientParameter.content, serverParameter.content).toList ++
-        (if (!isCompatibleStyle) Some(MissMatch("style")) else None).toList ++
-        (if (!isCompatibleExplode) Some(MissMatch("explode")) else None).toList ++
-        (if (!isCompatibleAllowEmptyValue) Some(MissMatch("allowEmptyValue")) else None).toList ++
-        (if (!isCompatibleAllowReserved) Some(MissMatch("allowReserved")) else None).toList
+        (if (!isCompatibleStyle) Some(IncompatibleStyle()) else None).toList ++
+        (if (!isCompatibleExplode) Some(IncompatibleExplode()) else None).toList ++
+        (if (!isCompatibleAllowEmptyValue) Some(IncompatibleAllowEmptyValue()) else None).toList ++
+        (if (!isCompatibleAllowReserved) Some(IncompatibleAllowReserved()) else None).toList
 
     if (issues.isEmpty)
       None
@@ -234,7 +234,7 @@ class OpenAPIComparator(
             if (clientHeader.required.getOrElse(false) && !serverHeader.required.getOrElse(false)) {
               Some(IncompatibleRequiredHeader(clientHeaderName))
             } else {
-              checkHeader(clientHeaderName, clientHeader, serverHeader)
+              checkResponseHeader(clientHeaderName, clientHeader, serverHeader)
             }
           case None => Some(MissingHeader(clientHeaderName))
           case _    => None
@@ -249,7 +249,7 @@ class OpenAPIComparator(
       None
   }
 
-  private def checkHeader(
+  private def checkResponseHeader(
       headerName: String,
       clientHeader: Header,
       serverHeader: Header
@@ -264,10 +264,10 @@ class OpenAPIComparator(
     val issues =
       schemaIssues.toList ++
         contentIssue.toList ++
-        (if (!isCompatibleStyle) Some(MissMatch("style")) else None).toList ++
-        (if (!isCompatibleExplode) Some(MissMatch("explode")) else None).toList ++
-        (if (!isCompatibleAllowEmptyValue) Some(MissMatch("allowEmptyValue")) else None).toList ++
-        (if (!isCompatibleAllowReserved) Some(MissMatch("allowReserved")) else None).toList
+        (if (!isCompatibleStyle) Some(IncompatibleStyle()) else None).toList ++
+        (if (!isCompatibleExplode) Some(IncompatibleExplode()) else None).toList ++
+        (if (!isCompatibleAllowEmptyValue) Some(IncompatibleAllowEmptyValue()) else None).toList ++
+        (if (!isCompatibleAllowReserved) Some(IncompatibleAllowReserved()) else None).toList
 
     if (issues.nonEmpty)
       Some(IncompatibleHeader(headerName, issues))
