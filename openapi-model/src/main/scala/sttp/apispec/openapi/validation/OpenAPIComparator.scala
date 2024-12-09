@@ -139,10 +139,16 @@ class OpenAPIComparator(
     val issues =
       checkSchema(clientParameter.schema, serverParameter.schema).toList ++
         checkContent(clientParameter.content, serverParameter.content).toList ++
-        (if (!isCompatibleStyle) Some(IncompatibleStyle()) else None).toList ++
-        (if (!isCompatibleExplode) Some(IncompatibleExplode()) else None).toList ++
-        (if (!isCompatibleAllowEmptyValue) Some(IncompatibleAllowEmptyValue()) else None).toList ++
-        (if (!isCompatibleAllowReserved) Some(IncompatibleAllowReserved()) else None).toList
+        (if (!isCompatibleStyle) Some(IncompatibleStyle(clientParameter.style, serverParameter.style))
+         else None).toList ++
+        (if (!isCompatibleExplode) Some(IncompatibleExplode(clientParameter.explode, serverParameter.explode))
+         else None).toList ++
+        (if (!isCompatibleAllowEmptyValue)
+           Some(IncompatibleAllowEmptyValue(clientParameter.allowEmptyValue, serverParameter.allowEmptyValue))
+         else None).toList ++
+        (if (!isCompatibleAllowReserved)
+           Some(IncompatibleAllowReserved(clientParameter.allowReserved, serverParameter.allowReserved))
+         else None).toList
 
     if (issues.isEmpty)
       None
@@ -264,10 +270,15 @@ class OpenAPIComparator(
     val issues =
       schemaIssues.toList ++
         contentIssue.toList ++
-        (if (!isCompatibleStyle) Some(IncompatibleStyle()) else None).toList ++
-        (if (!isCompatibleExplode) Some(IncompatibleExplode()) else None).toList ++
-        (if (!isCompatibleAllowEmptyValue) Some(IncompatibleAllowEmptyValue()) else None).toList ++
-        (if (!isCompatibleAllowReserved) Some(IncompatibleAllowReserved()) else None).toList
+        (if (!isCompatibleStyle) Some(IncompatibleStyle(clientHeader.style, serverHeader.style)) else None).toList ++
+        (if (!isCompatibleExplode) Some(IncompatibleExplode(clientHeader.explode, serverHeader.explode))
+         else None).toList ++
+        (if (!isCompatibleAllowEmptyValue)
+           Some(IncompatibleAllowEmptyValue(clientHeader.allowEmptyValue, serverHeader.allowEmptyValue))
+         else None).toList ++
+        (if (!isCompatibleAllowReserved)
+           Some(IncompatibleAllowReserved(clientHeader.allowReserved, serverHeader.allowReserved))
+         else None).toList
 
     if (issues.nonEmpty)
       Some(IncompatibleHeader(headerName, issues))

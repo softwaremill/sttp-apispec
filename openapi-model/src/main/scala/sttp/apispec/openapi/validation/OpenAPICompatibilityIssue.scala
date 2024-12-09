@@ -1,6 +1,6 @@
 package sttp.apispec.openapi.validation
 
-import sttp.apispec.openapi.ResponsesKey
+import sttp.apispec.openapi.{ParameterStyle, ResponsesKey}
 import sttp.apispec.validation.SchemaCompatibilityIssue
 
 sealed abstract class OpenAPICompatibilityIssue {
@@ -90,24 +90,24 @@ case class IncompatibleMediaType(mediaType: String, subIssues: List[OpenAPICompa
     s"incompatible media type $mediaType:\n${issuesRepr(subIssues)}"
 }
 
-case class IncompatibleStyle() extends OpenAPICompatibilityIssue {
+case class IncompatibleStyle(clientValue: Option[ParameterStyle], serverValue: Option[ParameterStyle]) extends OpenAPICompatibilityIssue {
   def description: String =
-    s"incompatible style"
+    s"incompatible style value: client=$clientValue, server=$serverValue"
 }
 
-case class IncompatibleExplode() extends OpenAPICompatibilityIssue {
+case class IncompatibleExplode(clientValue: Option[Boolean], serverValue: Option[Boolean]) extends OpenAPICompatibilityIssue {
   def description: String =
-    s"incompatible explode"
+    s"incompatible explode value: client=$clientValue, server=$serverValue"
 }
 
-case class IncompatibleAllowEmptyValue() extends OpenAPICompatibilityIssue {
+case class IncompatibleAllowEmptyValue(clientValue: Option[Boolean], serverValue: Option[Boolean]) extends OpenAPICompatibilityIssue {
   def description: String =
-    s"incompatible allowEmptyValue"
+    s"incompatible allowEmptyValue value: client=$clientValue, server=$serverValue"
 }
 
-case class IncompatibleAllowReserved() extends OpenAPICompatibilityIssue {
+case class IncompatibleAllowReserved(clientValue: Option[Boolean], serverValue: Option[Boolean]) extends OpenAPICompatibilityIssue {
   def description: String =
-    s"incompatible allowReserved"
+    s"incompatible allowReserved value: client=$clientValue, server=$serverValue"
 }
 
 case class MissingRequestBody() extends OpenAPICompatibilityIssue {

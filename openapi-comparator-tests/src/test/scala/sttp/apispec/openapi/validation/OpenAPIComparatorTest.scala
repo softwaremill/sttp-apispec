@@ -3,6 +3,7 @@ package sttp.apispec.openapi.validation
 import io.circe
 import org.scalatest.funsuite.AnyFunSuite
 import sttp.apispec.SchemaType
+import sttp.apispec.openapi.ParameterStyle
 import sttp.apispec.openapi.{OpenAPI, ResponsesCodeKey}
 import sttp.apispec.openapi.circe.openAPIDecoder
 import sttp.apispec.test.ResourcePlatform
@@ -141,7 +142,7 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val Right(clientOpenapi) = readOpenAPI("/petstore/updated-parameter-style/petstore-updated-parameter-style.json")
     val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-style/petstore.json")
 
-    val styleIssue = IncompatibleStyle()
+    val styleIssue = IncompatibleStyle(Some(ParameterStyle.Form), None)
     val parameterIssue = IncompatibleParameter("status", List(styleIssue))
     val operationIssue = IncompatibleOperation("get", List(parameterIssue))
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
@@ -155,7 +156,7 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
       readOpenAPI("/petstore/updated-parameter-explode/petstore-updated-parameter-explode.json")
     val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-explode/petstore.json")
 
-    val explodeIssue = IncompatibleExplode()
+    val explodeIssue = IncompatibleExplode(Some(true), None)
     val parameterIssue = IncompatibleParameter("status", List(explodeIssue))
     val operationIssue = IncompatibleOperation("get", List(parameterIssue))
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
@@ -169,7 +170,7 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
       readOpenAPI("/petstore/updated-parameter-allow_empty_value/petstore-updated-parameter-allow_empty_value.json")
     val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-allow_empty_value/petstore.json")
 
-    val allowEmptyValueIssue = IncompatibleAllowEmptyValue()
+    val allowEmptyValueIssue = IncompatibleAllowEmptyValue(Some(true), None)
     val parameterIssue = IncompatibleParameter("status", List(allowEmptyValueIssue))
     val operationIssue = IncompatibleOperation("get", List(parameterIssue))
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
@@ -183,7 +184,7 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
       readOpenAPI("/petstore/updated-parameter-allow_reserved/petstore-updated-parameter-allow_reserved.json")
     val Right(serverOpenapi) = readOpenAPI("/petstore/updated-parameter-allow_reserved/petstore.json")
 
-    val allowReservedIssue = IncompatibleAllowReserved()
+    val allowReservedIssue = IncompatibleAllowReserved(Some(true), None)
     val parameterIssue = IncompatibleParameter("status", List(allowReservedIssue))
     val operationIssue = IncompatibleOperation("get", List(parameterIssue))
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
@@ -398,7 +399,7 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
       readOpenAPI("/petstore/updated-response-header-style/petstore-updated-response-header-style.json")
     val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-style/petstore.json")
 
-    val styleIssue = IncompatibleStyle()
+    val styleIssue = IncompatibleStyle(Some(ParameterStyle.Form), None)
     val headerIssue = IncompatibleHeader("X-Rate-Limit", List(styleIssue))
     val responsesIssue = IncompatibleResponse(List(headerIssue))
     val operationIssue = IncompatibleOperation("get", List(responsesIssue))
@@ -413,7 +414,7 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
       readOpenAPI("/petstore/updated-response-header-explode/petstore-updated-response-header-explode.json")
     val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-explode/petstore.json")
 
-    val explodeIssue = IncompatibleExplode()
+    val explodeIssue = IncompatibleExplode(Some(true), None)
     val headerIssue = IncompatibleHeader("X-Rate-Limit", List(explodeIssue))
     val responsesIssue = IncompatibleResponse(List(headerIssue))
     val operationIssue = IncompatibleOperation("get", List(responsesIssue))
@@ -429,7 +430,7 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     )
     val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-allow_empty_value/petstore.json")
 
-    val allowEmptyValueIssue = IncompatibleAllowEmptyValue()
+    val allowEmptyValueIssue = IncompatibleAllowEmptyValue(Some(true), None)
     val headerIssue = IncompatibleHeader("X-Rate-Limit", List(allowEmptyValueIssue))
     val responsesIssue = IncompatibleResponse(List(headerIssue))
     val operationIssue = IncompatibleOperation("get", List(responsesIssue))
@@ -445,7 +446,7 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     )
     val Right(serverOpenapi) = readOpenAPI("/petstore/updated-response-header-allow_reserved/petstore.json")
 
-    val allowReservedIssue = IncompatibleAllowReserved()
+    val allowReservedIssue = IncompatibleAllowReserved(Some(true), None)
     val headerIssue = IncompatibleHeader("X-Rate-Limit", List(allowReservedIssue))
     val responsesIssue = IncompatibleResponse(List(headerIssue))
     val operationIssue = IncompatibleOperation("get", List(responsesIssue))
