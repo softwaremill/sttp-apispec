@@ -11,6 +11,21 @@ object OpenAPIComparator {
     new OpenAPIComparator(clientOpenAPI, serverOpenAPI)
 }
 
+/**
+ * A utility for comparing two OpenAPI specifications to validate their compatibility.
+ *
+ * The `OpenAPIComparator` class compares the client's OpenAPI specification with the server's
+ * specification to detect and highlight compatibility issues. It evaluates various components
+ * including paths, operations, parameters, request bodies, responses, headers, schemas, content,
+ * and media types.
+ *
+ * Note: This comparator does not compare meta-data, such as the info object, server lists, or
+ * descriptions in properties.
+ *
+ * @param clientOpenAPI the OpenAPI specification provided by the client.
+ * @param serverOpenAPI the OpenAPI specification provided by the server.
+ */
+
 class OpenAPIComparator private (
     clientOpenAPI: OpenAPI,
     serverOpenAPI: OpenAPI
@@ -44,6 +59,16 @@ class OpenAPIComparator private (
       }
     case _ => Map.empty[String, Schema]
   }
+
+  /**
+   * Compares the client and server OpenAPI specifications for compatibility.
+   *
+   * This method compares the paths in both specifications to identify compatibility issues.
+   * It detects incompatibilities such as missing paths, parameter mismatches, schema inconsistencies,
+   * and other discrepancies. It organizes the issues into a tree-like structure, with main issues and their sub-issues.
+   *
+   * @return a list of `OpenAPICompatibilityIssue` instances detailing the identified issues.
+   */
 
   def compare(): List[OpenAPICompatibilityIssue] = {
     clientOpenAPI.paths.pathItems.toList.flatMap {
