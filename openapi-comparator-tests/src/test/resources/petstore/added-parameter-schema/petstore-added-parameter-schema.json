@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "version": "1.1.2"
+    "version": "1.0.4"
   },
   "servers": [
     {
@@ -32,16 +32,12 @@
             "in": "query",
             "description": "Filter pets by status",
             "required": false,
-            "style": "form",
-            "explode": true,
-            "allowEmptyValue": true,
-            "allowReserved": true,
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
+            "schema": {
+              "type": "string",
+              "enum": [
+                "available",
+                "sold"
+              ]
             }
           }
         ],
@@ -68,11 +64,6 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "type": "string"
-              }
-            },
-            "application/xml": {
               "schema": {
                 "$ref": "#/components/schemas/NewPet"
               }
@@ -117,31 +108,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/Pet"
                 }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "headers": {
-              "X-Rate-Limit": {
-                "description": "The number of requests allowed per hour",
-                "content": {
-                  "application/xml": {
-                    "schema": {
-                      "type": "string"
-                    }
-                  }
-                }
               }
             }
           },
           "404": {
             "description": "Pet not found"
-          },
-          "500": {
-            "description": "Internal Error"
           }
         }
       }
@@ -158,10 +129,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "breed": {
-            "type": "string",
-            "description": "The breed of the pet"
           }
         }
       },
@@ -169,20 +136,6 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "UpdatedPet": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "breed": {
             "type": "string"
           }
         },

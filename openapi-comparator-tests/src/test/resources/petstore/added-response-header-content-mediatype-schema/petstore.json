@@ -128,11 +128,7 @@
               "X-Rate-Limit": {
                 "description": "The number of requests allowed per hour",
                 "content": {
-                  "application/xml": {
-                    "schema": {
-                      "type": "string"
-                    }
-                  }
+                  "application/json": {}
                 }
               }
             }

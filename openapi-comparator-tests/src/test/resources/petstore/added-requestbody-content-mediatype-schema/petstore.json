@@ -32,10 +32,6 @@
             "in": "query",
             "description": "Filter pets by status",
             "required": false,
-            "style": "form",
-            "explode": true,
-            "allowEmptyValue": true,
-            "allowReserved": true,
             "content": {
               "application/json": {
                 "schema": {
@@ -67,16 +63,7 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
-              "schema": {
-                "type": "string"
-              }
-            },
-            "application/xml": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPet"
-              }
-            }
+            "application/json": {}
           }
         },
         "responses": {
@@ -117,31 +104,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/Pet"
                 }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "headers": {
-              "X-Rate-Limit": {
-                "description": "The number of requests allowed per hour",
-                "content": {
-                  "application/xml": {
-                    "schema": {
-                      "type": "string"
-                    }
-                  }
-                }
               }
             }
           },
           "404": {
             "description": "Pet not found"
-          },
-          "500": {
-            "description": "Internal Error"
           }
         }
       }

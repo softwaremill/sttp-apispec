@@ -100,6 +100,28 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
+  test("server missing parameter schema when client has one") {
+    val clientOpenapi =
+      readOpenAPI("/petstore/added-parameter-schema/petstore-added-parameter-schema.json")
+    val serverOpenapi = readOpenAPI("/petstore/added-parameter-schema/petstore.json")
+
+    val schemaIssue = MissingSchema()
+    val parameterIssue = IncompatibleParameter("status", List(schemaIssue))
+    val operationIssue = IncompatibleOperation("get", List(parameterIssue))
+    val pathIssue = IncompatiblePath("/pets", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("no errors when server has a parameter schema but client does not") {
+    val clientOpenapi =
+      readOpenAPI("/petstore/added-parameter-schema/petstore.json")
+    val serverOpenapi = readOpenAPI("/petstore/added-parameter-schema/petstore-added-parameter-schema.json")
+
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
   test("server missing parameter content media-type when client has an extra one") {
     val clientOpenapi =
       readOpenAPI("/petstore/added-parameter-content-mediatype/petstore-added-parameter-content-mediatype.json")
@@ -138,6 +160,34 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val expected = List(pathIssue)
 
     assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("server missing parameter content media-type schema when client has one") {
+    val clientOpenapi =
+      readOpenAPI(
+        "/petstore/added-parameter-content-mediatype-schema/petstore-added-parameter-content-mediatype-schema.json"
+      )
+    val serverOpenapi = readOpenAPI("/petstore/added-parameter-content-mediatype-schema/petstore.json")
+
+    val schemaIssue = MissingSchema()
+    val mediaTypeIssue = IncompatibleMediaType("application/json", List(schemaIssue))
+    val parameterContentIssue = IncompatibleContent(List(mediaTypeIssue))
+    val parameterIssue = IncompatibleParameter("status", List(parameterContentIssue))
+    val operationIssue = IncompatibleOperation("get", List(parameterIssue))
+    val pathIssue = IncompatiblePath("/pets", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("no errors when server has a parameter content media-type schema but client does not") {
+    val clientOpenapi =
+      readOpenAPI("/petstore/added-parameter-content-mediatype-schema/petstore.json")
+    val serverOpenapi = readOpenAPI(
+      "/petstore/added-parameter-content-mediatype-schema/petstore-added-parameter-content-mediatype-schema.json"
+    )
+
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
   }
 
   test("server parameter style is incompatible with client parameter style") {
@@ -255,6 +305,34 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
+  test("server missing request-body content media-type schema when client has one") {
+    val clientOpenapi =
+      readOpenAPI(
+        "/petstore/added-requestbody-content-mediatype-schema/petstore-added-requestbody-content-mediatype-schema.json"
+      )
+    val serverOpenapi = readOpenAPI("/petstore/added-requestbody-content-mediatype-schema/petstore.json")
+
+    val schemaIssue = MissingSchema()
+    val mediaTypeIssue = IncompatibleMediaType("application/json", List(schemaIssue))
+    val requestBodyContentIssue = IncompatibleContent(List(mediaTypeIssue))
+    val requestBodyIssue = IncompatibleRequestBody(List(requestBodyContentIssue))
+    val operationIssue = IncompatibleOperation("post", List(requestBodyIssue))
+    val pathIssue = IncompatiblePath("/pets", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("no errors when server has a request-body content media-type schema but client does not") {
+    val clientOpenapi =
+      readOpenAPI("/petstore/added-requestbody-content-mediatype-schema/petstore.json")
+    val serverOpenapi = readOpenAPI(
+      "/petstore/added-requestbody-content-mediatype-schema/petstore-added-requestbody-content-mediatype-schema.json"
+    )
+
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
   test("server missing response when client has an extra one") {
     val clientOpenapi = readOpenAPI("/petstore/added-response/petstore-added-response.json")
     val serverOpenapi = readOpenAPI("/petstore/added-response/petstore.json")
@@ -315,6 +393,34 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
 
+  test("server missing response content media-type schema when client has one") {
+    val clientOpenapi =
+      readOpenAPI(
+        "/petstore/added-response-content-mediatype-schema/petstore-added-response-content-mediatype-schema.json"
+      )
+    val serverOpenapi = readOpenAPI("/petstore/added-response-content-mediatype-schema/petstore.json")
+
+    val schemaIssue = MissingSchema()
+    val mediaTypeIssues = IncompatibleMediaType("application/json", List(schemaIssue))
+    val responseContentIssues = IncompatibleContent(List(mediaTypeIssues))
+    val responsesIssue = IncompatibleResponse(List(responseContentIssues))
+    val operationIssue = IncompatibleOperation("get", List(responsesIssue))
+    val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("no errors when server has a response content media-type schema but client does not") {
+    val clientOpenapi =
+      readOpenAPI("/petstore/added-response-content-mediatype-schema/petstore.json")
+    val serverOpenapi = readOpenAPI(
+      "/petstore/added-response-content-mediatype-schema/petstore-added-response-content-mediatype-schema.json"
+    )
+
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
   test("server missing response header when client has an extra one") {
     val clientOpenapi = readOpenAPI("/petstore/added-response-header/petstore-added-response-header.json")
     val serverOpenapi = readOpenAPI("/petstore/added-response-header/petstore.json")
@@ -349,6 +455,29 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val expected = List(pathIssue)
 
     assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("server missing response header schema when client has one") {
+    val clientOpenapi =
+      readOpenAPI("/petstore/added-response-header-schema/petstore-added-response-header-schema.json")
+    val serverOpenapi = readOpenAPI("/petstore/added-response-header-schema/petstore.json")
+
+    val schemaIssue = MissingSchema()
+    val headerIssue = IncompatibleHeader("X-Rate-Limit", List(schemaIssue))
+    val responsesIssue = IncompatibleResponse(List(headerIssue))
+    val operationIssue = IncompatibleOperation("get", List(responsesIssue))
+    val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("no errors when server has a response header schema but client does not") {
+    val clientOpenapi =
+      readOpenAPI("/petstore/added-response-header-schema/petstore.json")
+    val serverOpenapi = readOpenAPI("/petstore/added-response-header-schema/petstore-added-response-header-schema.json")
+
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
   }
 
   test("server missing response header content media-type when client has an extra one") {
@@ -394,6 +523,35 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val expected = List(pathIssue)
 
     assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("server missing response header content media-type schema when client has one") {
+    val clientOpenapi =
+      readOpenAPI(
+        "/petstore/added-response-header-content-mediatype-schema/petstore-added-response-header-content-mediatype-schema.json"
+      )
+    val serverOpenapi = readOpenAPI("/petstore/added-response-header-content-mediatype-schema/petstore.json")
+
+    val schemaIssue = MissingSchema()
+    val mediaTypeIssues = IncompatibleMediaType("application/json", List(schemaIssue))
+    val contentIssues = IncompatibleContent(List(mediaTypeIssues))
+    val headerIssue = IncompatibleHeader("X-Rate-Limit", List(contentIssues))
+    val responsesIssue = IncompatibleResponse(List(headerIssue))
+    val operationIssue = IncompatibleOperation("get", List(responsesIssue))
+    val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("no errors when server has a response header content media-type schema but client does not") {
+    val clientOpenapi =
+      readOpenAPI("/petstore/added-response-header-content-mediatype-schema/petstore.json")
+    val serverOpenapi = readOpenAPI(
+      "/petstore/added-response-header-content-mediatype-schema/petstore-added-response-header-content-mediatype-schema.json"
+    )
+
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
   }
 
   test("server response header style is incompatible with client response header style") {

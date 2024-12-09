@@ -197,14 +197,15 @@ class OpenAPIComparator private (
       clientSchema: Option[SchemaLike],
       serverSchema: Option[SchemaLike]
   ): Option[OpenAPICompatibilityIssue] = {
-    (serverSchema, clientSchema) match {
-      case (Some(serverSchema), Some(clientSchema)) =>
+    (clientSchema, serverSchema) match {
+      case (Some(clientSchema), Some(serverSchema)) =>
         val schemaComparator = new SchemaComparator(clientSchemas, serverSchemas)
         val schemaIssues = schemaComparator.compare(clientSchema, serverSchema)
         if (schemaIssues.nonEmpty)
           Some(IncompatibleSchema(schemaIssues))
         else
           None
+      case (Some(_), None) => Some(MissingSchema())
       case _ => None
     }
   }

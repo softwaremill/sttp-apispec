@@ -150,3 +150,8 @@ case class IncompatibleHeader(headerName: String, subIssues: List[OpenAPICompati
   def description: String =
     s"incompatible header $headerName:\n${issuesRepr(subIssues)}"
 }
+
+case class MissingSchema() extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"missing schema"
+}

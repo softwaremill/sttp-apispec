@@ -14,7 +14,7 @@
             "name": "Apache 2.0",
             "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
         },
-        "version": "1.0.5"
+        "version": "1.1.2"
     },
     "servers": [
         {
@@ -31,7 +31,14 @@
                         "name": "status",
                         "in": "query",
                         "description": "Filter pets by status",
-                        "required": false
+                        "required": false,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
                     }
                 ],
                 "responses": {
@@ -58,7 +65,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/NewPet"
+                                "type": "string"
                             }
                         }
                     }
@@ -122,6 +129,10 @@
                     },
                     "name": {
                         "type": "string"
+                    },
+                    "breed": {
+                        "type": "string",
+                        "description": "The breed of the pet"
                     }
                 }
             },
@@ -129,6 +140,20 @@
                 "type": "object",
                 "properties": {
                     "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name"
+                ]
+            },
+            "UpdatedPet": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "breed": {
                         "type": "string"
                     }
                 },

@@ -113,28 +113,7 @@
           "200": {
             "description": "Successful response",
             "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Pet"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "headers": {
-              "X-Rate-Limit": {
-                "description": "The number of requests allowed per hour",
-                "content": {
-                  "application/xml": {
-                    "schema": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
+              "application/json": {}
             }
           },
           "404": {
