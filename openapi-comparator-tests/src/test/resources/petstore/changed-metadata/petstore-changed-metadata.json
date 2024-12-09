@@ -25,12 +25,12 @@
     "/pets": {
       "get": {
         "operationId": "getPets",
-        "description": "Gets all pets",
+        "description": "Get pets",
         "parameters": [
           {
             "name": "status",
             "in": "query",
-            "description": "Filter pets by status",
+            "description": "Filter pets by status value",
             "required": false,
             "style": "form",
             "explode": true,
@@ -47,7 +47,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "get pets successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -63,7 +63,7 @@
       },
       "post": {
         "operationId": "addPet",
-        "description": "Add a new pet",
+        "description": "Add new pet",
         "requestBody": {
           "required": true,
           "content": {
@@ -81,7 +81,7 @@
         },
         "responses": {
           "201": {
-            "description": "Pet created",
+            "description": "A new pet is created",
             "content": {
               "application/json": {
                 "schema": {
@@ -96,7 +96,7 @@
     "/pets/{petId}": {
       "get": {
         "operationId": "getPetById",
-        "description": "Get a pet by its ID",
+        "description": "Get pet by ID",
         "parameters": [
           {
             "name": "petId",
@@ -106,12 +106,12 @@
               "type": "integer",
               "format": "int32"
             },
-            "description": "The ID of the pet to retrieve"
+            "description": "The ID of the pet"
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful response",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -126,7 +126,7 @@
             },
             "headers": {
               "X-Rate-Limit": {
-                "description": "The number of requests allowed per hour",
+                "description": "The hourly limit for requests",
                 "style": "form",
                 "explode": true,
                 "allowEmptyValue": true,
@@ -142,7 +142,7 @@
             }
           },
           "404": {
-            "description": "Pet not found"
+            "description": "not found"
           },
           "500": {
             "description": "Internal Error"
@@ -165,7 +165,7 @@
           },
           "breed": {
             "type": "string",
-            "description": "The breed of the pet"
+            "description": "The pet's breed"
           }
         }
       },

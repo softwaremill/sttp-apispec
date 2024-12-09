@@ -2,11 +2,16 @@ package sttp.apispec.openapi.validation
 
 import sttp.apispec.{Schema, SchemaLike}
 import sttp.apispec.openapi.{Header, MediaType, OpenAPI, Operation, Parameter, PathItem, RequestBody, Response}
-import sttp.apispec.validation.SchemaComparator
+import sttp.apispec.validation.{SchemaComparator, SchemaResolver}
 
 import scala.collection.immutable.ListMap
 
-class OpenAPIComparator(
+object OpenAPIComparator {
+  def apply(clientOpenAPI: OpenAPI, serverOpenAPI: OpenAPI): OpenAPIComparator =
+    new OpenAPIComparator(clientOpenAPI, serverOpenAPI)
+}
+
+class OpenAPIComparator private (
     clientOpenAPI: OpenAPI,
     serverOpenAPI: OpenAPI
 ) {
@@ -201,7 +206,6 @@ class OpenAPIComparator(
         else
           None
       case _ => None
-
     }
   }
 
