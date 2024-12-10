@@ -1,8 +1,18 @@
 package sttp.apispec.openapi.validation
 
-import sttp.apispec.{Schema, SchemaLike, SecurityRequirement}
-import sttp.apispec.openapi.{Encoding, Header, MediaType, OpenAPI, Operation, Parameter, PathItem, RequestBody, Response}
-import sttp.apispec.validation.{SchemaComparator, SchemaResolver}
+import sttp.apispec.{Schema, SchemaLike}
+import sttp.apispec.openapi.{
+  Encoding,
+  Header,
+  MediaType,
+  OpenAPI,
+  Operation,
+  Parameter,
+  PathItem,
+  RequestBody,
+  Response
+}
+import sttp.apispec.validation.SchemaComparator
 
 import scala.collection.immutable.ListMap
 
@@ -174,9 +184,9 @@ class OpenAPIComparator private (
         (if (!isCompatibleAllowReserved)
            Some(IncompatibleAllowReserved(clientParameter.allowReserved, serverParameter.allowReserved))
          else None).toList ++
-    (if (!isCompatibleRequiredValue)
-       Some(IncompatibleRequiredValue(clientParameter.required, serverParameter.required))
-     else None).toList
+        (if (!isCompatibleRequiredValue)
+           Some(IncompatibleRequiredValue(clientParameter.required, serverParameter.required))
+         else None).toList
 
     if (issues.isEmpty)
       None

@@ -1,0 +1,73 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Simple Pet Store API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/pets": {
+      "post": {
+        "summary": "Add a new pet",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "tag": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pet created successfully."
+          }
+        },
+        "callbacks": {
+          "onPetStatusChange": {
+            "{$request.body#/callbackUrl}": {
+              "post": {
+                "summary": "Notify about pet status change",
+                "requestBody": {
+                  "required": true,
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          },
+                          "timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Callback successfully processed."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
