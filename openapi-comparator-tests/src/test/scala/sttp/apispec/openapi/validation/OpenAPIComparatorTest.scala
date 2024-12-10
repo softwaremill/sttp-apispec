@@ -8,6 +8,8 @@ import sttp.apispec.openapi.circe.openAPIDecoder
 import sttp.apispec.test.ResourcePlatform
 import sttp.apispec.validation.TypeMismatch
 
+import scala.collection.immutable.ListMap
+
 class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
   override val basedir = "openapi-comparator-tests"
 
@@ -717,6 +719,19 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
     val contentIssue = IncompatibleContent(List(mediaTypeIssue))
     val requestBodyIssue = IncompatibleRequestBody(List(contentIssue))
     val operationIssue = IncompatibleOperation("post", List(requestBodyIssue))
+    val pathIssue = IncompatiblePath("/pets", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("server operation security is incompatible with client operation security") {
+    val clientOpenapi = readOpenAPI("/petstore/updated-operation-security/petstore-updated-operation-security.json")
+    val serverOpenapi = readOpenAPI("/petstore/updated-operation-security/petstore.json")
+
+    val securityRequirementIssue =
+      IncompatibleSecurityRequirement(ListMap("OAuth2" -> Vector("read:pets", "write:pets")))
+    val operationIssue = IncompatibleOperation("get", List(securityRequirementIssue))
     val pathIssue = IncompatiblePath("/pets", List(operationIssue))
     val expected = List(pathIssue)
 

@@ -1,5 +1,6 @@
 package sttp.apispec.openapi.validation
 
+import sttp.apispec.SecurityRequirement
 import sttp.apispec.openapi.{ParameterStyle, ResponsesKey}
 import sttp.apispec.validation.SchemaCompatibilityIssue
 
@@ -163,7 +164,12 @@ case class IncompatibleEncoding(encodingName: String, subIssues: List[OpenAPICom
 }
 
 case class IncompatibleContentType(clientValue: Option[String], serverValue: Option[String])
-  extends OpenAPICompatibilityIssue {
+    extends OpenAPICompatibilityIssue {
   def description: String =
     s"incompatible contentType: client=$clientValue, server=$serverValue"
+}
+
+case class IncompatibleSecurityRequirement(securityRequirement: SecurityRequirement) extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"incompatible security requirement $securityRequirement"
 }

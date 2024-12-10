@@ -1,17 +1,7 @@
 package sttp.apispec.openapi.validation
 
-import sttp.apispec.{Schema, SchemaLike}
-import sttp.apispec.openapi.{
-  Encoding,
-  Header,
-  MediaType,
-  OpenAPI,
-  Operation,
-  Parameter,
-  PathItem,
-  RequestBody,
-  Response
-}
+import sttp.apispec.{Schema, SchemaLike, SecurityRequirement}
+import sttp.apispec.openapi.{Encoding, Header, MediaType, OpenAPI, Operation, Parameter, PathItem, RequestBody, Response}
 import sttp.apispec.validation.{SchemaComparator, SchemaResolver}
 
 import scala.collection.immutable.ListMap
@@ -153,8 +143,11 @@ class OpenAPIComparator private (
       case _ => None
     }
 
-    // TODO: callbacks, security?
-    val issues = parametersIssue ++ requestBodyIssue ++ responsesIssues
+    // TODO: callbacks
+    val incompatibleSecurityRequirements = clientOperation.security.filterNot(serverOperation.security.contains)
+    val securityIssues = incompatibleSecurityRequirements.map(IncompatibleSecurityRequirement(_))
+
+    val issues = parametersIssue ++ requestBodyIssue ++ responsesIssues ++ securityIssues
     if (issues.isEmpty)
       None
     else
