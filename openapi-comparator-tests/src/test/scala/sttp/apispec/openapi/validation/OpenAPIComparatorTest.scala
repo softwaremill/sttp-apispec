@@ -624,4 +624,44 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
 
     assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
+
+  test("server parameter required value is incompatible with client parameter required value") {
+    val clientOpenapi = readOpenAPI("/petstore/required-parameter/petstore-required-parameter.json")
+    val serverOpenapi = readOpenAPI("/petstore/required-parameter/petstore.json")
+
+    val requiredValueIssue = IncompatibleRequiredValue(Some(true), Some(false))
+    val parameterIssue = IncompatibleParameter("petId", List(requiredValueIssue))
+    val operationIssue = IncompatibleOperation("get", List(parameterIssue))
+    val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("server response header required value is incompatible with client response header required value") {
+    val clientOpenapi = readOpenAPI("/petstore/required-response-header/petstore-required-response-header.json")
+    val serverOpenapi = readOpenAPI("/petstore/required-response-header/petstore.json")
+
+    val requiredValueIssue = IncompatibleRequiredValue(Some(true), Some(false))
+    val headerIssue = IncompatibleHeader("X-Rate-Limit", List(requiredValueIssue))
+    val responsesIssue = IncompatibleResponse(List(headerIssue))
+    val operationIssue = IncompatibleOperation("get", List(responsesIssue))
+    val pathIssue = IncompatiblePath("/pets/{petId}", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("server request-body required value is incompatible with client request-body required value") {
+    val clientOpenapi = readOpenAPI("/petstore/required-request-body/petstore-required-request-body.json")
+    val serverOpenapi = readOpenAPI("/petstore/required-request-body/petstore.json")
+
+    val requiredValueIssue = IncompatibleRequiredValue(Some(true), Some(false))
+    val requestBodyIssue = IncompatibleRequestBody(List(requiredValueIssue))
+    val operationIssue = IncompatibleOperation("post", List(requestBodyIssue))
+    val pathIssue = IncompatiblePath("/pets", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
 }

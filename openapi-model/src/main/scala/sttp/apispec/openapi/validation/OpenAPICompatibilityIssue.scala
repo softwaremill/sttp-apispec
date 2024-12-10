@@ -50,11 +50,12 @@ case class MissingParameter(
     s"missing parameter $name"
 }
 
-case class IncompatibleRequiredParameter(
-    name: String
+case class IncompatibleRequiredValue(
+    clientValue: Option[Boolean],
+    serverValue: Option[Boolean]
 ) extends OpenAPICompatibilityIssue {
   def description: String =
-    s"parameter '$name' is required by the client but optional on the server"
+    s"required value mismatch: client has $clientValue, but server has $serverValue"
 }
 
 case class IncompatibleParameter(
@@ -90,22 +91,26 @@ case class IncompatibleMediaType(mediaType: String, subIssues: List[OpenAPICompa
     s"incompatible media type $mediaType:\n${issuesRepr(subIssues)}"
 }
 
-case class IncompatibleStyle(clientValue: Option[ParameterStyle], serverValue: Option[ParameterStyle]) extends OpenAPICompatibilityIssue {
+case class IncompatibleStyle(clientValue: Option[ParameterStyle], serverValue: Option[ParameterStyle])
+    extends OpenAPICompatibilityIssue {
   def description: String =
     s"incompatible style value: client=$clientValue, server=$serverValue"
 }
 
-case class IncompatibleExplode(clientValue: Option[Boolean], serverValue: Option[Boolean]) extends OpenAPICompatibilityIssue {
+case class IncompatibleExplode(clientValue: Option[Boolean], serverValue: Option[Boolean])
+    extends OpenAPICompatibilityIssue {
   def description: String =
     s"incompatible explode value: client=$clientValue, server=$serverValue"
 }
 
-case class IncompatibleAllowEmptyValue(clientValue: Option[Boolean], serverValue: Option[Boolean]) extends OpenAPICompatibilityIssue {
+case class IncompatibleAllowEmptyValue(clientValue: Option[Boolean], serverValue: Option[Boolean])
+    extends OpenAPICompatibilityIssue {
   def description: String =
     s"incompatible allowEmptyValue value: client=$clientValue, server=$serverValue"
 }
 
-case class IncompatibleAllowReserved(clientValue: Option[Boolean], serverValue: Option[Boolean]) extends OpenAPICompatibilityIssue {
+case class IncompatibleAllowReserved(clientValue: Option[Boolean], serverValue: Option[Boolean])
+    extends OpenAPICompatibilityIssue {
   def description: String =
     s"incompatible allowReserved value: client=$clientValue, server=$serverValue"
 }
@@ -113,11 +118,6 @@ case class IncompatibleAllowReserved(clientValue: Option[Boolean], serverValue: 
 case class MissingRequestBody() extends OpenAPICompatibilityIssue {
   def description: String =
     s"missing request body"
-}
-
-case class IncompatibleRequiredRequestBody() extends OpenAPICompatibilityIssue {
-  def description: String =
-    s"request body is required by the client but optional on the server"
 }
 
 case class IncompatibleRequestBody(subIssues: List[OpenAPICompatibilityIssue]) extends OpenAPICompatibilitySubIssues {
@@ -138,11 +138,6 @@ case class IncompatibleResponse(subIssues: List[OpenAPICompatibilityIssue]) exte
 case class MissingHeader(headerName: String) extends OpenAPICompatibilityIssue {
   def description: String =
     s"missing header $headerName"
-}
-
-case class IncompatibleRequiredHeader(headerName: String) extends OpenAPICompatibilityIssue {
-  def description: String =
-    s"header '$headerName' is required by the client but optional on the server"
 }
 
 case class IncompatibleHeader(headerName: String, subIssues: List[OpenAPICompatibilityIssue])

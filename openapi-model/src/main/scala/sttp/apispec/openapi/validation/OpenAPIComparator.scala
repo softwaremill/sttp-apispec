@@ -11,20 +11,20 @@ object OpenAPIComparator {
     new OpenAPIComparator(clientOpenAPI, serverOpenAPI)
 }
 
-/**
- * A utility for comparing two OpenAPI specifications to validate their compatibility.
- *
- * The `OpenAPIComparator` class compares the client's OpenAPI specification with the server's
- * specification to detect and highlight compatibility issues. It evaluates various components
- * including paths, operations, parameters, request bodies, responses, headers, schemas, content,
- * and media types.
- *
- * Note: This comparator does not compare meta-data, such as the info object, server lists, or
- * descriptions in properties.
- *
- * @param clientOpenAPI the OpenAPI specification provided by the client.
- * @param serverOpenAPI the OpenAPI specification provided by the server.
- */
+/** A utility for comparing two OpenAPI specifications to validate their compatibility.
+  *
+  * The `OpenAPIComparator` class compares the client's OpenAPI specification with the server's specification to detect
+  * and highlight compatibility issues. It evaluates various components including paths, operations, parameters, request
+  * bodies, responses, headers, schemas, content, and media types.
+  *
+  * Note: This comparator does not compare meta-data, such as the info object, server lists, or descriptions in
+  * properties.
+  *
+  * @param clientOpenAPI
+  *   the OpenAPI specification provided by the client.
+  * @param serverOpenAPI
+  *   the OpenAPI specification provided by the server.
+  */
 
 class OpenAPIComparator private (
     clientOpenAPI: OpenAPI,
@@ -60,15 +60,15 @@ class OpenAPIComparator private (
     case _ => Map.empty[String, Schema]
   }
 
-  /**
-   * Compares the client and server OpenAPI specifications for compatibility.
-   *
-   * This method compares the paths in both specifications to identify compatibility issues.
-   * It detects incompatibilities such as missing paths, parameter mismatches, schema inconsistencies,
-   * and other discrepancies. It organizes the issues into a tree-like structure, with main issues and their sub-issues.
-   *
-   * @return a list of `OpenAPICompatibilityIssue` instances detailing the identified issues.
-   */
+  /** Compares the client and server OpenAPI specifications for compatibility.
+    *
+    * This method compares the paths in both specifications to identify compatibility issues. It detects
+    * incompatibilities such as missing paths, parameter mismatches, schema inconsistencies, and other discrepancies. It
+    * organizes the issues into a tree-like structure, with main issues and their sub-issues.
+    *
+    * @return
+    *   a list of `OpenAPICompatibilityIssue` instances detailing the identified issues.
+    */
 
   def compare(): List[OpenAPICompatibilityIssue] = {
     clientOpenAPI.paths.pathItems.toList.flatMap {
@@ -120,23 +120,14 @@ class OpenAPIComparator private (
     val parametersIssue = clientParameters.flatMap { clientParameter =>
       val serverParameter = serverParameters.find(_.name == clientParameter.name)
       serverParameter match {
-        case None => Some(MissingParameter(clientParameter.name))
-        case Some(serverParameter) =>
-          if (clientParameter.required.getOrElse(false) && !serverParameter.required.getOrElse(false)) {
-            Some(IncompatibleRequiredParameter(clientParameter.name))
-          } else {
-            checkParameter(clientParameter, serverParameter)
-          }
+        case None                  => Some(MissingParameter(clientParameter.name))
+        case Some(serverParameter) => checkParameter(clientParameter, serverParameter)
       }
     }
 
     val requestBodyIssue = (clientOperation.requestBody, serverOperation.requestBody) match {
       case (Some(Right(clientRequestBody)), Some(Right(serverRequestBody))) =>
-        if (clientRequestBody.required.getOrElse(false) && !serverRequestBody.required.getOrElse(false)) {
-          Some(IncompatibleRequiredRequestBody())
-        } else {
-          checkRequestBody(clientRequestBody, serverRequestBody)
-        }
+        checkRequestBody(clientRequestBody, serverRequestBody)
       case (Some(Right(_)), None) => Some(MissingRequestBody())
       case _                      => None
     }
@@ -165,6 +156,7 @@ class OpenAPIComparator private (
     val isCompatibleExplode = serverParameter.explode == clientParameter.explode
     val isCompatibleAllowEmptyValue = serverParameter.allowEmptyValue == clientParameter.allowEmptyValue
     val isCompatibleAllowReserved = serverParameter.allowReserved == clientParameter.allowReserved
+    val isCompatibleRequiredValue = serverParameter.required == clientParameter.required
 
     val issues =
       checkSchema(clientParameter.schema, serverParameter.schema).toList ++
@@ -178,7 +170,10 @@ class OpenAPIComparator private (
          else None).toList ++
         (if (!isCompatibleAllowReserved)
            Some(IncompatibleAllowReserved(clientParameter.allowReserved, serverParameter.allowReserved))
-         else None).toList
+         else None).toList ++
+    (if (!isCompatibleRequiredValue)
+       Some(IncompatibleRequiredValue(clientParameter.required, serverParameter.required))
+     else None).toList
 
     if (issues.isEmpty)
       None
@@ -231,7 +226,7 @@ class OpenAPIComparator private (
         else
           None
       case (Some(_), None) => Some(MissingSchema())
-      case _ => None
+      case _               => None
     }
   }
 
@@ -253,9 +248,16 @@ class OpenAPIComparator private (
       clientRequestBody: RequestBody,
       serverRequestBody: RequestBody
   ): Option[IncompatibleRequestBody] = {
+    val isCompatibleRequiredValue = serverRequestBody.required == clientRequestBody.required
     val contentIssues = checkContent(clientRequestBody.content, serverRequestBody.content).toList
-    if (contentIssues.nonEmpty)
-      Some(IncompatibleRequestBody(contentIssues))
+
+    val issues = contentIssues ++
+      (if (!isCompatibleRequiredValue)
+         Some(IncompatibleRequiredValue(clientRequestBody.required, serverRequestBody.required))
+       else None).toList
+
+    if (issues.nonEmpty)
+      Some(IncompatibleRequestBody(issues))
     else
       None
   }
@@ -266,14 +268,9 @@ class OpenAPIComparator private (
       case (clientHeaderName, Right(clientHeader)) =>
         val serverHeader = serverResponse.headers.get(clientHeaderName)
         serverHeader match {
-          case Some(Right(serverHeader)) =>
-            if (clientHeader.required.getOrElse(false) && !serverHeader.required.getOrElse(false)) {
-              Some(IncompatibleRequiredHeader(clientHeaderName))
-            } else {
-              checkResponseHeader(clientHeaderName, clientHeader, serverHeader)
-            }
-          case None => Some(MissingHeader(clientHeaderName))
-          case _    => None
+          case Some(Right(serverHeader)) => checkResponseHeader(clientHeaderName, clientHeader, serverHeader)
+          case None                      => Some(MissingHeader(clientHeaderName))
+          case _                         => None
         }
       case _ => None
     }
@@ -296,6 +293,7 @@ class OpenAPIComparator private (
     val isCompatibleExplode = serverHeader.explode == clientHeader.explode
     val isCompatibleAllowEmptyValue = serverHeader.allowEmptyValue == clientHeader.allowEmptyValue
     val isCompatibleAllowReserved = serverHeader.allowReserved == clientHeader.allowReserved
+    val isCompatibleRequiredValue = serverHeader.required == clientHeader.required
 
     val issues =
       schemaIssues.toList ++
@@ -308,6 +306,9 @@ class OpenAPIComparator private (
          else None).toList ++
         (if (!isCompatibleAllowReserved)
            Some(IncompatibleAllowReserved(clientHeader.allowReserved, serverHeader.allowReserved))
+         else None).toList ++
+        (if (!isCompatibleRequiredValue)
+           Some(IncompatibleRequiredValue(clientHeader.required, serverHeader.required))
          else None).toList
 
     if (issues.nonEmpty)
