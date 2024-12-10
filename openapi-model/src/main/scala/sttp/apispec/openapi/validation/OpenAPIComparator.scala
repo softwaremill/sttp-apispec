@@ -1,7 +1,17 @@
 package sttp.apispec.openapi.validation
 
 import sttp.apispec.{Schema, SchemaLike}
-import sttp.apispec.openapi.{Header, MediaType, OpenAPI, Operation, Parameter, PathItem, RequestBody, Response}
+import sttp.apispec.openapi.{
+  Encoding,
+  Header,
+  MediaType,
+  OpenAPI,
+  Operation,
+  Parameter,
+  PathItem,
+  RequestBody,
+  Response
+}
 import sttp.apispec.validation.{SchemaComparator, SchemaResolver}
 
 import scala.collection.immutable.ListMap
@@ -200,17 +210,61 @@ class OpenAPIComparator private (
       Some(IncompatibleContent(issues.toList))
   }
 
+  private def checkEncoding(
+      encodingName: String,
+      clientEncoding: Encoding,
+      serverEncoding: Encoding
+  ): Option[IncompatibleEncoding] = {
+    val isCompatibleStyle = serverEncoding.style == clientEncoding.style
+    val isCompatibleExplode = serverEncoding.explode == clientEncoding.explode
+    val isCompatibleAllowReserved = serverEncoding.allowReserved == clientEncoding.allowReserved
+    val isCompatibleContentType = serverEncoding.contentType == clientEncoding.contentType
+    val headerIssues = clientEncoding.headers.flatMap {
+      case (clientHeaderName, Right(clientHeader)) =>
+        val serverHeader = serverEncoding.headers.get(clientHeaderName)
+        serverHeader match {
+          case Some(Right(serverHeader)) => checkResponseHeader(clientHeaderName, clientHeader, serverHeader)
+          case None                      => Some(MissingHeader(clientHeaderName))
+          case _                         => None
+        }
+      case _ => None
+    }
+
+    val issues = headerIssues ++
+      (if (!isCompatibleStyle) Some(IncompatibleStyle(clientEncoding.style, serverEncoding.style)) else None).toList ++
+      (if (!isCompatibleContentType)
+         Some(IncompatibleContentType(clientEncoding.contentType, serverEncoding.contentType))
+       else None).toList ++
+      (if (!isCompatibleExplode) Some(IncompatibleExplode(clientEncoding.explode, serverEncoding.explode))
+       else None).toList ++
+      (if (!isCompatibleAllowReserved)
+         Some(IncompatibleAllowReserved(clientEncoding.allowReserved, serverEncoding.allowReserved))
+       else None).toList
+
+    if (issues.nonEmpty)
+      Some(IncompatibleEncoding(encodingName, issues.toList))
+    else
+      None
+  }
+
   private def checkMediaType(
       mediaType: String,
       clientMediaTypeDescription: MediaType,
       serverMediaTypeDescription: MediaType
   ): Option[IncompatibleMediaType] = {
-    val issues = checkSchema(clientMediaTypeDescription.schema, serverMediaTypeDescription.schema)
+    val encodingIssues = clientMediaTypeDescription.encoding.flatMap { case (clientEncodingName, clientEncoding) =>
+      val serverEncoding = serverMediaTypeDescription.encoding.get(clientEncodingName)
+      serverEncoding match {
+        case None                 => Some(MissingEncoding(clientEncodingName))
+        case Some(serverEncoding) => checkEncoding(clientEncodingName, clientEncoding, serverEncoding)
+      }
+    }
+
+    val issues = checkSchema(clientMediaTypeDescription.schema, serverMediaTypeDescription.schema) ++ encodingIssues
     if (issues.nonEmpty)
       Some(IncompatibleMediaType(mediaType, issues.toList))
     else
       None
-    // TODO: encoding?
   }
 
   private def checkSchema(

@@ -664,4 +664,62 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
 
     assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
+
+  test("server missing request-body content media-type encoding when client has one") {
+    val clientOpenapi = readOpenAPI(
+      "/petstore/added-requestbody-content-mediatype-encoding/petstore-added-requestbody-content-mediatype-encoding.json"
+    )
+    val serverOpenapi = readOpenAPI("/petstore/added-requestbody-content-mediatype-encoding/petstore.json")
+
+    val encodingIssue = MissingEncoding("photo")
+    val mediaTypeIssues = IncompatibleMediaType("multipart/form-data", List(encodingIssue))
+    val contentIssues = IncompatibleContent(List(mediaTypeIssues))
+    val requestBodyIssue = IncompatibleRequestBody(List(contentIssues))
+    val operationIssue = IncompatibleOperation("post", List(requestBodyIssue))
+    val pathIssue = IncompatiblePath("/pets", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
+
+  test("no errors when server has a request-body content media-type encoding but client does not") {
+    val clientOpenapi = readOpenAPI("/petstore/added-requestbody-content-mediatype-encoding/petstore.json")
+    val serverOpenapi = readOpenAPI(
+      "/petstore/added-requestbody-content-mediatype-encoding/petstore-added-requestbody-content-mediatype-encoding.json"
+    )
+
+    assert(compare(clientOpenapi, serverOpenapi).isEmpty)
+  }
+
+  test(
+    "server request-body content media-type encoding is incompatible with client request-body content media-type encoding"
+  ) {
+    val clientOpenapi =
+      readOpenAPI(
+        "/petstore/updated-requestbody-content-mediatype-encoding/petstore-updated-requestbody-content-mediatype-encoding.json"
+      )
+    val serverOpenapi = readOpenAPI("/petstore/updated-requestbody-content-mediatype-encoding/petstore.json")
+
+    val missingHeaderIssue = MissingHeader("X-Custom-Header")
+    val allowReservedIssue = IncompatibleAllowReserved(Some(false), None)
+    val explodeIssue = IncompatibleExplode(Some(true), None)
+    val styleIssue = IncompatibleStyle(Some(ParameterStyle.Form), None)
+    val encodingIssue = IncompatibleEncoding(
+      "photo",
+      List(
+        missingHeaderIssue,
+        styleIssue,
+        explodeIssue,
+        allowReservedIssue
+      )
+    )
+    val mediaTypeIssue = IncompatibleMediaType("multipart/form-data", List(encodingIssue))
+    val contentIssue = IncompatibleContent(List(mediaTypeIssue))
+    val requestBodyIssue = IncompatibleRequestBody(List(contentIssue))
+    val operationIssue = IncompatibleOperation("post", List(requestBodyIssue))
+    val pathIssue = IncompatiblePath("/pets", List(operationIssue))
+    val expected = List(pathIssue)
+
+    assert(compare(clientOpenapi, serverOpenapi) == expected)
+  }
 }

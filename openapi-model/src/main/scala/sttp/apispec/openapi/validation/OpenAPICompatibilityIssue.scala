@@ -150,3 +150,20 @@ case class MissingSchema() extends OpenAPICompatibilityIssue {
   def description: String =
     s"missing schema"
 }
+
+case class MissingEncoding(encodingName: String) extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"missing encoding $encodingName"
+}
+
+case class IncompatibleEncoding(encodingName: String, subIssues: List[OpenAPICompatibilityIssue])
+    extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"incompatible encoding $encodingName:\n${issuesRepr(subIssues)}"
+}
+
+case class IncompatibleContentType(clientValue: Option[String], serverValue: Option[String])
+  extends OpenAPICompatibilityIssue {
+  def description: String =
+    s"incompatible contentType: client=$clientValue, server=$serverValue"
+}
