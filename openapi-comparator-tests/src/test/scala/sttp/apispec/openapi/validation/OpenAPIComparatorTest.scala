@@ -737,4 +737,36 @@ class OpenAPIComparatorTest extends AnyFunSuite with ResourcePlatform {
 
     assert(compare(clientOpenapi, serverOpenapi) == expected)
   }
+
+  test("format single issue description correctly") {
+    val clientOpenapi = readOpenAPI("/petstore/added-path/petstore-added-path.json")
+    val serverOpenapi = readOpenAPI("/petstore/added-path/petstore.json")
+
+    val expected = List(MissingPath("/pets/{petId}"))
+    val expectedDescription = "List(missing path: /pets/{petId})"
+
+    val result = compare(clientOpenapi, serverOpenapi)
+
+    assert(result == expected)
+    assert(result.toString() == expectedDescription)
+  }
+
+  test("render list of issues with proper indentation") {
+    val clientOpenapi = readOpenAPI("/petstore/updated-parameter-style/petstore-updated-parameter-style.json")
+    val serverOpenapi = readOpenAPI("/petstore/updated-parameter-style/petstore.json")
+
+    val styleIssue = IncompatibleStyle(Some(ParameterStyle.Form), None)
+    val parameterIssue = IncompatibleParameter("status", List(styleIssue))
+    val operationIssue = IncompatibleOperation("get", List(parameterIssue))
+    val pathIssue = IncompatiblePath("/pets", List(operationIssue))
+
+    val expected = List(pathIssue)
+    val expectedDescription =
+      "List(incompatible path /pets:\n- incompatible operation get:\n  - incompatible parameter status:\n    - incompatible style value: client=Some(Form), server=None)"
+
+    val result = compare(clientOpenapi, serverOpenapi)
+
+    assert(result == expected)
+    assert(result.toString() == expectedDescription)
+  }
 }
