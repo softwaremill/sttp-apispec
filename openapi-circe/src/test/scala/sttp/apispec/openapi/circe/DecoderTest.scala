@@ -9,6 +9,9 @@ import scala.collection.immutable.ListMap
 class DecoderTest extends AnyFunSuite with ResourcePlatform {
   override val basedir = "openapi-circe"
 
+  def extractOrThrow[T](option: Option[T], errorMessage: String): T =
+    option.getOrElse(throw new IllegalArgumentException(errorMessage))
+
   test("petstore deserialize") {
     val Right(openapi) = readJson("/petstore/basic-petstore.json").flatMap(_.as[OpenAPI]): @unchecked
 
@@ -69,5 +72,21 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
 
     assert(securityScheme.flows.map(_.clientCredentials.map(_.tokenUrl)) === expectedToken)
     assert(securityScheme.flows.map(_.clientCredentials.map(_.scopes)) === expectedScopes)
+  }
+
+  test("should decode callbacks pathitems successfully") {
+    val Right(openapi) = readJson("/callbacks/callbacks.json").flatMap(_.as[OpenAPI]): @unchecked
+
+    val pathItem =
+      extractOrThrow(openapi.paths.pathItems.get("/pets"), "The specified path item '/pets' does not exist")
+    val operation = extractOrThrow(pathItem.post, "The POST operation is not defined for the path '/pets'")
+    val callback = extractOrThrow(
+      operation.callbacks.get("onPetStatusChange"),
+      "The callback 'onPetStatusChange' is not defined for the POST operation."
+    )
+
+    val doesPathItemExist = callback.getOrElse(null).pathItems.contains("{$request.body#/callbackUrl}")
+
+    assert(doesPathItemExist)
   }
 }
