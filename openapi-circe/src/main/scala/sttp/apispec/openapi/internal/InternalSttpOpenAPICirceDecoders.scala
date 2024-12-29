@@ -91,7 +91,11 @@ trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
     } yield Responses(responses, extensions)
   })
   implicit val parameterDecoder: Decoder[Parameter] = withExtensions(deriveDecoder[Parameter])
-  implicit val callbackDecoder: Decoder[Callback] = deriveDecoder[Callback]
+  implicit val callbackDecoder: Decoder[Callback] = Decoder.instance { c =>
+    for {
+      pathItems <- c.as[JsonObject].flatMap(json => json.asJson.as[ListMap[String, ReferenceOr[PathItem]]])
+    } yield Callback(pathItems)
+  }
   implicit val operationDecoder: Decoder[Operation] = {
 
     implicit def listReference[A: Decoder]: Decoder[List[A]] =
