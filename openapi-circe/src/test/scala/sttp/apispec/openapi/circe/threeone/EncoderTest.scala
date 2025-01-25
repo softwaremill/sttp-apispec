@@ -167,4 +167,19 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     val securityScheme = Some(clientCredentialsSecurityScheme(ListMap("example" -> "description")))
     assert(expectedSecuritySchema === securityScheme.asJson)
   }
+
+  test("encode enum schema with null element") {
+    import sttp.apispec.openapi.circe._
+
+    val nullableEnumSchema = Schema(
+      `type` = Some(List(SchemaType.String, SchemaType.Null)),
+      `enum` = Some(List("foo", "bar", null).map(ExampleSingleValue(_)))
+    )
+    val openapi = OpenAPI(
+      info = Info(title = "API", version = "1.0.0"),
+      components = Some(Components(schemas = ListMap("NullableEnum" -> nullableEnumSchema)))
+    )
+    val Right(expectedEnumSchema) = readJson("/enumSchema/nullable-enum-schema.json")
+    assert(expectedEnumSchema === openapi.asJson)
+  }
 }

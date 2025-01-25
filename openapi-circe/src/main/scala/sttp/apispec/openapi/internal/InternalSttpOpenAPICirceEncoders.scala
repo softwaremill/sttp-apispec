@@ -4,7 +4,7 @@ package internal
 
 import io.circe.generic.semiauto._
 import io.circe.syntax._
-import io.circe.{Encoder, Json}
+import io.circe.{Encoder, Json, JsonNumber, JsonObject}
 import sttp.apispec.internal.JsonSchemaCirceEncoders
 
 import scala.collection.immutable.ListMap
@@ -86,6 +86,20 @@ trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
   implicit val encoderInfo: Encoder[Info] = deriveEncoder[Info].mapJsonObject(expandExtensions)
   implicit val encoderContact: Encoder[Contact] = deriveEncoder[Contact].mapJsonObject(expandExtensions)
   implicit val encoderLicense: Encoder[License] = deriveEncoder[License].mapJsonObject(expandExtensions)
+
+  private val nullFieldValueDropper = new Json.Folder[Json] {
+    def onNull: Json = Json.Null
+    def onBoolean(value: Boolean): Json = Json.fromBoolean(value)
+    def onNumber(value: JsonNumber): Json = Json.fromJsonNumber(value)
+    def onString(value: String): Json = Json.fromString(value)
+    def onArray(value: Vector[Json]): Json =
+      Json.fromValues(value.map(_.foldWith(this)))
+    def onObject(value: JsonObject): Json =
+      Json.fromJsonObject(
+        value.filter { case (_, v) => !v.isNull }.mapValues(_.foldWith(this))
+      )
+  }
+
   implicit val encoderOpenAPI: Encoder[OpenAPI] =
-    deriveEncoder[OpenAPI].mapJsonObject(expandExtensions).mapJson(_.deepDropNullValues)
+    deriveEncoder[OpenAPI].mapJsonObject(expandExtensions).mapJson(_.foldWith(nullFieldValueDropper))
 }
