@@ -4,7 +4,7 @@ package internal
 
 import io.circe.generic.semiauto._
 import io.circe.syntax._
-import io.circe.{Encoder, Json, JsonNumber, JsonObject}
+import io.circe.{Encoder, Json}
 import sttp.apispec.internal.JsonSchemaCirceEncoders
 
 import scala.collection.immutable.ListMap
