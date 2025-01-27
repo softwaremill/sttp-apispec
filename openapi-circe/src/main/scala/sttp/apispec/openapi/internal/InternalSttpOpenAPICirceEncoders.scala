@@ -10,7 +10,7 @@ import sttp.apispec.internal.JsonSchemaCirceEncoders
 import scala.collection.immutable.ListMap
 
 trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
-  implicit val encoderReference: Encoder[Reference] = deriveEncoder[Reference]
+  implicit val encoderReference: Encoder[Reference] = deriveEncoder[Reference].dropNulls
   implicit def encoderReferenceOr[T: Encoder]: Encoder[ReferenceOr[T]] = {
     case Left(Reference(ref, summary, description)) =>
       Json
@@ -27,25 +27,25 @@ trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
     // #79: all OAuth flow object MUST include a scopes field, but it MAY be empty.
     implicit def encodeListMap: Encoder[ListMap[String, String]] = doEncodeListMap(nullWhenEmpty = false)
 
-    deriveEncoder[OAuthFlow].mapJsonObject(expandExtensions)
+    deriveEncoder[OAuthFlow].dropNullsExpandExtensions
   }
-  implicit val encoderOAuthFlows: Encoder[OAuthFlows] = deriveEncoder[OAuthFlows].mapJsonObject(expandExtensions)
+  implicit val encoderOAuthFlows: Encoder[OAuthFlows] = deriveEncoder[OAuthFlows].dropNullsExpandExtensions
   implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
-    deriveEncoder[SecurityScheme].mapJsonObject(expandExtensions)
+    deriveEncoder[SecurityScheme].dropNullsExpandExtensions
 
   implicit val encoderHeader: Encoder[Header] = deriveEncoder[Header]
-  implicit val encoderExample: Encoder[Example] = deriveEncoder[Example].mapJsonObject(expandExtensions)
-  implicit val encoderResponse: Encoder[Response] = deriveEncoder[Response].mapJsonObject(expandExtensions)
-  implicit val encoderLink: Encoder[Link] = deriveEncoder[Link].mapJsonObject(expandExtensions)
+  implicit val encoderExample: Encoder[Example] = deriveEncoder[Example].dropNullsExpandExtensions
+  implicit val encoderResponse: Encoder[Response] = deriveEncoder[Response].dropNullsExpandExtensions
+  implicit val encoderLink: Encoder[Link] = deriveEncoder[Link].dropNullsExpandExtensions
   implicit val encoderCallback: Encoder[Callback] = Encoder.instance { callback =>
     Json.obj(callback.pathItems.map { case (path, pathItem) => path -> pathItem.asJson }.toList: _*)
   }
-  implicit val encoderEncoding: Encoder[Encoding] = deriveEncoder[Encoding].mapJsonObject(expandExtensions)
-  implicit val encoderMediaType: Encoder[MediaType] = deriveEncoder[MediaType].mapJsonObject(expandExtensions)
-  implicit val encoderRequestBody: Encoder[RequestBody] = deriveEncoder[RequestBody].mapJsonObject(expandExtensions)
+  implicit val encoderEncoding: Encoder[Encoding] = deriveEncoder[Encoding].dropNullsExpandExtensions
+  implicit val encoderMediaType: Encoder[MediaType] = deriveEncoder[MediaType].dropNullsExpandExtensions
+  implicit val encoderRequestBody: Encoder[RequestBody] = deriveEncoder[RequestBody].dropNullsExpandExtensions
   implicit val encoderParameterStyle: Encoder[ParameterStyle] = { e => Encoder.encodeString(e.value) }
   implicit val encoderParameterIn: Encoder[ParameterIn] = { e => Encoder.encodeString(e.value) }
-  implicit val encoderParameter: Encoder[Parameter] = deriveEncoder[Parameter].mapJsonObject(expandExtensions)
+  implicit val encoderParameter: Encoder[Parameter] = deriveEncoder[Parameter].dropNullsExpandExtensions
   implicit val encoderResponseMap: Encoder[ListMap[ResponsesKey, ReferenceOr[Response]]] =
     (responses: ListMap[ResponsesKey, ReferenceOr[Response]]) => {
       val fields = responses.map {
@@ -70,22 +70,21 @@ trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
     implicit def encodeListMapForCallbacks: Encoder[ListMap[String, ReferenceOr[Callback]]] =
       doEncodeListMap(nullWhenEmpty = true)
 
-    deriveEncoder[Operation].mapJsonObject(expandExtensions)
+    deriveEncoder[Operation].dropNullsExpandExtensions
   }
-  implicit val encoderPathItem: Encoder[PathItem] = deriveEncoder[PathItem].mapJsonObject(expandExtensions)
+  implicit val encoderPathItem: Encoder[PathItem] = deriveEncoder[PathItem].dropNullsExpandExtensions
   implicit val encoderPaths: Encoder[Paths] = Encoder.instance { paths =>
     val extensions = paths.extensions.asJsonObject
     val pathItems = paths.pathItems.asJson
     pathItems.asObject.map(_.deepMerge(extensions).asJson).getOrElse(pathItems)
   }
-  implicit val encoderComponents: Encoder[Components] = deriveEncoder[Components].mapJsonObject(expandExtensions)
+  implicit val encoderComponents: Encoder[Components] = deriveEncoder[Components].dropNullsExpandExtensions
   implicit val encoderServerVariable: Encoder[ServerVariable] =
-    deriveEncoder[ServerVariable].mapJsonObject(expandExtensions)
-  implicit val encoderServer: Encoder[Server] = deriveEncoder[Server].mapJsonObject(expandExtensions)
-  implicit val encoderTag: Encoder[Tag] = deriveEncoder[Tag].mapJsonObject(expandExtensions)
-  implicit val encoderInfo: Encoder[Info] = deriveEncoder[Info].mapJsonObject(expandExtensions)
-  implicit val encoderContact: Encoder[Contact] = deriveEncoder[Contact].mapJsonObject(expandExtensions)
-  implicit val encoderLicense: Encoder[License] = deriveEncoder[License].mapJsonObject(expandExtensions)
-  implicit val encoderOpenAPI: Encoder[OpenAPI] =
-    deriveEncoder[OpenAPI].mapJsonObject(expandExtensions).mapJson(_.deepDropNullValues)
+    deriveEncoder[ServerVariable].dropNullsExpandExtensions
+  implicit val encoderServer: Encoder[Server] = deriveEncoder[Server].dropNullsExpandExtensions
+  implicit val encoderTag: Encoder[Tag] = deriveEncoder[Tag].dropNullsExpandExtensions
+  implicit val encoderInfo: Encoder[Info] = deriveEncoder[Info].dropNullsExpandExtensions
+  implicit val encoderContact: Encoder[Contact] = deriveEncoder[Contact].dropNullsExpandExtensions
+  implicit val encoderLicense: Encoder[License] = deriveEncoder[License].dropNullsExpandExtensions
+  implicit val encoderOpenAPI: Encoder[OpenAPI] = deriveEncoder[OpenAPI].dropNullsExpandExtensions
 }

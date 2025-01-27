@@ -4,7 +4,6 @@ import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
 import sttp.apispec._
 import sttp.apispec.openapi._
-import sttp.apispec.openapi.circe.SttpOpenAPICirceEncoders
 import sttp.apispec.test._
 
 import scala.collection.immutable.ListMap
@@ -87,10 +86,13 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
         schemaComponent("type 'null'")(Schema(SchemaType.Null)),
         schemaComponent("nullable string")(Schema(SchemaType.String, SchemaType.Null)),
         schemaComponent("nullable reference")(Schema.referenceTo("#/components/schemas/", "Foo").nullable),
+        schemaComponent("nullable enum")(Schema(`enum` = Some(List("a", "b", null).map(ExampleSingleValue(_))))),
         schemaComponent("single example")(Schema(SchemaType.String)
           .copy(examples = Some(List(ExampleSingleValue("exampleValue"))))),
         schemaComponent("multi valued example")(Schema(SchemaType.Array)
           .copy(examples = Some(List(ExampleMultipleValue(List("ex1", "ex1")))))),
+        schemaComponent("object with example")(Schema(SchemaType.Object)
+          .copy(examples = Some(List(ExampleSingleValue("""{"a": 1, "b": null}"""))))),
         schemaComponent("min/max")(Schema(
           minimum = Some(BigDecimal(10)),
           maximum = Some(BigDecimal(20)),
@@ -116,7 +118,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     val schemas31 = ListMap(
       schemaComponent("multiple examples")(Schema(SchemaType.String)
-        .copy(examples = Some(List("ex1", "ex2").map(ExampleSingleValue)))),
+        .copy(examples = Some(List("ex1", "ex2").map(ExampleSingleValue(_))))),
     )
 
     val openApiJson = fullSchemaOpenApi.copy(
@@ -152,19 +154,19 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     )
 
 
-  test("encode security schema with empty scopes") {
+  test("encode security scheme with empty scopes") {
     import sttp.apispec.openapi.circe._
 
-    val Right(expectedSecuritySchema) = readJson("/securitySchema/security-schema-with-empty-scopes.json")
+    val Right(expectedSecurityScheme) = readJson("/securityScheme/security-scheme-with-empty-scopes.json")
     val securityScheme = Some(clientCredentialsSecurityScheme(ListMap.empty))
-    assert(expectedSecuritySchema === securityScheme.asJson)
+    assert(expectedSecurityScheme === securityScheme.asJson)
   }
 
-  test("encode security schema with not empty scopes") {
+  test("encode security scheme with not empty scopes") {
     import sttp.apispec.openapi.circe._
 
-    val Right(expectedSecuritySchema) = readJson("/securitySchema/security-schema-with-scopes.json")
+    val Right(expectedSecurityScheme) = readJson("/securityScheme/security-scheme-with-scopes.json")
     val securityScheme = Some(clientCredentialsSecurityScheme(ListMap("example" -> "description")))
-    assert(expectedSecuritySchema === securityScheme.asJson)
+    assert(expectedSecurityScheme === securityScheme.asJson)
   }
 }

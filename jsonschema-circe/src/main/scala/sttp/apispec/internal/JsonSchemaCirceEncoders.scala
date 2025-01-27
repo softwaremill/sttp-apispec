@@ -5,13 +5,18 @@ import io.circe._
 import io.circe.generic.semiauto.deriveEncoder
 import io.circe.parser.parse
 import io.circe.syntax._
+import sttp.apispec.internal.JsonSchemaCirceEncoders.ObjectEncoderOps
 
 import scala.collection.immutable.ListMap
+import scala.language.implicitConversions
 
 trait JsonSchemaCirceEncoders {
   def anyObjectEncoding: AnySchema.Encoding
 
   def openApi30: Boolean = false
+
+  protected final implicit def objectEncoderOps[T](encoder: Encoder.AsObject[T]): ObjectEncoderOps[T] =
+    new ObjectEncoderOps(encoder)
 
   implicit lazy val encoderSchema: Encoder[Schema] = Encoder.AsObject
     .instance { (s: Schema) =>
@@ -115,7 +120,7 @@ trait JsonSchemaCirceEncoders {
         )
       )
     }
-    .mapJsonObject(expandExtensions)
+    .dropNullsExpandExtensions
 
   // note: these are strict val-s, order matters!
   implicit val extensionValue: Encoder[ExtensionValue] =
@@ -153,10 +158,10 @@ trait JsonSchemaCirceEncoders {
     Encoder.encodeString.contramap(_.value)
 
   implicit val encoderDiscriminator: Encoder[Discriminator] =
-    deriveEncoder[Discriminator]
+    deriveEncoder[Discriminator].dropNulls
 
   implicit val encoderExternalDocumentation: Encoder[ExternalDocumentation] =
-    deriveEncoder[ExternalDocumentation].mapJsonObject(expandExtensions)
+    deriveEncoder[ExternalDocumentation].dropNullsExpandExtensions
 
   implicit val encoderAnySchema: Encoder[AnySchema] = Encoder.instance {
     case AnySchema.Anything =>
@@ -191,6 +196,20 @@ trait JsonSchemaCirceEncoders {
       Json.obj(properties: _*)
   }
 
+  // just for backward compatibility
+  private[apispec] def expandExtensions(jsonObject: JsonObject): JsonObject =
+    JsonSchemaCirceEncoders.expandExtensions(jsonObject)
+
+}
+object JsonSchemaCirceEncoders {
+  class ObjectEncoderOps[T](private val encoder: Encoder.AsObject[T]) extends AnyVal {
+    def dropNulls: Encoder.AsObject[T] =
+      encoder.mapJsonObject(_.filter { case (_, v) => !v.isNull })
+
+    def dropNullsExpandExtensions: Encoder.AsObject[T] =
+      dropNulls.mapJsonObject(expandExtensions)
+  }
+
   /*
       Openapi extensions are arbitrary key-value data that could be added to some of models in specifications, such
       as `OpenAPI` itself, `License`, `Parameter`, etc.
@@ -221,7 +240,7 @@ trait JsonSchemaCirceEncoders {
         x-foo: 42
       ```
    */
-  private[apispec] def expandExtensions(jsonObject: JsonObject): JsonObject = {
+  private def expandExtensions(jsonObject: JsonObject): JsonObject = {
     val jsonWithoutExt = jsonObject.filterKeys(_ != "extensions")
     jsonObject("extensions")
       .flatMap(_.asObject)
@@ -230,11 +249,10 @@ trait JsonSchemaCirceEncoders {
         allKeys.foldLeft(JsonObject.empty) { case (acc, key) =>
           extObject(key).orElse(jsonWithoutExt(key)) match {
             case Some(value) => acc.add(key, value)
-            case None        => acc
+            case None => acc
           }
         }
       }
       .getOrElse(jsonWithoutExt)
   }
-
 }

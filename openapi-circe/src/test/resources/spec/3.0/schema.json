@@ -15,6 +15,14 @@
         "nullable": true,
         "description": "nullable string"
       },
+      "nullable enum" : {
+        "description" : "nullable enum",
+        "enum" : [
+          "a",
+          "b",
+          null
+        ]
+      },
       "nullable reference": {
         "nullable": true,
         "allOf": [
@@ -36,6 +44,14 @@
           "ex1",
           "ex1"
         ]
+      },
+      "object with example" : {
+        "description" : "object with example",
+        "example" : {
+          "a" : 1,
+          "b" : null
+        },
+        "type" : "object"
       },
       "min/max": {
         "minimum": 10,
