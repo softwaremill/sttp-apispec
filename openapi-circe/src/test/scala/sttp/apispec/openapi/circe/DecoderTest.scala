@@ -42,14 +42,14 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     val Right(openapi) = readJson("/spec/3.1/schema.json").flatMap(_.as[OpenAPI]): @unchecked
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
-    assert(schemas.size === 11)
+    assert(schemas.size === 13)
   }
 
   test("all schemas types 3.0") {
     val Right(openapi) = readJson("/spec/3.0/schema.json").flatMap(_.as[OpenAPI]): @unchecked
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
-    assert(schemas.size === 10)
+    assert(schemas.size === 12)
   }
 
   test("decode security schema with not empty scopes") {
