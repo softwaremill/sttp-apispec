@@ -118,7 +118,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     val schemas31 = ListMap(
       schemaComponent("multiple examples")(Schema(SchemaType.String)
-        .copy(examples = Some(List("ex1", "ex2").map(ExampleSingleValue)))),
+        .copy(examples = Some(List("ex1", "ex2").map(ExampleSingleValue(_))))),
     )
 
     val openApiJson = fullSchemaOpenApi.copy(

@@ -217,11 +217,11 @@ abstract class SchemaComparatorTest(referencePrefix: String) extends AnyFunSuite
   }
 
   private def enums(values: Any*): List[ExampleSingleValue] =
-    values.toList.map(ExampleSingleValue)
+    values.toList.map(ExampleSingleValue(_))
 
   private def enumSchema(values: String*): Schema = values.toList match {
-    case single :: Nil => stringSchema.copy(`enum` = Some(List(single).map(ExampleSingleValue)))
-    case multiple => stringSchema.copy(`enum` = Some(multiple.map(ExampleSingleValue)))
+    case single :: Nil => stringSchema.copy(`enum` = Some(List(single).map(ExampleSingleValue(_))))
+    case multiple => stringSchema.copy(`enum` = Some(multiple.map(ExampleSingleValue(_))))
   }
 
   test("compatible enum & const") {
