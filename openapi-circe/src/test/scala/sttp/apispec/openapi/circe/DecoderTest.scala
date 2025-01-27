@@ -52,23 +52,23 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     assert(schemas.size === 12)
   }
 
-  test("decode security schema with not empty scopes") {
+  test("decode security scheme with not empty scopes") {
     val expectedScopes = Some(Some(ListMap("example" -> "description")))
     val expectedToken = Some(Some(Some("openapi-circe-token")))
 
     val Right(securityScheme) =
-      readJson("/securitySchema/security-schema-with-scopes.json").flatMap(_.as[SecurityScheme]): @unchecked
+      readJson("/securityScheme/security-scheme-with-scopes.json").flatMap(_.as[SecurityScheme]): @unchecked
 
     assert(securityScheme.flows.map(_.clientCredentials.map(_.tokenUrl)) === expectedToken)
     assert(securityScheme.flows.map(_.clientCredentials.map(_.scopes)) === expectedScopes)
   }
 
-  test("decode security schema with empty scopes") {
+  test("decode security scheme with empty scopes") {
     val expectedScopes = Some(Some(ListMap.empty[String, String]))
     val expectedToken = Some(Some(Some("openapi-circe-token")))
 
     val Right(securityScheme) =
-      readJson("/securitySchema/security-schema-with-empty-scopes.json").flatMap(_.as[SecurityScheme]): @unchecked
+      readJson("/securityScheme/security-scheme-with-empty-scopes.json").flatMap(_.as[SecurityScheme]): @unchecked
 
     assert(securityScheme.flows.map(_.clientCredentials.map(_.tokenUrl)) === expectedToken)
     assert(securityScheme.flows.map(_.clientCredentials.map(_.scopes)) === expectedScopes)
