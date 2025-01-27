@@ -86,7 +86,7 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
         schemaComponent("type 'null'")(Schema(SchemaType.Null)),
         schemaComponent("nullable string")(Schema(SchemaType.String, SchemaType.Null)),
         schemaComponent("nullable reference")(Schema.referenceTo("#/components/schemas/", "Foo").nullable),
-        schemaComponent("nullable enum")(Schema(enum = Some(List("a", "b", null).map(ExampleSingleValue(_))))),
+        schemaComponent("nullable enum")(Schema(`enum` = Some(List("a", "b", null).map(ExampleSingleValue(_))))),
         schemaComponent("single example")(Schema(SchemaType.String)
           .copy(examples = Some(List(ExampleSingleValue("exampleValue"))))),
         schemaComponent("multi valued example")(Schema(SchemaType.Array)
