@@ -129,6 +129,7 @@ trait JsonSchemaCirceEncoders {
   implicit val encoderExampleSingleValue: Encoder[ExampleSingleValue] = {
     case ExampleSingleValue(value: String)     => parse(value).getOrElse(Json.fromString(value))
     case ExampleSingleValue(value: Int)        => Json.fromInt(value)
+    case ExampleSingleValue(value: Short)      => Json.fromInt(value)
     case ExampleSingleValue(value: Long)       => Json.fromLong(value)
     case ExampleSingleValue(value: Float)      => Json.fromFloatOrString(value)
     case ExampleSingleValue(value: Double)     => Json.fromDoubleOrString(value)
