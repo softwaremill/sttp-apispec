@@ -15,7 +15,7 @@ val circeVersion = "0.14.6"
 val circeYamlVersion = "0.15.1"
 
 val scalaTestVersion = "3.2.18"
-val scalaCollectionCompatVersion = "2.11.0"
+val scalaCollectionCompatVersion = "2.13.0"
 
 excludeLintKeys in Global ++= Set(ideSkipProject)
 
