@@ -75,7 +75,7 @@ trait JsonSchemaCirceDecoders {
     def adjustMaximum(obj: JsonObject): JsonObject =
       (obj("maximum"), obj("exclusiveMaximum")) match {
         case (Some(max), Some(Json.True)) => obj.remove("maximum").add("exclusiveMaximum", max)
-        case _ => obj
+        case _                            => obj
       }
 
     // OAS 3.0: { "minimum": 10, "exclusiveMinimum": true }
@@ -83,7 +83,7 @@ trait JsonSchemaCirceDecoders {
     def adjustMinimum(obj: JsonObject): JsonObject =
       (obj("minimum"), obj("exclusiveMinimum")) match {
         case (Some(min), Some(Json.True)) => obj.remove("minimum").add("exclusiveMinimum", min)
-        case _ => obj
+        case _                            => obj
       }
 
     // OAS 3.0: { "example": "exampleValue" }
@@ -91,7 +91,7 @@ trait JsonSchemaCirceDecoders {
     def adjustExample(obj: JsonObject): JsonObject =
       obj("example") match {
         case Some(example) => obj.remove("example").add("examples", Json.arr(example))
-        case _ => obj
+        case _             => obj
       }
 
     // Both OAS 3.0 and OAS 3.1 allow `type` to be a string or an array of strings,
@@ -99,19 +99,19 @@ trait JsonSchemaCirceDecoders {
     def adjustType(obj: JsonObject): JsonObject =
       obj("type") match {
         case Some(tpe) if tpe.isString => obj.add("type", Json.arr(tpe))
-        case _ => obj
+        case _                         => obj
       }
 
     def adjustSyntax(decoder: Decoder[Schema]) = Decoder.instance { c =>
       val nullable = c.get[Boolean]("nullable").contains(true)
-      val modded = c.withFocus(_
-        .mapObject(adjustType)
-        .mapObject(adjustMaximum)
-        .mapObject(adjustMinimum)
-        .mapObject(adjustExample)
-        .mapObject(translateDefinitionsTo$def)
+      val modded = c.withFocus(
+        _.mapObject(adjustType)
+          .mapObject(adjustMaximum)
+          .mapObject(adjustMinimum)
+          .mapObject(adjustExample)
+          .mapObject(translateDefinitionsTo$def)
       )
-      decoder.tryDecode(modded).map(s => if(nullable) s.nullable else s)
+      decoder.tryDecode(modded).map(s => if (nullable) s.nullable else s)
     }
 
     adjustSyntax(withExtensions(deriveDecoder[Schema]))

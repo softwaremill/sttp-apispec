@@ -18,109 +18,107 @@ trait JsonSchemaCirceEncoders {
   protected final implicit def objectEncoderOps[T](encoder: Encoder.AsObject[T]): ObjectEncoderOps[T] =
     new ObjectEncoderOps(encoder)
 
-  implicit lazy val encoderSchema: Encoder[Schema] = Encoder.AsObject
-    .instance { (s: Schema) =>
-      val nullSchema = Schema(`type` = Some(List(SchemaType.Null)))
+  implicit lazy val encoderSchema: Encoder[Schema] = Encoder.AsObject.instance { (s: Schema) =>
+    val nullSchema = Schema(`type` = Some(List(SchemaType.Null)))
 
-      // Nullable $ref Schema is represented as {"anyOf": [{"$ref": "some-ref"}, {"type": "null"}]}
-      // In OpenAPI 3.0, we need to translate it to {"allOf": [{"$ref": "some-ref"}], "nullable": true}
-      val wrappedNullableRef30 = s.anyOf match {
-        case List(refSchema: Schema, `nullSchema`) if refSchema.$ref.isDefined && openApi30 =>
-          Some(refSchema)
-        case _ => None
-      }
-
-      val typeAndNullable = s.`type` match {
-        case Some(List(tpe)) =>
-          List("type" := tpe)
-        case Some(List(tpe, SchemaType.Null)) if openApi30 =>
-          List("type" := tpe, "nullable" := true)
-        case None if wrappedNullableRef30.isDefined =>
-          List("nullable" := true)
-        case t =>
-          List("type" := t)
-      }
-
-      val minFields = (s.minimum, s.exclusiveMinimum) match {
-        case (None, Some(min)) if openApi30 =>
-          Vector("minimum" := min, "exclusiveMinimum" := true)
-        case _ =>
-          Vector("minimum" := s.minimum, "exclusiveMinimum" := s.exclusiveMinimum)
-      }
-
-      val maxFields = (s.maximum, s.exclusiveMaximum) match {
-        case (None, Some(max)) if openApi30 =>
-          Vector("maximum" := max, "exclusiveMaximum" := true)
-        case _ =>
-          Vector("maximum" := s.maximum, "exclusiveMaximum" := s.exclusiveMaximum)
-      }
-
-      val exampleFields = s.examples match {
-        case Some(List(example)) if openApi30 =>
-          Vector("example" := example)
-        case _ =>
-          Vector("examples" := s.examples)
-      }
-
-      JsonObject.fromIterable(
-        Vector(
-          "$schema" := s.$schema,
-          "$vocabulary" := s.$vocabulary,
-          "$id" := s.$id,
-          "$anchor" := s.$anchor,
-          "$dynamicAnchor" := s.$dynamicAnchor,
-          "$ref" := s.$ref,
-          "$dynamicRef" := s.$dynamicRef,
-          "$comment" := s.$comment,
-          "$defs" := s.$defs,
-          "title" := s.title,
-          "description" := s.description,
-          "default" := s.default,
-          "deprecated" := s.deprecated,
-          "readOnly" := s.readOnly,
-          "writeOnly" := s.writeOnly
-        ) ++ exampleFields ++ typeAndNullable ++ Vector(
-          "enum" := s.`enum`,
-          "const" := s.const,
-          "format" := s.format,
-          "allOf" := wrappedNullableRef30.map(List(_)).getOrElse(s.allOf),
-          "anyOf" := (if (wrappedNullableRef30.isDefined) Nil else s.anyOf),
-          "oneOf" := s.oneOf,
-          "not" := s.not,
-          "if" := s.`if`,
-          "then" := s.`then`,
-          "else" := s.`else`,
-          "dependentSchemas" := s.dependentSchemas,
-          "multipleOf" := s.multipleOf
-        ) ++ minFields ++ maxFields ++ Vector(
-          "maxLength" := s.maxLength,
-          "minLength" := s.minLength,
-          "pattern" := s.pattern,
-          "maxItems" := s.maxItems,
-          "minItems" := s.minItems,
-          "uniqueItems" := s.uniqueItems,
-          "maxContains" := s.maxContains,
-          "minContains" := s.minContains,
-          "prefixItems" := s.prefixItems,
-          "items" := s.items,
-          "contains" := s.contains,
-          "unevaluatedItems" := s.unevaluatedItems,
-          "maxProperties" := s.maxProperties,
-          "minProperties" := s.minProperties,
-          "required" := s.required,
-          "dependentRequired" := s.dependentRequired,
-          "discriminator" := s.discriminator,
-          "properties" := s.properties,
-          "patternProperties" := s.patternProperties,
-          "additionalProperties" := s.additionalProperties,
-          "propertyNames" := s.propertyNames,
-          "unevaluatedProperties" := s.unevaluatedProperties,
-          "externalDocs" := s.externalDocs,
-          "extensions" := s.extensions
-        )
-      )
+    // Nullable $ref Schema is represented as {"anyOf": [{"$ref": "some-ref"}, {"type": "null"}]}
+    // In OpenAPI 3.0, we need to translate it to {"allOf": [{"$ref": "some-ref"}], "nullable": true}
+    val wrappedNullableRef30 = s.anyOf match {
+      case List(refSchema: Schema, `nullSchema`) if refSchema.$ref.isDefined && openApi30 =>
+        Some(refSchema)
+      case _ => None
     }
-    .dropNullsExpandExtensions
+
+    val typeAndNullable = s.`type` match {
+      case Some(List(tpe)) =>
+        List("type" := tpe)
+      case Some(List(tpe, SchemaType.Null)) if openApi30 =>
+        List("type" := tpe, "nullable" := true)
+      case None if wrappedNullableRef30.isDefined =>
+        List("nullable" := true)
+      case t =>
+        List("type" := t)
+    }
+
+    val minFields = (s.minimum, s.exclusiveMinimum) match {
+      case (None, Some(min)) if openApi30 =>
+        Vector("minimum" := min, "exclusiveMinimum" := true)
+      case _ =>
+        Vector("minimum" := s.minimum, "exclusiveMinimum" := s.exclusiveMinimum)
+    }
+
+    val maxFields = (s.maximum, s.exclusiveMaximum) match {
+      case (None, Some(max)) if openApi30 =>
+        Vector("maximum" := max, "exclusiveMaximum" := true)
+      case _ =>
+        Vector("maximum" := s.maximum, "exclusiveMaximum" := s.exclusiveMaximum)
+    }
+
+    val exampleFields = s.examples match {
+      case Some(List(example)) if openApi30 =>
+        Vector("example" := example)
+      case _ =>
+        Vector("examples" := s.examples)
+    }
+
+    JsonObject.fromIterable(
+      Vector(
+        "$schema" := s.$schema,
+        "$vocabulary" := s.$vocabulary,
+        "$id" := s.$id,
+        "$anchor" := s.$anchor,
+        "$dynamicAnchor" := s.$dynamicAnchor,
+        "$ref" := s.$ref,
+        "$dynamicRef" := s.$dynamicRef,
+        "$comment" := s.$comment,
+        "$defs" := s.$defs,
+        "title" := s.title,
+        "description" := s.description,
+        "default" := s.default,
+        "deprecated" := s.deprecated,
+        "readOnly" := s.readOnly,
+        "writeOnly" := s.writeOnly
+      ) ++ exampleFields ++ typeAndNullable ++ Vector(
+        "enum" := s.`enum`,
+        "const" := s.const,
+        "format" := s.format,
+        "allOf" := wrappedNullableRef30.map(List(_)).getOrElse(s.allOf),
+        "anyOf" := (if (wrappedNullableRef30.isDefined) Nil else s.anyOf),
+        "oneOf" := s.oneOf,
+        "not" := s.not,
+        "if" := s.`if`,
+        "then" := s.`then`,
+        "else" := s.`else`,
+        "dependentSchemas" := s.dependentSchemas,
+        "multipleOf" := s.multipleOf
+      ) ++ minFields ++ maxFields ++ Vector(
+        "maxLength" := s.maxLength,
+        "minLength" := s.minLength,
+        "pattern" := s.pattern,
+        "maxItems" := s.maxItems,
+        "minItems" := s.minItems,
+        "uniqueItems" := s.uniqueItems,
+        "maxContains" := s.maxContains,
+        "minContains" := s.minContains,
+        "prefixItems" := s.prefixItems,
+        "items" := s.items,
+        "contains" := s.contains,
+        "unevaluatedItems" := s.unevaluatedItems,
+        "maxProperties" := s.maxProperties,
+        "minProperties" := s.minProperties,
+        "required" := s.required,
+        "dependentRequired" := s.dependentRequired,
+        "discriminator" := s.discriminator,
+        "properties" := s.properties,
+        "patternProperties" := s.patternProperties,
+        "additionalProperties" := s.additionalProperties,
+        "propertyNames" := s.propertyNames,
+        "unevaluatedProperties" := s.unevaluatedProperties,
+        "externalDocs" := s.externalDocs,
+        "extensions" := s.extensions
+      )
+    )
+  }.dropNullsExpandExtensions
 
   // note: these are strict val-s, order matters!
   implicit val extensionValue: Encoder[ExtensionValue] =
@@ -249,7 +247,7 @@ object JsonSchemaCirceEncoders {
         allKeys.foldLeft(JsonObject.empty) { case (acc, key) =>
           extObject(key).orElse(jsonWithoutExt(key)) match {
             case Some(value) => acc.add(key, value)
-            case None => acc
+            case None        => acc
           }
         }
       }
