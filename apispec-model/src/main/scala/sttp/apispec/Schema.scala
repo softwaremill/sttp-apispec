@@ -134,17 +134,18 @@ case class Schema(
     case Some(types) =>
       val NullExample = ExampleSingleValue("null")
       if (types.contains(SchemaType.Null)) this // ensure idempotency
-      else copy(
-        `type` = Some(types :+ SchemaType.Null),
-        `enum` = `enum`.orElse(`const`.map(List(_))).map(vs => (vs :+ NullExample).distinct),
-        `const` = None
-      )
+      else
+        copy(
+          `type` = Some(types :+ SchemaType.Null),
+          `enum` = `enum`.orElse(`const`.map(List(_))).map(vs => (vs :+ NullExample).distinct),
+          `const` = None
+        )
 
     case None =>
       // Representing nullable schemas (without explicit `type`) using `anyOf` is safer than `oneOf`.
       // If `oneOf` was used, and the original schema was already nullable, `null` would not be a valid
       // value for the resulting schema.
-      if(anyOf.contains(Schema.Null)) this // ensure idempotency
+      if (anyOf.contains(Schema.Null)) this // ensure idempotency
       else if (anyOf.nonEmpty) copy(anyOf = anyOf :+ Schema.Null)
       else Schema(anyOf = List(this, Schema.Null))
   }
