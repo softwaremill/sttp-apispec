@@ -176,7 +176,8 @@ class EncoderTest extends AnyFunSuite {
       contentType = Some("text/plain"),
       examples = List(
         MessageExample(None, Some(ExampleSingleValue("abc")), Some("lowercase"), Some("Lowercase letters example")),
-        MessageExample(None, Some(ExampleSingleValue("ABC")), Some("uppercase"), Some("Uppercase letters example")))
+        MessageExample(None, Some(ExampleSingleValue("ABC")), Some("uppercase"), Some("Uppercase letters example"))
+      )
     )
     val comp = Components(messages = ListMap("string" -> Right(message)))
 
@@ -201,13 +202,12 @@ class EncoderTest extends AnyFunSuite {
 
     val schema = Schema.oneOf(
       List(Schema.referenceTo("", "Dog"), Schema.referenceTo("", "Cat")),
-      Some(Discriminator("pet", Some(ListMap("Dog" -> "Dog", "Cat" -> "Cat")))))
+      Some(Discriminator("pet", Some(ListMap("Dog" -> "Dog", "Cat" -> "Cat"))))
+    )
     val message = SingleMessage(payload = Some(Right(schema)))
 
     assert(expected === message.asJson.deepDropNullValues)
   }
-
-
 
   def parse(s: String): Json = io.circe.parser.parse(s).fold(throw _, identity)
 }
