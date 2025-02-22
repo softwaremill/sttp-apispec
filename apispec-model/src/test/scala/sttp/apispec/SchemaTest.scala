@@ -22,20 +22,25 @@ class SchemaTest extends AnyFunSuite {
   }
 
   test("nullable enum") {
-    val schema = Schema(`type` = Some(List(SchemaType.String)), `enum` = Some(List("a", "b").map(ExampleSingleValue(_))))
-    assert(schema.nullable == Schema(
-      `type` = Some(List(SchemaType.String, SchemaType.Null)),
-      `enum` = Some(List("a", "b", "null").map(ExampleSingleValue(_)))
-    ))
+    val schema =
+      Schema(`type` = Some(List(SchemaType.String)), `enum` = Some(List("a", "b").map(ExampleSingleValue(_))))
+    assert(
+      schema.nullable == Schema(
+        `type` = Some(List(SchemaType.String, SchemaType.Null)),
+        `enum` = Some(List("a", "b", "null").map(ExampleSingleValue(_)))
+      )
+    )
     assert(schema.nullable.nullable == schema.nullable) // idempotency
   }
 
   test("nullable const") {
     val schema = Schema(`type` = Some(List(SchemaType.String)), `const` = Some(ExampleSingleValue("a")))
-    assert(schema.nullable == Schema(
-      `type` = Some(List(SchemaType.String, SchemaType.Null)),
-      `enum` = Some(List("a", "null").map(ExampleSingleValue(_)))
-    ))
+    assert(
+      schema.nullable == Schema(
+        `type` = Some(List(SchemaType.String, SchemaType.Null)),
+        `enum` = Some(List("a", "null").map(ExampleSingleValue(_)))
+      )
+    )
     assert(schema.nullable.nullable == schema.nullable)
   }
 }
