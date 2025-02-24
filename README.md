@@ -135,7 +135,7 @@ val yaml2_0 = asyncApi.toYaml // // convert model to AsyncApi 2.0.0 yaml string
 
 ## Contributing
 
-If you have a question, or hit a problem, feel free to ask on our [gitter channel](https://gitter.im/softwaremill/tapir)!
+If you have a question, or hit a problem, feel free to ask on [softwaremill.community](https://softwaremill.community/)!
 
 Or, if you encounter a bug, something is unclear in the code or documentation, don’t hesitate and open an issue on GitHub.
 
