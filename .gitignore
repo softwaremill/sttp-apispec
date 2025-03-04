@@ -28,6 +28,7 @@ lowered.hnir
 # Bloop / Metals
 .bloop/
 .metals/
-project/metals.sbt
+metals.sbt
+.vscode
 
 .bsp

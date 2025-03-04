@@ -3,9 +3,9 @@ import com.softwaremill.Publish.ossPublishSettings
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 
-val scala2_12 = "2.12.19"
+val scala2_12 = "2.12.20"
 val scala2_13 = "2.13.13"
-val scala3 = "3.3.3"
+val scala3 = "3.3.5"
 
 val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
@@ -88,9 +88,9 @@ lazy val projectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STT
 val compileAndTest = "compile->compile;test->test"
 
 lazy val rootProject = (project in file("."))
-  .settings(commonSettings*)
+  .settings(commonSettings *)
   .settings(publish / skip := true, name := "sttp-apispec", scalaVersion := scala2_13)
-  .aggregate(projectAggregates*)
+  .aggregate(projectAggregates *)
 
 lazy val circeTestUtils: ProjectMatrix = (projectMatrix in file("circe-testutils"))
   .settings(commonSettings)
