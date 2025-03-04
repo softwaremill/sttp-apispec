@@ -94,5 +94,3 @@ class BoundsTest extends AnyFunSuite {
     assert(!b.contains(Bounds(Some(Bound.exclusive(-1)), Some(Bound.exclusive(11)))))
   }
 }
-
-
