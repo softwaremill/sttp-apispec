@@ -4,7 +4,7 @@ import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 
 val scala2_12 = "2.12.20"
-val scala2_13 = "2.13.13"
+val scala2_13 = "2.13.16"
 val scala3 = "3.3.5"
 
 val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
