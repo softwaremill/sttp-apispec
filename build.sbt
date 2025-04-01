@@ -11,8 +11,9 @@ val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
 val scalaNativeVersions = List(scala2_12, scala2_13, scala3)
 
-val circeYamlVersion = "0.15.1"
 val circeVersion = "0.14.9"
+val circeYamlVersionCompat212 = "0.15.1"
+val circeYamlVersionLatest = "0.15.1"
 
 val scalaTestVersion = "3.2.18"
 val scalaCollectionCompatVersion = "2.11.0"
@@ -203,7 +204,12 @@ lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
 lazy val openapiCirceYaml: ProjectMatrix = (projectMatrix in file("openapi-circe-yaml"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq("io.circe" %% "circe-yaml" % circeYamlVersion),
+    libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, n)) if n <= 12 =>
+        Seq("io.circe" %% "circe-yaml" % circeYamlVersionCompat212)
+      case _ =>
+        Seq("io.circe" %% "circe-yaml" % circeYamlVersionLatest)
+    }),
     name := "openapi-circe-yaml"
   )
   .jvmPlatform(
@@ -255,7 +261,12 @@ lazy val asyncapiCirce: ProjectMatrix = (projectMatrix in file("asyncapi-circe")
 lazy val asyncapiCirceYaml: ProjectMatrix = (projectMatrix in file("asyncapi-circe-yaml"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq("io.circe" %% "circe-yaml" % circeYamlVersion),
+    libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, n)) if n <= 12 =>
+        Seq("io.circe" %% "circe-yaml" % circeYamlVersionCompat212)
+      case _ =>
+        Seq("io.circe" %% "circe-yaml" % circeYamlVersionLatest)
+    }),
     name := "asyncapi-circe-yaml"
   )
   .jvmPlatform(
