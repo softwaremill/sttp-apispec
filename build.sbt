@@ -4,7 +4,7 @@ import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 
 val scala2_12 = "2.12.20"
-val scala2_13 = "2.13.13"
+val scala2_13 = "2.13.14"
 val scala3 = "3.3.5"
 
 val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
@@ -13,7 +13,7 @@ val scalaNativeVersions = List(scala2_12, scala2_13, scala3)
 
 val circeVersion = "0.14.9"
 val circeYamlVersionCompat212 = "0.15.2"
-val circeYamlVersionLatest = "0.15.2"
+val circeYamlVersionLatest = "0.16.0"
 
 val scalaTestVersion = "3.2.18"
 val scalaCollectionCompatVersion = "2.11.0"
