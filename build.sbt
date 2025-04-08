@@ -4,18 +4,18 @@ import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 
 val scala2_12 = "2.12.20"
-val scala2_13 = "2.13.14"
+val scala2_13 = "2.13.16"
 val scala3 = "3.3.5"
 
 val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
-val scalaNativeVersions = List(scala2_12, scala2_13, scala3)
+val scalaNativeVersions = List(scala2_13, scala3)
 
-val circeVersion = "0.14.9"
+val circeVersion = "0.14.12"
 val circeYamlVersionCompat212 = "0.15.2"
 val circeYamlVersionLatest = "0.16.0"
 
-val scalaTestVersion = "3.2.18"
+val scalaTestVersion = "3.2.19"
 val scalaCollectionCompatVersion = "2.11.0"
 
 excludeLintKeys in Global ++= Set(ideSkipProject)
@@ -142,8 +142,7 @@ lazy val jsonSchemaCirce: ProjectMatrix = (projectMatrix in file("jsonschema-cir
     libraryDependencies ++= Seq(
       "io.circe" %%% "circe-core" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
-      "io.circe" %%% "circe-generic" % circeVersion,
-      "org.scala-lang.modules" %%% "scala-collection-compat" % scalaCollectionCompatVersion
+      "io.circe" %%% "circe-generic" % circeVersion
     ),
     name := "jsonschema-circe"
   )
