@@ -11,7 +11,7 @@ val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
 val scalaNativeVersions = List(scala2_13, scala3)
 
-val circeVersion = "0.14.6"
+val circeVersion = "0.14.12"
 val circeYamlVersion = "0.15.1"
 
 val scalaTestVersion = "3.2.18"
@@ -141,8 +141,7 @@ lazy val jsonSchemaCirce: ProjectMatrix = (projectMatrix in file("jsonschema-cir
     libraryDependencies ++= Seq(
       "io.circe" %%% "circe-core" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
-      "io.circe" %%% "circe-generic" % circeVersion,
-      "org.scala-lang.modules" %%% "scala-collection-compat" % scalaCollectionCompatVersion
+      "io.circe" %%% "circe-generic" % circeVersion
     ),
     name := "jsonschema-circe"
   )
