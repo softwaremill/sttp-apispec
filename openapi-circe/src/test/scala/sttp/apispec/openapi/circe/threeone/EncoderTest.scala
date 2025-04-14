@@ -190,4 +190,51 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
     val securityScheme = Some(clientCredentialsSecurityScheme(ListMap("example" -> "description")))
     assert(expectedSecurityScheme === securityScheme.asJson)
   }
+
+  test("encode headers in response") {
+    import sttp.apispec.openapi.circe._
+
+    val withPathItem = petstore.addPathItem(
+      "/pets",
+      PathItem(
+        get = Some(
+          Operation(
+            operationId = Some("getPets"),
+            description = Some("Gets all pets")
+          ).addResponse(
+            200,
+            Response(
+              description = "Success",
+              content = ListMap(
+                "application/json" ->
+                  MediaType(schema = Some(arrayOf(ref("#/components/schemas/Pet"))))
+              ),
+              headers =
+                ListMap("Location" -> refOr(Header(required = Some(true), schema = Some(Schema(SchemaType.String)))))
+            )
+          )
+        )
+      )
+    )
+    val petSchema = Schema(
+      `type` = Some(List(SchemaType.Object)),
+      properties = ListMap(
+        "id" -> Schema(`type` = Some(List(SchemaType.Integer)), format = Some("int32")),
+        "name" -> Schema(`type` = Some(List(SchemaType.String)))
+      )
+    )
+    val withComponents = withPathItem.components(
+      Components(schemas =
+        ListMap(
+          "Pet" -> petSchema
+        )
+      )
+    )
+    val server = Server(url = "http://petstore.swagger.io/v1")
+    val withServer = withComponents.servers(List(server))
+    val serialized = withServer.asJson
+    val Right(json) = readJson("/petstore/header-petstore.json"): @unchecked
+
+    assert(serialized === json)
+  }
 }

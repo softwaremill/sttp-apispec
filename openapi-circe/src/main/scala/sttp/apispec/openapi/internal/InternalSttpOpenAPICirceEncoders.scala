@@ -33,7 +33,7 @@ trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
   implicit val encoderSecurityScheme: Encoder[SecurityScheme] =
     deriveEncoder[SecurityScheme].dropNullsExpandExtensions
 
-  implicit val encoderHeader: Encoder[Header] = deriveEncoder[Header]
+  implicit val encoderHeader: Encoder[Header] = deriveEncoder[Header].dropNulls
   implicit val encoderExample: Encoder[Example] = deriveEncoder[Example].dropNullsExpandExtensions
   implicit val encoderResponse: Encoder[Response] = deriveEncoder[Response].dropNullsExpandExtensions
   implicit val encoderLink: Encoder[Link] = deriveEncoder[Link].dropNullsExpandExtensions
