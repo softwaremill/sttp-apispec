@@ -30,5 +30,6 @@ lowered.hnir
 .metals/
 metals.sbt
 .vscode
+.cursor
 
 .bsp
