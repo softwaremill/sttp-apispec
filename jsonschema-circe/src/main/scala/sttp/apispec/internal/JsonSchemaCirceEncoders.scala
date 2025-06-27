@@ -21,6 +21,13 @@ trait JsonSchemaCirceEncoders {
   implicit lazy val encoderSchema: Encoder[Schema] = Encoder.AsObject.instance { (s: Schema) =>
     val nullSchema = Schema(`type` = Some(List(SchemaType.Null)))
 
+    // In OpenAPI 3.0 the keyword "const" is not allowed and needs to be replaced by an "enum" with one element
+    val enumAndConstFields =
+      if (openApi30 && s.const.isDefined)
+        Vector("enum" := s.const.map(List(_)), "const" := None)
+      else
+        Vector("enum" := s.`enum`, "const" := s.const)
+
     // Nullable $ref Schema is represented as {"anyOf": [{"$ref": "some-ref"}, {"type": "null"}]}
     // In OpenAPI 3.0, we need to translate it to {"allOf": [{"$ref": "some-ref"}], "nullable": true}
     val wrappedNullableRef30 = s.anyOf match {
@@ -31,13 +38,13 @@ trait JsonSchemaCirceEncoders {
 
     val typeAndNullable = s.`type` match {
       case Some(List(tpe)) =>
-        List("type" := tpe)
+        Vector("type" := tpe)
       case Some(List(tpe, SchemaType.Null)) if openApi30 =>
-        List("type" := tpe, "nullable" := true)
+        Vector("type" := tpe, "nullable" := true)
       case None if wrappedNullableRef30.isDefined =>
-        List("nullable" := true)
+        Vector("nullable" := true)
       case t =>
-        List("type" := t)
+        Vector("type" := t)
     }
 
     val minFields = (s.minimum, s.exclusiveMinimum) match {
@@ -78,9 +85,7 @@ trait JsonSchemaCirceEncoders {
         "deprecated" := s.deprecated,
         "readOnly" := s.readOnly,
         "writeOnly" := s.writeOnly
-      ) ++ exampleFields ++ typeAndNullable ++ Vector(
-        "enum" := s.`enum`,
-        "const" := s.const,
+      ) ++ exampleFields ++ typeAndNullable ++ enumAndConstFields ++ Vector(
         "format" := s.format,
         "allOf" := wrappedNullableRef30.map(List(_)).getOrElse(s.allOf),
         "anyOf" := (if (wrappedNullableRef30.isDefined) Nil else s.anyOf),

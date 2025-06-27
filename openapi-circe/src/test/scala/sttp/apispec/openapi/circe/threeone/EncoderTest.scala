@@ -121,7 +121,9 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
         ),
         schemaComponent("exclusiveMinimum false")(Schema(minimum = Some(BigDecimal(10)))),
         schemaComponent("array")(Schema(SchemaType.Array).copy(items = Some(Schema(SchemaType.String)))),
-        schemaComponent("array with unique items")(Schema(SchemaType.Array).copy(uniqueItems = Some(true)))
+        schemaComponent("array with unique items")(Schema(SchemaType.Array).copy(uniqueItems = Some(true))),
+        schemaComponent("const")(Schema(const = Some("const1").map(ExampleSingleValue(_)))),
+        schemaComponent("enum")(Schema(`enum` = Some(List("enum1", "enum2").map(ExampleSingleValue(_)))))
       )
     )
 
@@ -156,6 +158,31 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     val openApiJson = fullSchemaOpenApi.copy(openapi = "3.0.1").asJson
     val Right(json) = readJson("/spec/3.0/schema.json"): @unchecked
+
+    assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
+  }
+
+  test("replace const by single enum value in 3.0 schema") {
+    import sttp.apispec.openapi.circe_openapi_3_0_3._
+
+    val components = Components(
+      schemas = ListMap(
+        schemaComponent("const and enum")(
+          Schema(
+            const = Some("const1").map(ExampleSingleValue(_)),
+            `enum` = Some(List("enum1", "enum2").map(ExampleSingleValue(_)))
+          )
+        )
+      )
+    )
+
+    val openApiJson = fullSchemaOpenApi
+      .copy(
+        openapi = "3.0.1",
+        components = Some(components)
+      )
+      .asJson
+    val Right(json) = readJson("/spec/3.0/const_and_enum.json"): @unchecked
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
   }

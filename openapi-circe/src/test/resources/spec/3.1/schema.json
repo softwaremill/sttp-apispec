@@ -68,6 +68,17 @@
         "maximum": 20,
         "description": "min/max"
       },
+      "const" : {
+        "const" : "const1",
+        "description" : "const"
+      },
+      "enum" : {
+        "description" : "enum",
+        "enum" : [
+          "enum1",
+          "enum2"
+        ]
+      },
       "exclusive min/max": {
         "exclusiveMinimum": 10,
         "exclusiveMaximum": 20,
