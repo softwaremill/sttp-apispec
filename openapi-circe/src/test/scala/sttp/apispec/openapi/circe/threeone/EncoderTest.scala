@@ -167,16 +167,21 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
 
     val components = Components(
       schemas = ListMap(
-        schemaComponent("const and enum")(Schema(
-          const = Some("const1").map(ExampleSingleValue(_)),
-          `enum` = Some(List("enum1", "enum2").map(ExampleSingleValue(_)))))
+        schemaComponent("const and enum")(
+          Schema(
+            const = Some("const1").map(ExampleSingleValue(_)),
+            `enum` = Some(List("enum1", "enum2").map(ExampleSingleValue(_)))
+          )
+        )
       )
     )
 
-    val openApiJson = fullSchemaOpenApi.copy(
-      openapi = "3.0.1",
-      components = Some(components)
-    ).asJson
+    val openApiJson = fullSchemaOpenApi
+      .copy(
+        openapi = "3.0.1",
+        components = Some(components)
+      )
+      .asJson
     val Right(json) = readJson("/spec/3.0/const_and_enum.json"): @unchecked
 
     assert(openApiJson.spaces2SortKeys == json.spaces2SortKeys)
