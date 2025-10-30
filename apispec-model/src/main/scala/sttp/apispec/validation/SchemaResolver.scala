@@ -24,8 +24,8 @@ class SchemaResolver(schemas: Map[String, Schema]) {
   }
 
   @tailrec final def resolveAndNormalize(schema: SchemaLike): Schema = schema match {
-    case AnySchema.Anything => Schema.Empty
-    case AnySchema.Nothing  => Schema.Nothing
+    case AnySchema.Anything                                  => Schema.Empty
+    case AnySchema.Nothing                                   => Schema.Nothing
     case s @ ReferenceSchema(SchemaResolver.Reference(name)) =>
       resolveAndNormalize(
         schemas.getOrElse(name, throw new NoSuchElementException(s"could not resolve schema reference ${s.$ref.get}"))

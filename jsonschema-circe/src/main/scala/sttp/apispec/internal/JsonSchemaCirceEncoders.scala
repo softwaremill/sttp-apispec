@@ -195,7 +195,7 @@ trait JsonSchemaCirceEncoders {
 
   private[apispec] def doEncodeListMap[K: KeyEncoder, V: Encoder](nullWhenEmpty: Boolean): Encoder[ListMap[K, V]] = {
     case m: ListMap[K, V] if m.isEmpty && nullWhenEmpty => Json.Null
-    case m: ListMap[K, V] =>
+    case m: ListMap[K, V]                               =>
       val properties = m.map { case (k, v) => KeyEncoder[K].apply(k) -> Encoder[V].apply(v) }.toList
       Json.obj(properties: _*)
   }

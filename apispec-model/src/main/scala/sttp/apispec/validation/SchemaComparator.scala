@@ -35,7 +35,7 @@ class SchemaComparator(
   private def computeCached[K, V](cache: mutable.Map[K, V], key: K, recursiveValue: V)(compute: => V): V =
     cache.get(key) match {
       case Some(value) => value
-      case None =>
+      case None        =>
         cache.put(key, recursiveValue)
         val result =
           try compute
@@ -166,7 +166,7 @@ class SchemaComparator(
           variants: List[SchemaLike],
           acc: List[List[SchemaCompatibilityIssue]]
       ): Option[AlternativeIssues] = variants match {
-        case Nil => Some(AlternativeIssues(acc.reverse))
+        case Nil             => Some(AlternativeIssues(acc.reverse))
         case variant :: tail =>
           compare(writerSchema, variant) match {
             case Nil    => None

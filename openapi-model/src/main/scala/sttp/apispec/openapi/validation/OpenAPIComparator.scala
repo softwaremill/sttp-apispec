@@ -85,7 +85,7 @@ class OpenAPIComparator private (
       case (pathName, clientPathItem) =>
         val serverPathItem = serverOpenAPI.paths.pathItems.get(pathName)
         serverPathItem match {
-          case None => Some(MissingPath(pathName))
+          case None                 => Some(MissingPath(pathName))
           case Some(serverPathItem) =>
             val pathIssues = checkPath(pathName, clientPathItem, serverPathItem)
             if (pathIssues.isEmpty)
@@ -201,7 +201,7 @@ class OpenAPIComparator private (
     val issues = clientContent.flatMap { case (clientMediaType, clientMediaTypeDescription) =>
       val serverMediaTypeDescription = serverContent.get(clientMediaType)
       serverMediaTypeDescription match {
-        case None => Some(MissingMediaType(clientMediaType))
+        case None                             => Some(MissingMediaType(clientMediaType))
         case Some(serverMediaTypeDescription) =>
           checkMediaType(clientMediaType, clientMediaTypeDescription, serverMediaTypeDescription)
       }
