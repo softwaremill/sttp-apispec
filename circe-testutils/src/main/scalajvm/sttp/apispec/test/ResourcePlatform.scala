@@ -2,8 +2,7 @@ package sttp.apispec.test
 
 import io.circe._
 import io.circe.parser.decode
-import java.io.{BufferedReader, InputStreamReader, StringWriter}
-import java.nio.charset.StandardCharsets
+import scala.io.Source
 
 trait ResourcePlatform {
 
@@ -12,11 +11,8 @@ trait ResourcePlatform {
     */
   def basedir: String
   def readJson(path: String): Either[Error, Json] = {
-
     val is = getClass.getResourceAsStream(path)
-    val reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
-    val writer = new StringWriter()
-    reader.transferTo(writer)
-    decode[Json](writer.toString)
+    try decode[Json](Source.fromInputStream(is, "UTF-8").mkString)
+    finally is.close()
   }
 }
