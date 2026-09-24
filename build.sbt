@@ -1,11 +1,10 @@
 import com.softwaremill.SbtSoftwareMillCommon.commonSmlBuildSettings
 import com.softwaremill.Publish.ossPublishSettings
 import sbt.Reference.display
-import sbt.internal.ProjectMatrix
 
-val scala2_12 = "2.12.20"
-val scala2_13 = "2.13.16"
-val scala3 = "3.3.6"
+val scala2_12 = "2.12.21"
+val scala2_13 = "2.13.18"
+val scala3 = "3.3.8"
 
 val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
@@ -18,7 +17,7 @@ val circeYamlVersionLatest = "0.16.1"
 val scalaTestVersion = "3.2.19"
 val scalaCollectionCompatVersion = "2.11.0"
 
-excludeLintKeys in Global ++= Set(ideSkipProject)
+Global / excludeLintKeys ++= Set(ideSkipProject)
 
 val scala3Settings = Seq(
   scalacOptions -= "-Xmax-inlines",
@@ -27,13 +26,16 @@ val scala3Settings = Seq(
   }
 )
 
-val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
-  organization := "com.softwaremill.sttp.apispec",
-  mimaPreviousArtifacts := Set.empty,
-  versionScheme := Some("early-semver")
-) ++ scala3Settings
+commonSmlBuildSettings
+ossPublishSettings
+scala3Settings
 
-val commonJvmSettings = commonSettings ++ Seq(
+organization := "com.softwaremill.sttp.apispec"
+mimaPreviousArtifacts := Set.empty
+versionScheme := Some("early-semver")
+
+val commonJvmSettings = Seq(
+  scalacOptions ++= (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq.empty else Seq("-release", "8")),
   ideSkipProject := (scalaVersion.value != scala2_13),
   libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % scalaTestVersion % Test),
   mimaPreviousArtifacts := previousStableVersion.value.map(organization.value %% moduleName.value % _).toSet,
@@ -42,7 +44,7 @@ val commonJvmSettings = commonSettings ++ Seq(
   }
 )
 
-val commonJsSettings = commonSettings ++ Seq(
+val commonJsSettings = Seq(
   ideSkipProject := true,
   Compile / scalacOptions ++= {
     if (isSnapshot.value) Seq.empty
@@ -58,12 +60,12 @@ val commonJsSettings = commonSettings ++ Seq(
         s"$mapSourcePrefix:$dir->$url/v${version.value}/"
       }
   },
-  libraryDependencies ++= Seq("org.scalatest" %%% "scalatest" % scalaTestVersion % Test)
+  libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % scalaTestVersion % Test)
 )
 
-val commonNativeSettings = commonSettings ++ Seq(
+val commonNativeSettings = Seq(
   ideSkipProject := true,
-  libraryDependencies ++= Seq("org.scalatest" %%% "scalatest" % scalaTestVersion % Test)
+  libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % scalaTestVersion % Test)
 )
 
 lazy val allProjectAggregates: Seq[ProjectReference] =
@@ -89,18 +91,16 @@ lazy val projectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STT
 val compileAndTest = "compile->compile;test->test"
 
 lazy val rootProject = (project in file("."))
-  .settings(commonSettings *)
   .settings(publish / skip := true, name := "sttp-apispec", scalaVersion := scala2_13)
   .aggregate(projectAggregates *)
 
 lazy val circeTestUtils: ProjectMatrix = (projectMatrix in file("circe-testutils"))
-  .settings(commonSettings)
   .settings(
     publish / skip := true,
     name := "circe-testutils",
     libraryDependencies ++= Seq(
-      "io.circe" %%% "circe-core" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion
     )
   )
   .jvmPlatform(
@@ -118,7 +118,6 @@ lazy val circeTestUtils: ProjectMatrix = (projectMatrix in file("circe-testutils
 // apispec
 
 lazy val apispecModel: ProjectMatrix = (projectMatrix in file("apispec-model"))
-  .settings(commonSettings)
   .settings(
     name := "apispec-model"
   )
@@ -137,12 +136,11 @@ lazy val apispecModel: ProjectMatrix = (projectMatrix in file("apispec-model"))
 
 // jsonschema
 lazy val jsonSchemaCirce: ProjectMatrix = (projectMatrix in file("jsonschema-circe"))
-  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "io.circe" %%% "circe-core" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion,
-      "io.circe" %%% "circe-generic" % circeVersion
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
+      "io.circe" %% "circe-generic" % circeVersion
     ),
     name := "jsonschema-circe"
   )
@@ -163,7 +161,6 @@ lazy val jsonSchemaCirce: ProjectMatrix = (projectMatrix in file("jsonschema-cir
 // openapi
 
 lazy val openapiModel: ProjectMatrix = (projectMatrix in file("openapi-model"))
-  .settings(commonSettings)
   .settings(
     name := "openapi-model"
   )
@@ -182,7 +179,6 @@ lazy val openapiModel: ProjectMatrix = (projectMatrix in file("openapi-model"))
   .dependsOn(apispecModel)
 
 lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
-  .settings(commonSettings)
   .settings(
     name := "openapi-circe"
   )
@@ -201,7 +197,6 @@ lazy val openapiCirce: ProjectMatrix = (projectMatrix in file("openapi-circe"))
   .dependsOn(openapiModel, jsonSchemaCirce, circeTestUtils % Test)
 
 lazy val openapiCirceYaml: ProjectMatrix = (projectMatrix in file("openapi-circe-yaml"))
-  .settings(commonSettings)
   .settings(
     libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, n)) if n <= 12 =>
@@ -220,7 +215,6 @@ lazy val openapiCirceYaml: ProjectMatrix = (projectMatrix in file("openapi-circe
 // asyncapi
 
 lazy val asyncapiModel: ProjectMatrix = (projectMatrix in file("asyncapi-model"))
-  .settings(commonSettings)
   .settings(
     name := "asyncapi-model"
   )
@@ -239,7 +233,6 @@ lazy val asyncapiModel: ProjectMatrix = (projectMatrix in file("asyncapi-model")
   .dependsOn(apispecModel)
 
 lazy val asyncapiCirce: ProjectMatrix = (projectMatrix in file("asyncapi-circe"))
-  .settings(commonSettings)
   .settings(
     name := "asyncapi-circe"
   )
@@ -258,7 +251,6 @@ lazy val asyncapiCirce: ProjectMatrix = (projectMatrix in file("asyncapi-circe")
   .dependsOn(asyncapiModel, jsonSchemaCirce)
 
 lazy val asyncapiCirceYaml: ProjectMatrix = (projectMatrix in file("asyncapi-circe-yaml"))
-  .settings(commonSettings)
   .settings(
     libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, n)) if n <= 12 =>
@@ -275,7 +267,6 @@ lazy val asyncapiCirceYaml: ProjectMatrix = (projectMatrix in file("asyncapi-cir
   .dependsOn(asyncapiCirce)
 
 lazy val openapiComparatorTests: ProjectMatrix = (projectMatrix in file("openapi-comparator-tests"))
-  .settings(commonSettings)
   .settings(
     name := "openapi-comparator-tests",
     publish / skip := true
