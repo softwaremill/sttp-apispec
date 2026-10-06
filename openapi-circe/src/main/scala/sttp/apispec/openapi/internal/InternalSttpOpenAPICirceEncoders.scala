@@ -38,7 +38,7 @@ trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
   implicit val encoderResponse: Encoder[Response] = deriveEncoder[Response].dropNullsExpandExtensions
   implicit val encoderLink: Encoder[Link] = deriveEncoder[Link].dropNullsExpandExtensions
   implicit val encoderCallback: Encoder[Callback] = Encoder.instance { callback =>
-    Json.obj(callback.pathItems.map { case (path, pathItem) => path -> pathItem.asJson }.toList: _*)
+    Json.fromFields(callback.pathItems.map { case (path, pathItem) => path -> pathItem.asJson }.toList)
   }
   implicit val encoderEncoding: Encoder[Encoding] = deriveEncoder[Encoding].dropNullsExpandExtensions
   implicit val encoderMediaType: Encoder[MediaType] = deriveEncoder[MediaType].dropNullsExpandExtensions
@@ -54,7 +54,7 @@ trait InternalSttpOpenAPICirceEncoders extends JsonSchemaCirceEncoders {
         case (ResponsesRangeKey(range), r) => (s"${range}XX", r.asJson)
       }
 
-      Json.obj(fields.toSeq: _*)
+      Json.fromFields(fields.toSeq)
     }
   implicit val encoderResponses: Encoder[Responses] = Encoder.instance { resp =>
     val extensions = resp.extensions.asJsonObject

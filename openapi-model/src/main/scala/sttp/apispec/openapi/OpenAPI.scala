@@ -108,7 +108,8 @@ final case class Server(
   def addExtension(key: String, value: ExtensionValue): Server = copy(extensions = extensions.updated(key, value))
 
   def description(d: String): Server = copy(description = Some(d))
-  def variables(vars: (String, ServerVariable)*): Server = copy(variables = Some(ListMap(vars: _*)))
+  def variables(vars: (String, ServerVariable)*): Server =
+    copy(variables = Some(ListMap.empty[String, ServerVariable] ++ vars))
   def extensions(updated: ListMap[String, ExtensionValue]): Server = copy(extensions = updated)
 }
 

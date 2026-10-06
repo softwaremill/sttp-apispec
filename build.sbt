@@ -4,7 +4,7 @@ import sbt.Reference.display
 
 val scala2_12 = "2.12.21"
 val scala2_13 = "2.13.18"
-val scala3 = "3.3.8"
+val scala3 = "3.9.0"
 
 val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
@@ -22,7 +22,18 @@ Global / excludeLintKeys ++= Set(ideSkipProject)
 val scala3Settings = Seq(
   scalacOptions -= "-Xmax-inlines",
   scalacOptions ++= {
-    if (scalaVersion.value.startsWith("3")) List("-Xmax-inlines", "64") else Nil
+    if (scalaVersion.value.startsWith("3"))
+      List(
+        "-Xmax-inlines",
+        "64",
+        // TODO(scala-3.9): `$ref`, `$id`, `$schema`, ... are public case class fields / parameter names mirroring
+        // JSON Schema keywords; renaming them would break the API, so the "identifier should not contain `$`" warning is silenced
+        "-Wconf:msg=which is reserved for internal compiler use:s",
+        // TODO(scala-3.9): circe decoders are passed explicitly to `implicit` params; `using` syntax is not available
+        // in Scala 2 (shared sources), so the warning is silenced for these files
+        "-Wconf:msg=Implicit parameters should be provided with a `using` clause&src=.*(JsonSchemaCirceDecoders|InternalSttpOpenAPICirceDecoders)\\.scala:s"
+      )
+    else Nil
   }
 )
 
