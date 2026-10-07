@@ -53,16 +53,16 @@ trait JsonSchemaCirceDecoders {
 
   implicit val schemaDecoder: Decoder[Schema] = {
     implicit def listMapDecoder[A: Decoder]: Decoder[ListMap[String, A]] =
-      Decoder.decodeOption(Decoder.decodeMapLike[String, A, ListMap]).map(_.getOrElse(ListMap.empty))
+      CirceDecoderSupport.optional(Decoder.decodeMapLike[String, A, ListMap]).map(_.getOrElse(ListMap.empty))
 
     implicit def listPatternMapDecoder[A: Decoder]: Decoder[ListMap[Pattern, A]] =
-      Decoder.decodeOption(Decoder.decodeMapLike[Pattern, A, ListMap]).map(_.getOrElse(ListMap.empty))
+      CirceDecoderSupport.optional(Decoder.decodeMapLike[Pattern, A, ListMap]).map(_.getOrElse(ListMap.empty))
 
     implicit def listDependentFieldsDecoder: Decoder[ListMap[String, List[String]]] =
-      Decoder.decodeOption(Decoder.decodeMapLike[String, List[String], ListMap]).map(_.getOrElse(ListMap.empty))
+      CirceDecoderSupport.optional(Decoder.decodeMapLike[String, List[String], ListMap]).map(_.getOrElse(ListMap.empty))
 
     implicit def listReference[A: Decoder]: Decoder[List[A]] =
-      Decoder.decodeOption(Decoder.decodeList[A]).map(_.getOrElse(Nil))
+      CirceDecoderSupport.optional(Decoder.decodeList[A]).map(_.getOrElse(Nil))
 
     def translateDefinitionsToDefs(obj: JsonObject): JsonObject = {
       val map = obj.toMap

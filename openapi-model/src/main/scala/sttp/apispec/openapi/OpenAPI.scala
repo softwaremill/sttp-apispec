@@ -571,8 +571,8 @@ object Callback {
   val Empty: Callback = Callback()
 }
 
-case class Reference($ref: String, summary: Option[String] = None, description: Option[String] = None)
+case class Reference(`$ref`: String, summary: Option[String] = None, description: Option[String] = None)
 
 object Reference {
-  def to(prefix: String, $ref: String): Reference = new Reference(s"$prefix${$ref}")
+  def to(prefix: String, `$ref`: String): Reference = new Reference(s"$prefix${$ref}")
 }

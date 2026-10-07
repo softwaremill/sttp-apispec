@@ -28,15 +28,15 @@ object AnySchema {
 case class Schema(
     // Core JSON Schema keywords
     // https://json-schema.org/draft/2020-12/json-schema-core#section-8
-    $schema: Option[String] = None,
-    $vocabulary: Option[ListMap[String, Boolean]] = None,
-    $id: Option[String] = None,
-    $anchor: Option[String] = None,
-    $dynamicAnchor: Option[String] = None,
-    $ref: Option[String] = None,
-    $dynamicRef: Option[String] = None,
-    $comment: Option[String] = None,
-    $defs: Option[ListMap[String, SchemaLike]] = None,
+    `$schema`: Option[String] = None,
+    `$vocabulary`: Option[ListMap[String, Boolean]] = None,
+    `$id`: Option[String] = None,
+    `$anchor`: Option[String] = None,
+    `$dynamicAnchor`: Option[String] = None,
+    `$ref`: Option[String] = None,
+    `$dynamicRef`: Option[String] = None,
+    `$comment`: Option[String] = None,
+    `$defs`: Option[ListMap[String, SchemaLike]] = None,
 
     // Annotations
     // https://json-schema.org/draft/2020-12/json-schema-validation#section-9
@@ -164,7 +164,7 @@ object Schema {
   def oneOf(references: List[SchemaLike], discriminator: Option[Discriminator]): Schema =
     Schema(oneOf = references, discriminator = discriminator)
 
-  def referenceTo(prefix: String, $ref: String): Schema =
+  def referenceTo(prefix: String, `$ref`: String): Schema =
     Schema($ref = Some(s"$prefix${$ref}"))
 }
 
