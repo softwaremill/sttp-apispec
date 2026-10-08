@@ -4,7 +4,7 @@ import sbt.Reference.display
 
 val scala2_12 = "2.12.21"
 val scala2_13 = "2.13.18"
-val scala3 = "3.3.8"
+val scala3 = "3.9.0"
 
 val scalaJVMVersions = List(scala2_12, scala2_13, scala3)
 val scalaJSVersions = List(scala2_12, scala2_13, scala3)
