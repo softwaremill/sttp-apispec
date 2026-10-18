@@ -144,7 +144,7 @@ trait JsonSchemaCirceEncoders {
   }
 
   implicit val encoderMultipleExampleValue: Encoder[ExampleMultipleValue] = { e =>
-    Json.arr(e.values.map(v => encoderExampleSingleValue(ExampleSingleValue(v))): _*)
+    Json.fromValues(e.values.map(v => encoderExampleSingleValue(ExampleSingleValue(v))))
   }
 
   implicit val encoderExampleValue: Encoder[ExampleValue] = {
@@ -188,7 +188,7 @@ trait JsonSchemaCirceEncoders {
 
   implicit def encodeList[T: Encoder]: Encoder[List[T]] = {
     case Nil        => Json.Null
-    case l: List[T] => Json.arr(l.map(i => implicitly[Encoder[T]].apply(i)): _*)
+    case l: List[T] => Json.fromValues(l.map(i => implicitly[Encoder[T]].apply(i)))
   }
 
   implicit def encodeListMap[K: KeyEncoder, V: Encoder]: Encoder[ListMap[K, V]] = doEncodeListMap(nullWhenEmpty = true)
@@ -197,7 +197,7 @@ trait JsonSchemaCirceEncoders {
     case m: ListMap[K, V] if m.isEmpty && nullWhenEmpty => Json.Null
     case m: ListMap[K, V]                               =>
       val properties = m.map { case (k, v) => KeyEncoder[K].apply(k) -> Encoder[V].apply(v) }.toList
-      Json.obj(properties: _*)
+      Json.fromFields(properties)
   }
 
   // just for backward compatibility

@@ -6,7 +6,7 @@ import cats.syntax.all._
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.semiauto.deriveDecoder
-import sttp.apispec.internal.JsonSchemaCirceDecoders
+import sttp.apispec.internal.{CirceDecoderSupport, JsonSchemaCirceDecoders}
 
 import scala.collection.immutable.ListMap
 
@@ -15,10 +15,10 @@ trait InternalSttpOpenAPICirceDecoders extends JsonSchemaCirceDecoders {
   implicit def decodeReferenceOr[A: Decoder]: Decoder[ReferenceOr[A]] = referenceDecoder.either(Decoder[A])
 
   def listMapStringADecoder[A: Decoder]: Decoder[ListMap[String, A]] =
-    Decoder.decodeOption(Decoder.decodeMapLike[String, A, ListMap]).map(_.getOrElse(ListMap.empty))
+    CirceDecoderSupport.optional(Decoder.decodeMapLike[String, A, ListMap]).map(_.getOrElse(ListMap.empty))
 
   def listADecoder[A: Decoder]: Decoder[List[A]] =
-    Decoder.decodeOption(Decoder.decodeList[A]).map(_.getOrElse(Nil))
+    CirceDecoderSupport.optional(Decoder.decodeList[A]).map(_.getOrElse(Nil))
 
   implicit def listMapStringReferenceOrADecoder[A: Decoder]: Decoder[ListMap[String, ReferenceOr[A]]] =
     listMapStringADecoder

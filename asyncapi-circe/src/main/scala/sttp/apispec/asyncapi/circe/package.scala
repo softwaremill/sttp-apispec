@@ -62,12 +62,12 @@ package circe {
       implicit val encoderKafkaMessageBinding: Encoder[KafkaMessageBinding] = deriveEncoder[KafkaMessageBinding]
       (a: List[MessageBinding]) =>
         nullIfEmpty(a)(
-          Json.obj(
+          Json.fromFields(
             a.map {
               case v: HttpMessageBinding      => "http" -> v.asJson
               case v: WebSocketMessageBinding => "ws" -> v.asJson
               case v: KafkaMessageBinding     => "kafka" -> v.asJson
-            }: _*
+            }
           )
         )
     }
@@ -79,12 +79,12 @@ package circe {
       implicit val encoderKafkaOperationBinding: Encoder[KafkaOperationBinding] = deriveEncoder[KafkaOperationBinding]
       (a: List[OperationBinding]) =>
         nullIfEmpty(a)(
-          Json.obj(
+          Json.fromFields(
             a.map {
               case v: HttpOperationBinding      => "http" -> v.asJson
               case v: WebSocketOperationBinding => "ws" -> v.asJson
               case v: KafkaOperationBinding     => "kafka" -> v.asJson
-            }: _*
+            }
           )
         )
     }
@@ -96,12 +96,12 @@ package circe {
       implicit val encoderKafkaChannelBinding: Encoder[KafkaChannelBinding] = deriveEncoder[KafkaChannelBinding]
       (a: List[ChannelBinding]) =>
         nullIfEmpty(a)(
-          Json.obj(
+          Json.fromFields(
             a.map {
               case v: HttpChannelBinding      => "http" -> v.asJson
               case v: WebSocketChannelBinding => "ws" -> v.asJson
               case v: KafkaChannelBinding     => "kafka" -> v.asJson
-            }: _*
+            }
           )
         )
     }
@@ -113,12 +113,12 @@ package circe {
       implicit val encoderKafkaServerBinding: Encoder[KafkaServerBinding] = deriveEncoder[KafkaServerBinding]
       (a: List[ServerBinding]) =>
         nullIfEmpty(a)(
-          Json.obj(
+          Json.fromFields(
             a.map {
               case v: HttpServerBinding      => "http" -> v.asJson
               case v: WebSocketServerBinding => "ws" -> v.asJson
               case v: KafkaServerBinding     => "kafka" -> v.asJson
-            }: _*
+            }
           )
         )
     }
