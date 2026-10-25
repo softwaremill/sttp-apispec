@@ -4,8 +4,8 @@ import sttp.apispec._
 
 import scala.collection.immutable.ListMap
 
-/** In-code versions of the enum and const schemas from the `spec/3.x/schema.json` fixtures. */
-object EnumSchemas {
+/** In-code versions of the enum, const, default and example schemas from the `spec/3.x/schema.json` fixtures. */
+object ValueSchemas {
   private def enumOf(tpe: SchemaType, values: Any*): Schema =
     Schema(tpe).copy(`enum` = Some(values.toList.map(ExampleSingleValue(_))))
 
@@ -14,6 +14,10 @@ object EnumSchemas {
     "boolean enum" -> enumOf(SchemaType.Boolean, true),
     "string enum with JSON values" -> enumOf(SchemaType.String, "1", "true", "null"),
     "nullable string enum" -> enumOf(SchemaType.String, "1").nullable,
-    "string const" -> Schema(SchemaType.String).copy(const = Some(ExampleSingleValue("1")))
+    "string const" -> Schema(SchemaType.String).copy(const = Some(ExampleSingleValue("1"))),
+    "null const" -> Schema(const = Some(ExampleSingleValue("null"))),
+    "string default and example" -> Schema(SchemaType.String)
+      .copy(default = Some(ExampleSingleValue("1")), examples = Some(List(ExampleSingleValue("true")))),
+    "nullable default null" -> Schema(SchemaType.String).nullable.copy(default = Some(ExampleSingleValue("null")))
   ).map { case (desc, schema) => desc -> schema.copy(description = Some(desc)) }
 }

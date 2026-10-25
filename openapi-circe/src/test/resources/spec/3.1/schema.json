@@ -118,6 +118,27 @@
         "enum": [200],
         "description": "integer enum from strings"
       },
+      "JSON-encoded string values": {
+        "type": "string",
+        "default": "a",
+        "enum": ["a"],
+        "description": "JSON-encoded string values"
+      },
+      "null const": {
+        "const": null,
+        "description": "null const"
+      },
+      "string default and example": {
+        "type": "string",
+        "default": "1",
+        "examples": ["true"],
+        "description": "string default and example"
+      },
+      "nullable default null": {
+        "type": ["string", "null"],
+        "default": null,
+        "description": "nullable default null"
+      },
       "boolean enum": {
         "type": "boolean",
         "enum": [true],

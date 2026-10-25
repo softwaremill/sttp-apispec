@@ -110,6 +110,12 @@ trait JsonSchemaCirceDecoders {
         case _                         => obj
       }
 
+    // A null const or default would decode as None. It's a value, decoded as "null" like null in other values.
+    def adjustNullValues(obj: JsonObject): JsonObject =
+      List("const", "default").foldLeft(obj) { (o, key) =>
+        if (o(key).exists(_.isNull)) o.add(key, Json.fromString("null")) else o
+      }
+
     def adjustSyntax(decoder: Decoder[Schema]) = Decoder.instance { c =>
       val nullable = c.get[Boolean]("nullable").contains(true)
       val modded = c.withFocus(
@@ -117,6 +123,7 @@ trait JsonSchemaCirceDecoders {
           .mapObject(adjustMaximum)
           .mapObject(adjustMinimum)
           .mapObject(adjustExample)
+          .mapObject(adjustNullValues)
           .mapObject(translateDefinitionsToDefs)
       )
       decoder.tryDecode(modded).map(s => if (nullable) s.nullable else s)
