@@ -4,7 +4,7 @@ import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
 import sttp.apispec._
 import sttp.apispec.openapi._
-import sttp.apispec.openapi.circe.EnumSchemas
+import sttp.apispec.openapi.circe.ValueSchemas
 import sttp.apispec.test._
 
 import scala.collection.immutable.ListMap
@@ -127,8 +127,14 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
         schemaComponent("enum")(Schema(`enum` = Some(List("enum1", "enum2").map(ExampleSingleValue(_))))),
         schemaComponent("integer enum from strings")(
           Schema(SchemaType.Integer).copy(`enum` = Some(List(ExampleSingleValue("200"))))
+        ),
+        schemaComponent("JSON-encoded string values")(
+          Schema(SchemaType.String).copy(
+            default = Some(ExampleSingleValue("\"a\"")),
+            `enum` = Some(List(ExampleSingleValue("\"a\"")))
+          )
         )
-      ) ++ EnumSchemas.all
+      ) ++ ValueSchemas.all
     )
 
     OpenAPI(

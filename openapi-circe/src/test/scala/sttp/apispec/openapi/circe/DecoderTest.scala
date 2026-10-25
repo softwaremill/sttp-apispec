@@ -42,24 +42,24 @@ class DecoderTest extends AnyFunSuite with ResourcePlatform {
     val Right(openapi) = readJson("/spec/3.1/schema.json").flatMap(_.as[OpenAPI]): @unchecked
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
-    assert(schemas.size === 21)
+    assert(schemas.size === 25)
   }
 
   test("all schemas types 3.0") {
     val Right(openapi) = readJson("/spec/3.0/schema.json").flatMap(_.as[OpenAPI]): @unchecked
     assert(openapi.info.title === "API")
     val schemas = openapi.components.getOrElse(Components.Empty).schemas
-    assert(schemas.size === 20)
+    assert(schemas.size === 24)
   }
 
-  test("enum and const values decode to the values used in code") {
+  test("enum, const, default and example values decode to the values used in code") {
     def decodedSchemas(file: String) = {
       val Right(openapi) = readJson(file).flatMap(_.as[OpenAPI]): @unchecked
       openapi.components.getOrElse(Components.Empty).schemas
     }
     val schemas31 = decodedSchemas("/spec/3.1/schema.json")
     val schemas30 = decodedSchemas("/spec/3.0/schema.json")
-    EnumSchemas.all.foreach { case (name, schema) =>
+    ValueSchemas.all.foreach { case (name, schema) =>
       assert(schemas31(name) == schema, name)
       // 3.0 has no const, so it's encoded as an enum
       if (schema.const.isEmpty) assert(schemas30(name) == schema, name)

@@ -22,8 +22,8 @@ trait JsonSchemaCirceEncoders {
     val nullSchema = Schema(`type` = Some(List(SchemaType.Null)))
 
     // In OpenAPI 3.0 the keyword "const" is not allowed and needs to be replaced by an "enum" with one element
-    val enumJson = s.`enum`.map(_.map(encodeEnumValue(s, _)))
-    val constJson = s.const.map(encodeEnumValue(s, _))
+    val enumJson = s.`enum`.map(_.map(encodeSchemaValue(s, _)))
+    val constJson = s.const.map(encodeSchemaValue(s, _))
     val enumAndConstFields =
       if (openApi30 && constJson.isDefined)
         Vector("enum" := constJson.map(List(_)), "const" := None)
@@ -63,14 +63,19 @@ trait JsonSchemaCirceEncoders {
         Vector("maximum" := s.maximum, "exclusiveMaximum" := s.exclusiveMaximum)
     }
 
-    val exampleFields = s.examples match {
+    val examplesJson = s.examples.map(_.map(encodeSchemaValue(s, _)))
+    val exampleFields = examplesJson match {
       case Some(List(example)) if openApi30 =>
         Vector("example" := example)
       case _ =>
-        Vector("examples" := s.examples)
+        Vector("examples" := examplesJson)
     }
 
-    JsonObject.fromIterable(
+    // Unlike other null fields, a null const or default is a value, which is kept
+    val keptNullFields =
+      Set("default").filter(_ => s.default.isDefined) ++ Set("const").filter(_ => s.const.isDefined && !openApi30)
+
+    val fields = JsonObject.fromIterable(
       Vector(
         "$schema" := s.$schema,
         "$vocabulary" := s.$vocabulary,
@@ -83,7 +88,7 @@ trait JsonSchemaCirceEncoders {
         "$defs" := s.$defs,
         "title" := s.title,
         "description" := s.description,
-        "default" := s.default,
+        "default" := s.default.map(encodeSchemaValue(s, _)),
         "deprecated" := s.deprecated,
         "readOnly" := s.readOnly,
         "writeOnly" := s.writeOnly
@@ -125,7 +130,8 @@ trait JsonSchemaCirceEncoders {
         "extensions" := s.extensions
       )
     )
-  }.dropNullsExpandExtensions
+    expandExtensions(fields.filter { case (k, v) => !v.isNull || keptNullFields(k) })
+  }
 
   // note: these are strict val-s, order matters!
   implicit val extensionValue: Encoder[ExtensionValue] =
@@ -155,16 +161,18 @@ trait JsonSchemaCirceEncoders {
     case e: ExampleSingleValue   => encoderExampleSingleValue.apply(e)
   }
 
-  // Strings in string schemas are written as-is; elsewhere they are parsed as JSON (so "200" becomes 200). In nullable
-  // schemas, "null" is the JSON null added by Schema.nullable.
-  private def encodeEnumValue(s: Schema, v: ExampleValue): Json = {
+  // Strings are parsed as JSON (so "200" becomes 200), except in string schemas: there, only JSON-encoded strings
+  // (e.g. "\"a\"", as tapir passes for JSON codecs) are unwrapped. In nullable schemas, "null" is the JSON null added by
+  // Schema.nullable.
+  private def encodeSchemaValue(s: Schema, v: ExampleValue): Json = {
     val types = s.`type`.getOrElse(Nil)
     val isNullable = types.contains(SchemaType.Null)
     val isStringSchema = types.filterNot(_ == SchemaType.Null) == List(SchemaType.String)
     v match {
       case ExampleSingleValue("null") if isNullable            => Json.Null
-      case ExampleSingleValue(value: String) if isStringSchema => Json.fromString(value)
-      case _                                                   => encoderExampleValue(v)
+      case ExampleSingleValue(value: String) if isStringSchema =>
+        parse(value).toOption.filter(_.isString).getOrElse(Json.fromString(value))
+      case _ => encoderExampleValue(v)
     }
   }
 
