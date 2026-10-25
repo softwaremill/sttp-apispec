@@ -2,27 +2,22 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
-/** A JSON value, used in examples, defaults, enums and consts. */
+/** A value of an example, default, enum or const, as written in the JSON or YAML document. */
 sealed trait ExampleValue
 
 /** @param value
-  *   A JSON value: a number (`Int`, `Long`, `Short`, `Float`, `Double`, `BigDecimal`, `BigInt`), a `Boolean`, `null`, a
-  *   `String`, or an `io.circe.Json` (decoded arrays and objects). Other values are written as strings, using
-  *   `toString`.
+  *   An `Int`, `Long`, `Short`, `Float`, `Double`, `BigDecimal`, `BigInt`, `Boolean`, `null`, `String` or
+  *   `io.circe.Json`. Values in other formats, such as XML, are given as a `String`. Values of other types are written
+  *   as strings, using `toString`.
   *
-  * A `String` is either a string, or an encoded JSON value:
-  *   - in the `enum`, `const`, `default` and `examples` of a [[Schema]] with type `string` (optionally also `null`), it
-  *     is a string, unless it's a JSON-encoded string or `null` (e.g. `"\"a\""` or `"null"`)
-  *   - everywhere else, it's an encoded JSON value if it parses as JSON (e.g. `"200"` is a number), and a string
-  *     otherwise
-  *
-  * Decoded values hold `Int`, `Long` or `BigDecimal` numbers, so a value compares equal to the same number given as
-  * another numeric type, but not to the number given as a `String`.
+  * A `String` which is valid JSON is written as that JSON value (e.g. `"200"` as a number). In the `enum`, `const`,
+  * `default` and `examples` of a string [[Schema]], this only applies to JSON strings and `null` (e.g. `"\"a\""` or
+  * `"null"`).
   */
 case class ExampleSingleValue(value: Any) extends ExampleValue
 
 /** @param values
-  *   JSON values, as in [[ExampleSingleValue]].
+  *   Values, as in [[ExampleSingleValue]].
   */
 case class ExampleMultipleValue(values: List[Any]) extends ExampleValue
 
