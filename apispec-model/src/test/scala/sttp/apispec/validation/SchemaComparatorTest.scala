@@ -259,6 +259,13 @@ abstract class SchemaComparatorTest(referencePrefix: String) extends AnyFunSuite
     assert(compare(enumSchema("a", "b"), enumSchema("a", "b", "c")) == Nil)
   }
 
+  test("compatible float enum") {
+    val floatEnum = numberSchema.copy(`enum` = Some(enums(1.1f)))
+    val decimalEnum = numberSchema.copy(`enum` = Some(enums(BigDecimal("1.1"))))
+    assert(compare(floatEnum, decimalEnum) == Nil)
+    assert(compare(decimalEnum, floatEnum) == Nil)
+  }
+
   test("incompatible enum & const") {
     assert(
       compare(stringSchema, enumSchema("a", "b")) == List(

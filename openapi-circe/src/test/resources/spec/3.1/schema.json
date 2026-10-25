@@ -107,6 +107,36 @@
           "ex1",
           "ex2"
         ]
+      },
+      "integer enum": {
+        "type": "integer",
+        "enum": [200, 404],
+        "description": "integer enum"
+      },
+      "integer enum from strings": {
+        "type": "integer",
+        "enum": [200],
+        "description": "integer enum from strings"
+      },
+      "boolean enum": {
+        "type": "boolean",
+        "enum": [true],
+        "description": "boolean enum"
+      },
+      "string enum with JSON values": {
+        "type": "string",
+        "enum": ["1", "true", "null"],
+        "description": "string enum with JSON values"
+      },
+      "nullable string enum": {
+        "type": ["string", "null"],
+        "enum": ["1", null],
+        "description": "nullable string enum"
+      },
+      "string const": {
+        "type": "string",
+        "const": "1",
+        "description": "string const"
       }
     }
   }

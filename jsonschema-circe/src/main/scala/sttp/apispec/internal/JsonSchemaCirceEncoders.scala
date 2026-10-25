@@ -22,11 +22,13 @@ trait JsonSchemaCirceEncoders {
     val nullSchema = Schema(`type` = Some(List(SchemaType.Null)))
 
     // In OpenAPI 3.0 the keyword "const" is not allowed and needs to be replaced by an "enum" with one element
+    val enumJson = s.`enum`.map(_.map(encodeEnumValue(s, _)))
+    val constJson = s.const.map(encodeEnumValue(s, _))
     val enumAndConstFields =
-      if (openApi30 && s.const.isDefined)
-        Vector("enum" := s.const.map(List(_)), "const" := None)
+      if (openApi30 && constJson.isDefined)
+        Vector("enum" := constJson.map(List(_)), "const" := None)
       else
-        Vector("enum" := s.`enum`, "const" := s.const)
+        Vector("enum" := enumJson, "const" := constJson)
 
     // Nullable $ref Schema is represented as {"anyOf": [{"$ref": "some-ref"}, {"type": "null"}]}
     // In OpenAPI 3.0, we need to translate it to {"allOf": [{"$ref": "some-ref"}], "nullable": true}
@@ -140,6 +142,7 @@ trait JsonSchemaCirceEncoders {
     case ExampleSingleValue(value: BigDecimal) => Json.fromBigDecimal(value)
     case ExampleSingleValue(value: BigInt)     => Json.fromBigInt(value)
     case ExampleSingleValue(null)              => Json.Null
+    case ExampleSingleValue(value: Json)       => value
     case ExampleSingleValue(value)             => Json.fromString(value.toString)
   }
 
@@ -150,6 +153,19 @@ trait JsonSchemaCirceEncoders {
   implicit val encoderExampleValue: Encoder[ExampleValue] = {
     case e: ExampleMultipleValue => encoderMultipleExampleValue.apply(e)
     case e: ExampleSingleValue   => encoderExampleSingleValue.apply(e)
+  }
+
+  // Strings in string schemas are written as-is; elsewhere they are parsed as JSON (so "200" becomes 200). In nullable
+  // schemas, "null" is the JSON null added by Schema.nullable.
+  private def encodeEnumValue(s: Schema, v: ExampleValue): Json = {
+    val types = s.`type`.getOrElse(Nil)
+    val isNullable = types.contains(SchemaType.Null)
+    val isStringSchema = types.filterNot(_ == SchemaType.Null) == List(SchemaType.String)
+    v match {
+      case ExampleSingleValue("null") if isNullable            => Json.Null
+      case ExampleSingleValue(value: String) if isStringSchema => Json.fromString(value)
+      case _                                                   => encoderExampleValue(v)
+    }
   }
 
   implicit val encoderSchemaType: Encoder[SchemaType] =

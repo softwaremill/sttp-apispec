@@ -28,16 +28,24 @@ trait JsonSchemaCirceDecoders {
 
   implicit val discriminatorDecoder: Decoder[Discriminator] = deriveDecoder[Discriminator]
 
+  /** Decodes scalars to the Scala values that schemas built in code use, so that decoded and in-code values compare
+    * equal. `null` becomes the `"null"` string, as in [[Schema.nullable]]. Arrays and objects stay as [[Json]].
+    */
+  private def decodeExampleValue(json: Json): Any =
+    json.fold(
+      jsonNull = "null",
+      jsonBoolean = b => b,
+      jsonNumber = n => n.toInt.orElse(n.toLong).orElse(n.toBigDecimal).getOrElse(n.toDouble),
+      jsonString = s => s,
+      jsonArray = _ => json,
+      jsonObject = _ => json
+    )
+
   implicit val exampleSingleValueDecoder: Decoder[ExampleSingleValue] =
-    Decoder[Json].map(json => json.asString.map(ExampleSingleValue(_)).getOrElse(ExampleSingleValue(json)))
+    Decoder[Json].map(json => ExampleSingleValue(decodeExampleValue(json)))
 
   implicit val exampleMultipleValueDecoder: Decoder[ExampleMultipleValue] =
-    Decoder[List[Json]].map { json =>
-      val listString = json.flatMap(_.asString)
-      if (listString.nonEmpty) {
-        ExampleMultipleValue(listString)
-      } else ExampleMultipleValue(json)
-    }
+    Decoder[List[Json]].map(values => ExampleMultipleValue(values.map(decodeExampleValue)))
 
   implicit val exampleValueDecoder: Decoder[ExampleValue] =
     exampleMultipleValueDecoder.widen[ExampleValue].or(exampleSingleValueDecoder.widen[ExampleValue])
