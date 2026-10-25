@@ -31,7 +31,7 @@ trait JsonSchemaCirceDecoders {
   /** Decodes scalars to the Scala values that schemas built in code use, so that decoded and in-code values compare
     * equal. `null` becomes the `"null"` string, as in [[Schema.nullable]]. Arrays and objects stay as [[Json]].
     */
-  private def exampleValue(json: Json): Any =
+  private def decodeExampleValue(json: Json): Any =
     json.fold(
       jsonNull = "null",
       jsonBoolean = b => b,
@@ -42,10 +42,10 @@ trait JsonSchemaCirceDecoders {
     )
 
   implicit val exampleSingleValueDecoder: Decoder[ExampleSingleValue] =
-    Decoder[Json].map(json => ExampleSingleValue(exampleValue(json)))
+    Decoder[Json].map(json => ExampleSingleValue(decodeExampleValue(json)))
 
   implicit val exampleMultipleValueDecoder: Decoder[ExampleMultipleValue] =
-    Decoder[List[Json]].map(values => ExampleMultipleValue(values.map(exampleValue)))
+    Decoder[List[Json]].map(values => ExampleMultipleValue(values.map(decodeExampleValue)))
 
   implicit val exampleValueDecoder: Decoder[ExampleValue] =
     exampleMultipleValueDecoder.widen[ExampleValue].or(exampleSingleValueDecoder.widen[ExampleValue])

@@ -21,33 +21,14 @@ trait JsonSchemaCirceEncoders {
   implicit lazy val encoderSchema: Encoder[Schema] = Encoder.AsObject.instance { (s: Schema) =>
     val nullSchema = Schema(`type` = Some(List(SchemaType.Null)))
 
-    // String values are parsed as JSON (e.g. tapir passes "200" for an integer enum). For a string schema, that would
-    // turn "1" or "true" into a number or boolean, so there they are kept as strings.
-    val stringOnlyType =
-      s.`type`.exists(ts =>
-        ts.contains(SchemaType.String) && ts.forall(Set[SchemaType](SchemaType.String, SchemaType.Null))
-      )
-    val nullableType = s.`type`.exists(_.contains(SchemaType.Null))
-    val enumValueEncoder: Encoder[ExampleValue] =
-      if (stringOnlyType) {
-        case ExampleSingleValue(value: String) =>
-          parse(value) match {
-            case Right(json) if json.isString || (json.isNull && nullableType) => json
-            case _                                                             => Json.fromString(value)
-          }
-        case e => encoderExampleValue(e)
-      }
-      else encoderExampleValue
-
     // In OpenAPI 3.0 the keyword "const" is not allowed and needs to be replaced by an "enum" with one element
+    val enumJson = s.`enum`.map(_.map(encodeEnumValue(s, _)))
+    val constJson = s.const.map(encodeEnumValue(s, _))
     val enumAndConstFields =
-      if (openApi30 && s.const.isDefined)
-        Vector("enum" := s.const.map(c => Json.arr(enumValueEncoder(c))), "const" := Option.empty[Json])
+      if (openApi30 && constJson.isDefined)
+        Vector("enum" := constJson.map(List(_)), "const" := None)
       else
-        Vector(
-          "enum" := s.`enum`.filter(_.nonEmpty).map(vs => Json.fromValues(vs.map(v => enumValueEncoder(v)))),
-          "const" := s.const.map(c => enumValueEncoder(c))
-        )
+        Vector("enum" := enumJson, "const" := constJson)
 
     // Nullable $ref Schema is represented as {"anyOf": [{"$ref": "some-ref"}, {"type": "null"}]}
     // In OpenAPI 3.0, we need to translate it to {"allOf": [{"$ref": "some-ref"}], "nullable": true}
@@ -172,6 +153,19 @@ trait JsonSchemaCirceEncoders {
   implicit val encoderExampleValue: Encoder[ExampleValue] = {
     case e: ExampleMultipleValue => encoderMultipleExampleValue.apply(e)
     case e: ExampleSingleValue   => encoderExampleSingleValue.apply(e)
+  }
+
+  // Strings in string schemas are written as-is; elsewhere they are parsed as JSON (so "200" becomes 200). In nullable
+  // schemas, "null" is the JSON null added by Schema.nullable.
+  private def encodeEnumValue(s: Schema, v: ExampleValue): Json = {
+    val types = s.`type`.getOrElse(Nil)
+    val isNullable = types.contains(SchemaType.Null)
+    val isStringSchema = types.filterNot(_ == SchemaType.Null) == List(SchemaType.String)
+    v match {
+      case ExampleSingleValue("null") if isNullable            => Json.Null
+      case ExampleSingleValue(value: String) if isStringSchema => Json.fromString(value)
+      case _                                                   => encoderExampleValue(v)
+    }
   }
 
   implicit val encoderSchemaType: Encoder[SchemaType] =

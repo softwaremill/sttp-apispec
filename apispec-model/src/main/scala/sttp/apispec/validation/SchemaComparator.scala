@@ -354,6 +354,13 @@ class SchemaComparator(
       case _                                       => writerTpe == readerTpe
     }
 
+  // A decoded value such as BigDecimal("1.1") isn't equal to 1.1f, as no Float holds 1.1 exactly.
+  private def sameEnumValue(v1: ExampleValue, v2: ExampleValue): Boolean = (v1, v2) match {
+    case (ExampleSingleValue(f: Float), ExampleSingleValue(d: BigDecimal)) => d.toFloat == f
+    case (ExampleSingleValue(d: BigDecimal), ExampleSingleValue(f: Float)) => d.toFloat == f
+    case _                                                                 => v1 == v2
+  }
+
   private def checkEnumAndConst(writerSchema: Schema, readerSchema: Schema): Option[EnumMismatch] = {
     val writerEnum = writerSchema.const.map(List(_)).orElse(writerSchema.`enum`)
     val readerEnum = readerSchema.const.map(List(_)).orElse(readerSchema.`enum`)
@@ -362,7 +369,7 @@ class SchemaComparator(
         Some(EnumMismatch(None, readerValues))
       case (Some(writerValues), Some(readerValues)) =>
         val incompatibleWriterValues =
-          writerValues.filter(wv => !readerValues.contains(wv))
+          writerValues.filter(wv => !readerValues.exists(sameEnumValue(wv, _)))
         if (incompatibleWriterValues.isEmpty) None
         else Some(EnumMismatch(Some(incompatibleWriterValues), readerValues))
       case _ =>
