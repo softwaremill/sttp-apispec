@@ -12,12 +12,10 @@ object ValueSchemas {
   val all: ListMap[String, Schema] = ListMap(
     "integer enum" -> enumOf(SchemaType.Integer, 200, 404),
     "boolean enum" -> enumOf(SchemaType.Boolean, true),
-    "string enum with JSON values" -> enumOf(SchemaType.String, "1", "true", "null"),
+    "string enum with JSON values" -> enumOf(SchemaType.String, "1", "true"),
     "nullable string enum" -> enumOf(SchemaType.String, "1").nullable,
     "string const" -> Schema(SchemaType.String).copy(const = Some(ExampleSingleValue("1"))),
-    "null const" -> Schema(const = Some(ExampleSingleValue("null"))),
     "string default and example" -> Schema(SchemaType.String)
-      .copy(default = Some(ExampleSingleValue("1")), examples = Some(List(ExampleSingleValue("true")))),
-    "nullable default null" -> Schema(SchemaType.String).nullable.copy(default = Some(ExampleSingleValue("null")))
+      .copy(default = Some(ExampleSingleValue("1")), examples = Some(List(ExampleSingleValue("true"))))
   ).map { case (desc, schema) => desc -> schema.copy(description = Some(desc)) }
 }

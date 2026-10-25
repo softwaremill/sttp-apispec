@@ -29,11 +29,11 @@ trait JsonSchemaCirceDecoders {
   implicit val discriminatorDecoder: Decoder[Discriminator] = deriveDecoder[Discriminator]
 
   /** Decodes scalars to the Scala values that schemas built in code use, so that decoded and in-code values compare
-    * equal. `null` becomes the `"null"` string, as in [[Schema.nullable]]. Arrays and objects stay as [[Json]].
+    * equal. Arrays and objects stay as [[Json]].
     */
   private def decodeExampleValue(json: Json): Any =
     json.fold(
-      jsonNull = "null",
+      jsonNull = null,
       jsonBoolean = b => b,
       jsonNumber = n => n.toInt.orElse(n.toLong).orElse(n.toBigDecimal).getOrElse(n.toDouble),
       jsonString = s => s,
@@ -110,12 +110,6 @@ trait JsonSchemaCirceDecoders {
         case _                         => obj
       }
 
-    // A null const or default would decode as None. It's a value, decoded as "null" like null in other values.
-    def adjustNullValues(obj: JsonObject): JsonObject =
-      List("const", "default").foldLeft(obj) { (o, key) =>
-        if (o(key).exists(_.isNull)) o.add(key, Json.fromString("null")) else o
-      }
-
     def adjustSyntax(decoder: Decoder[Schema]) = Decoder.instance { c =>
       val nullable = c.get[Boolean]("nullable").contains(true)
       val modded = c.withFocus(
@@ -123,7 +117,6 @@ trait JsonSchemaCirceDecoders {
           .mapObject(adjustMaximum)
           .mapObject(adjustMinimum)
           .mapObject(adjustExample)
-          .mapObject(adjustNullValues)
           .mapObject(translateDefinitionsToDefs)
       )
       decoder.tryDecode(modded).map(s => if (nullable) s.nullable else s)

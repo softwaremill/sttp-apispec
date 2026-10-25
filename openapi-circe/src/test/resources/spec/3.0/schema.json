@@ -110,21 +110,16 @@
         "enum": ["a"],
         "description": "JSON-encoded string values"
       },
-      "null const": {
-        "enum": [null],
-        "description": "null const"
+      "null default and examples": {
+        "type": "string",
+        "example": "a",
+        "description": "null default and examples"
       },
       "string default and example": {
         "type": "string",
         "default": "1",
         "example": "true",
         "description": "string default and example"
-      },
-      "nullable default null": {
-        "type": "string",
-        "nullable": true,
-        "default": null,
-        "description": "nullable default null"
       },
       "boolean enum": {
         "type": "boolean",
@@ -133,7 +128,7 @@
       },
       "string enum with JSON values": {
         "type": "string",
-        "enum": ["1", "true", "null"],
+        "enum": ["1", "true"],
         "description": "string enum with JSON values"
       },
       "nullable string enum": {

@@ -63,7 +63,8 @@ trait JsonSchemaCirceEncoders {
         Vector("maximum" := s.maximum, "exclusiveMaximum" := s.exclusiveMaximum)
     }
 
-    val examplesJson = s.examples.map(_.map(encodeSchemaValue(s, _)))
+    // Null examples are dropped, like other null fields
+    val examplesJson = s.examples.map(_.map(encodeSchemaValue(s, _)).filterNot(_.isNull))
     val exampleFields = examplesJson match {
       case Some(List(example)) if openApi30 =>
         Vector("example" := example)
@@ -71,11 +72,7 @@ trait JsonSchemaCirceEncoders {
         Vector("examples" := examplesJson)
     }
 
-    // Unlike other null fields, a null const or default is a value, which is kept
-    val keptNullFields =
-      Set("default").filter(_ => s.default.isDefined) ++ Set("const").filter(_ => s.const.isDefined && !openApi30)
-
-    val fields = JsonObject.fromIterable(
+    JsonObject.fromIterable(
       Vector(
         "$schema" := s.$schema,
         "$vocabulary" := s.$vocabulary,
@@ -130,8 +127,7 @@ trait JsonSchemaCirceEncoders {
         "extensions" := s.extensions
       )
     )
-    expandExtensions(fields.filter { case (k, v) => !v.isNull || keptNullFields(k) })
-  }
+  }.dropNullsExpandExtensions
 
   // note: these are strict val-s, order matters!
   implicit val extensionValue: Encoder[ExtensionValue] =
@@ -161,17 +157,14 @@ trait JsonSchemaCirceEncoders {
     case e: ExampleSingleValue   => encoderExampleSingleValue.apply(e)
   }
 
-  // Strings are parsed as JSON (so "200" becomes 200), except in string schemas: there, only JSON-encoded strings
-  // (e.g. "\"a\"", as tapir passes for JSON codecs) are unwrapped. In nullable schemas, "null" is the JSON null added by
-  // Schema.nullable.
+  // Strings are parsed as JSON (so "200" becomes 200), except in string schemas: there, only JSON-encoded strings and
+  // nulls (e.g. "\"a\"" or "null", as tapir passes for JSON codecs) are unwrapped.
   private def encodeSchemaValue(s: Schema, v: ExampleValue): Json = {
     val types = s.`type`.getOrElse(Nil)
-    val isNullable = types.contains(SchemaType.Null)
     val isStringSchema = types.filterNot(_ == SchemaType.Null) == List(SchemaType.String)
     v match {
-      case ExampleSingleValue("null") if isNullable            => Json.Null
       case ExampleSingleValue(value: String) if isStringSchema =>
-        parse(value).toOption.filter(_.isString).getOrElse(Json.fromString(value))
+        parse(value).toOption.filter(j => j.isString || j.isNull).getOrElse(Json.fromString(value))
       case _ => encoderExampleValue(v)
     }
   }
