@@ -21,12 +21,33 @@ trait JsonSchemaCirceEncoders {
   implicit lazy val encoderSchema: Encoder[Schema] = Encoder.AsObject.instance { (s: Schema) =>
     val nullSchema = Schema(`type` = Some(List(SchemaType.Null)))
 
+    // String values are parsed as JSON (e.g. tapir passes "200" for an integer enum). For a string schema, that would
+    // turn "1" or "true" into a number or boolean, so there they are kept as strings.
+    val stringOnlyType =
+      s.`type`.exists(ts =>
+        ts.contains(SchemaType.String) && ts.forall(Set[SchemaType](SchemaType.String, SchemaType.Null))
+      )
+    val nullableType = s.`type`.exists(_.contains(SchemaType.Null))
+    val enumValueEncoder: Encoder[ExampleValue] =
+      if (stringOnlyType) {
+        case ExampleSingleValue(value: String) =>
+          parse(value) match {
+            case Right(json) if json.isString || (json.isNull && nullableType) => json
+            case _                                                             => Json.fromString(value)
+          }
+        case e => encoderExampleValue(e)
+      }
+      else encoderExampleValue
+
     // In OpenAPI 3.0 the keyword "const" is not allowed and needs to be replaced by an "enum" with one element
     val enumAndConstFields =
       if (openApi30 && s.const.isDefined)
-        Vector("enum" := s.const.map(List(_)), "const" := None)
+        Vector("enum" := s.const.map(c => Json.arr(enumValueEncoder(c))), "const" := Option.empty[Json])
       else
-        Vector("enum" := s.`enum`, "const" := s.const)
+        Vector(
+          "enum" := s.`enum`.filter(_.nonEmpty).map(vs => Json.fromValues(vs.map(v => enumValueEncoder(v)))),
+          "const" := s.const.map(c => enumValueEncoder(c))
+        )
 
     // Nullable $ref Schema is represented as {"anyOf": [{"$ref": "some-ref"}, {"type": "null"}]}
     // In OpenAPI 3.0, we need to translate it to {"allOf": [{"$ref": "some-ref"}], "nullable": true}
@@ -140,6 +161,7 @@ trait JsonSchemaCirceEncoders {
     case ExampleSingleValue(value: BigDecimal) => Json.fromBigDecimal(value)
     case ExampleSingleValue(value: BigInt)     => Json.fromBigInt(value)
     case ExampleSingleValue(null)              => Json.Null
+    case ExampleSingleValue(value: Json)       => value
     case ExampleSingleValue(value)             => Json.fromString(value.toString)
   }
 
