@@ -132,7 +132,7 @@ case class Schema(
     */
   def nullable: Schema = `type` match {
     case Some(types) =>
-      val NullExample = ExampleSingleValue("null")
+      val NullExample = ExampleSingleValue(null)
       if (types.contains(SchemaType.Null)) this // ensure idempotency
       else
         copy(

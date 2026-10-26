@@ -2,8 +2,23 @@ package sttp.apispec
 
 import scala.collection.immutable.ListMap
 
+/** A value of an example, default, enum or const, as written in the JSON or YAML document. */
 sealed trait ExampleValue
+
+/** @param value
+  *   An `Int`, `Long`, `Short`, `Float`, `Double`, `BigDecimal`, `BigInt`, `Boolean`, `null`, `String` or
+  *   `io.circe.Json`. Values in other formats, such as XML, are given as a `String`. Values of other types are written
+  *   as strings, using `toString`.
+  *
+  * A `String` which is valid JSON is written as that JSON value (e.g. `"200"` as a number). In the `enum`, `const`,
+  * `default` and `examples` of a string [[Schema]], this only applies to JSON strings and `null` (e.g. `"\"a\""` or
+  * `"null"`).
+  */
 case class ExampleSingleValue(value: Any) extends ExampleValue
+
+/** @param values
+  *   Values, as in [[ExampleSingleValue]].
+  */
 case class ExampleMultipleValue(values: List[Any]) extends ExampleValue
 
 case class Tag(

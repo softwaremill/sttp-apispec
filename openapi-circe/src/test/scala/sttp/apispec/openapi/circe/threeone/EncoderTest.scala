@@ -133,6 +133,12 @@ class EncoderTest extends AnyFunSuite with ResourcePlatform {
             default = Some(ExampleSingleValue("\"a\"")),
             `enum` = Some(List(ExampleSingleValue("\"a\"")))
           )
+        ),
+        schemaComponent("null default and examples")(
+          Schema(SchemaType.String).copy(
+            default = Some(ExampleSingleValue("null")),
+            examples = Some(List(ExampleSingleValue(null), ExampleSingleValue("a")))
+          )
         )
       ) ++ ValueSchemas.all
     )
