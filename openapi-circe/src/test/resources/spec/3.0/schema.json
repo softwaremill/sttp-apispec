@@ -115,6 +115,12 @@
         "example": "a",
         "description": "null default and examples"
       },
+      "object default and example": {
+        "type": "object",
+        "default": {"a": 1},
+        "example": {"b": [1, 2]},
+        "description": "object default and example"
+      },
       "string default and example": {
         "type": "string",
         "default": "1",

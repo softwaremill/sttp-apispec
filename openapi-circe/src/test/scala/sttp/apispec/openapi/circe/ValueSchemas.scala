@@ -16,6 +16,10 @@ object ValueSchemas {
     "nullable string enum" -> enumOf(SchemaType.String, "1").nullable,
     "string const" -> Schema(SchemaType.String).copy(const = Some(ExampleSingleValue("1"))),
     "string default and example" -> Schema(SchemaType.String)
-      .copy(default = Some(ExampleSingleValue("1")), examples = Some(List(ExampleSingleValue("true"))))
+      .copy(default = Some(ExampleSingleValue("1")), examples = Some(List(ExampleSingleValue("true")))),
+    "object default and example" -> Schema(SchemaType.Object).copy(
+      default = Some(ExampleSingleValue("{\"a\":1}")),
+      examples = Some(List(ExampleSingleValue("{\"b\":[1,2]}")))
+    )
   ).map { case (desc, schema) => desc -> schema.copy(description = Some(desc)) }
 }

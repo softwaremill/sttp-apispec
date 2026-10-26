@@ -354,11 +354,18 @@ class SchemaComparator(
       case _                                       => writerTpe == readerTpe
     }
 
-  // A decoded value such as BigDecimal("1.1") isn't equal to 1.1f, as no Float holds 1.1 exactly.
-  private def sameEnumValue(v1: ExampleValue, v2: ExampleValue): Boolean = (v1, v2) match {
-    case (ExampleSingleValue(f: Float), ExampleSingleValue(d: BigDecimal)) => d.toFloat == f
-    case (ExampleSingleValue(d: BigDecimal), ExampleSingleValue(f: Float)) => d.toFloat == f
-    case _                                                                 => v1 == v2
+  private def sameExampleValue(v1: ExampleValue, v2: ExampleValue): Boolean = (v1, v2) match {
+    case (ExampleSingleValue(a), ExampleSingleValue(b))       => sameValue(a, b)
+    case (ExampleMultipleValue(as), ExampleMultipleValue(bs)) => as.corresponds(bs)(sameValue)
+    case _                                                    => false
+  }
+
+  // A decoded value such as BigDecimal("1.1") isn't equal to 1.1f, as no Float holds 1.1 exactly. Other numbers, e.g.
+  // BigDecimal(1) and 1, are equal using ==.
+  private def sameValue(v1: Any, v2: Any): Boolean = (v1, v2) match {
+    case (f: Float, d: BigDecimal) => d.toFloat == f
+    case (d: BigDecimal, f: Float) => d.toFloat == f
+    case _                         => v1 == v2
   }
 
   private def checkEnumAndConst(writerSchema: Schema, readerSchema: Schema): Option[EnumMismatch] = {
@@ -369,7 +376,7 @@ class SchemaComparator(
         Some(EnumMismatch(None, readerValues))
       case (Some(writerValues), Some(readerValues)) =>
         val incompatibleWriterValues =
-          writerValues.filter(wv => !readerValues.exists(sameEnumValue(wv, _)))
+          writerValues.filter(wv => !readerValues.exists(sameExampleValue(wv, _)))
         if (incompatibleWriterValues.isEmpty) None
         else Some(EnumMismatch(Some(incompatibleWriterValues), readerValues))
       case _ =>

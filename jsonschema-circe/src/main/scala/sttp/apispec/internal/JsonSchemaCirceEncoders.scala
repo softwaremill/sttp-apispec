@@ -144,7 +144,6 @@ trait JsonSchemaCirceEncoders {
     case ExampleSingleValue(value: BigDecimal) => Json.fromBigDecimal(value)
     case ExampleSingleValue(value: BigInt)     => Json.fromBigInt(value)
     case ExampleSingleValue(null)              => Json.Null
-    case ExampleSingleValue(value: Json)       => value
     case ExampleSingleValue(value)             => Json.fromString(value.toString)
   }
 
@@ -157,8 +156,8 @@ trait JsonSchemaCirceEncoders {
     case e: ExampleSingleValue   => encoderExampleSingleValue.apply(e)
   }
 
-  // Strings are parsed as JSON (so "200" becomes 200), except in string schemas: there, only JSON-encoded strings and
-  // nulls (e.g. "\"a\"" or "null", as tapir passes for JSON codecs) are unwrapped.
+  // In string schemas, only JSON strings and nulls (e.g. "\"a\"" or "null", as tapir passes for JSON codecs) are
+  // unwrapped, so that plain text such as "200" stays a string.
   private def encodeSchemaValue(s: Schema, v: ExampleValue): Json = {
     val types = s.`type`.getOrElse(Nil)
     val isStringSchema = types.filterNot(_ == SchemaType.Null) == List(SchemaType.String)

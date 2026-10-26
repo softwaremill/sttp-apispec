@@ -29,7 +29,7 @@ trait JsonSchemaCirceDecoders {
   implicit val discriminatorDecoder: Decoder[Discriminator] = deriveDecoder[Discriminator]
 
   /** Decodes scalars to the Scala values that schemas built in code use, so that decoded and in-code values compare
-    * equal. Arrays and objects stay as [[Json]].
+    * equal. Arrays and objects are decoded to their JSON text.
     */
   private def decodeExampleValue(json: Json): Any =
     json.fold(
@@ -37,8 +37,8 @@ trait JsonSchemaCirceDecoders {
       jsonBoolean = b => b,
       jsonNumber = n => n.toInt.orElse(n.toLong).orElse(n.toBigDecimal).getOrElse(n.toDouble),
       jsonString = s => s,
-      jsonArray = _ => json,
-      jsonObject = _ => json
+      jsonArray = _ => json.noSpaces,
+      jsonObject = _ => json.noSpaces
     )
 
   implicit val exampleSingleValueDecoder: Decoder[ExampleSingleValue] =
