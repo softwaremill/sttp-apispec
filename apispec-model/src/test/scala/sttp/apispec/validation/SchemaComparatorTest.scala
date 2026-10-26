@@ -264,6 +264,10 @@ abstract class SchemaComparatorTest(referencePrefix: String) extends AnyFunSuite
     val decimalEnum = numberSchema.copy(`enum` = Some(enums(BigDecimal("1.1"))))
     assert(compare(floatEnum, decimalEnum) == Nil)
     assert(compare(decimalEnum, floatEnum) == Nil)
+
+    val floatListEnum = numberSchema.copy(`enum` = Some(List(ExampleMultipleValue(List(1.1f)))))
+    val decimalListEnum = numberSchema.copy(`enum` = Some(List(ExampleMultipleValue(List(BigDecimal("1.1"))))))
+    assert(compare(floatListEnum, decimalListEnum) == Nil)
   }
 
   test("incompatible enum & const") {
