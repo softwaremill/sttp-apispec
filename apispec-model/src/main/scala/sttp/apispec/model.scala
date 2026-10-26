@@ -6,12 +6,12 @@ import scala.collection.immutable.ListMap
 sealed trait ExampleValue
 
 /** @param value
-  *   A `Boolean`, `null`, number (`Int`, `Long`, `Short`, `Float`, `Double`, `BigDecimal` or `BigInt`) or `String`.
-  *   Other values are written as strings, using `toString`.
+  *   The value as it appears in the document: a `Boolean`, `null`, number (`Int`, `Long`, `Short`, `Float`, `Double`,
+  *   `BigDecimal` or `BigInt`) or `String`. Other values are written as strings, using `toString`.
   *
-  * A `String` is either plain text (e.g. a query parameter or XML), or a value encoded as JSON (e.g. `"200"`, `"\"a\""`
-  * or `"{\"a\":1}"`). Text which is valid JSON is written as that JSON value. In a string [[Schema]], this only applies
-  * to JSON strings and `null`.
+  * A `String` can also hold the value's encoded text, e.g. a codec's output (`"200"`, `"\"a\""` or `"{\"a\":1}"`). Text
+  * which is valid JSON is written as that JSON value; in a string [[Schema]], only JSON strings and `null` are.
+  * Objects, and arrays nested in values, are given as JSON text.
   */
 case class ExampleSingleValue(value: Any) extends ExampleValue
 
