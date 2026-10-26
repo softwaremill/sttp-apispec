@@ -158,7 +158,8 @@ trait JsonSchemaCirceEncoders {
 
   // The same as encoderExampleValue, except for strings in string schemas: there, only JSON strings and nulls (e.g.
   // "\"a\"" or "null", as tapir passes for JSON codecs) are unwrapped. Otherwise, a string enum such as ["1", "true"]
-  // would be written as [1, true], as tapir passes raw enum values. The same applies to plain-text defaults and examples.
+  // would be written as [1, true], as tapir passes enum values as plain strings, not as JSON. The same applies to
+  // plain-text defaults and examples.
   private def encodeSchemaValue(s: Schema, v: ExampleValue): Json = {
     val types = s.`type`.getOrElse(Nil)
     val isStringSchema = types.filterNot(_ == SchemaType.Null) == List(SchemaType.String)
